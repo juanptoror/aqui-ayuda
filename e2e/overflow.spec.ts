@@ -22,6 +22,7 @@ const RUTAS = [
   { nombre: 'municipios', url: '/ciudades' },
   { nombre: 'ciudad', url: '/ciudad/dosquebradas' },
   { nombre: 'que-falta', url: '/que-falta' },
+  { nombre: 'ayuda-directa', url: '/ayuda-directa' },
   { nombre: 'como-ayudar', url: '/como-ayudar' },
   { nombre: 'acerca', url: '/acerca' },
   { nombre: 'ruta-inexistente', url: '/no-existe-esta-ruta' },
@@ -30,9 +31,10 @@ const RUTAS = [
 /** Espera a que la app pinte contenido real, no el esqueleto de carga. */
 async function esperarContenido(page: Page) {
   await page.waitForSelector('.page-header__title', { timeout: 15_000 })
-  await page.waitForLoadState('networkidle').catch(() => {
-    /* con red lenta seguimos: el layout ya está pintado */
-  })
+  // Timeout propio: una pantalla que consulta una API externa puede no llegar
+  // nunca a "networkidle", y sin límite la espera se comería el test entero.
+  // El layout ya está pintado, que es lo que se va a medir.
+  await page.waitForLoadState('networkidle', { timeout: 6_000 }).catch(() => {})
 }
 
 /** Elementos que sobresalen del ancho de la ventana. */

@@ -1,6 +1,7 @@
 import { NavLink, Link, useLocation } from 'react-router-dom'
 import {
   Building2,
+  HandHeart,
   HeartHandshake,
   Home,
   Info,
@@ -20,11 +21,14 @@ interface Destino {
   icono: typeof Home
 }
 
+/* Cinco destinos: en 375px caben a 75px cada uno, y por eso las etiquetas
+   cortas de la barra inferior son de una sola palabra. */
 const DESTINOS: Destino[] = [
   { a: '/', etiqueta: 'Inicio', etiquetaCorta: 'Inicio', icono: Home },
-  { a: '/ciudades', etiqueta: 'Ciudades', etiquetaCorta: 'Ciudades', icono: Building2 },
-  { a: '/que-falta', etiqueta: 'Qué falta', etiquetaCorta: 'Qué falta', icono: TriangleAlert },
-  { a: '/como-ayudar', etiqueta: 'Cómo ayudar', etiquetaCorta: 'Ayudar', icono: HeartHandshake },
+  { a: '/ciudades', etiqueta: 'Centros de acopio', etiquetaCorta: 'Centros', icono: Building2 },
+  { a: '/ayuda-directa', etiqueta: 'Ayuda entre personas', etiquetaCorta: 'Personas', icono: HandHeart },
+  { a: '/que-falta', etiqueta: 'Qué falta', etiquetaCorta: 'Falta', icono: TriangleAlert },
+  { a: '/como-ayudar', etiqueta: 'Cómo ayudar', etiquetaCorta: 'Guía', icono: HeartHandshake },
 ]
 
 function BotonTema({ compacto }: { compacto?: boolean }) {
