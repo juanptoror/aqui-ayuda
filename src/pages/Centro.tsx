@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
   ArrowLeft,
   Boxes,
   Building2,
+  CircleCheck,
   CircleSlash,
   DoorOpen,
   FileText,
@@ -11,10 +13,21 @@ import {
   Package,
   Phone,
   User,
+  UserPlus,
 } from 'lucide-react'
-import { PageHeader, EmptyState, Badge, SkeletonLinea } from '@/components/ui'
-import { AvisoTelefonos } from '@/components/Acceso'
+import {
+  PageHeader,
+  EmptyState,
+  Badge,
+  SkeletonLinea,
+  Notice,
+  AvisoError,
+} from '@/components/ui'
+import { AvisoTelefonos, Acceso } from '@/components/Acceso'
 import { SelloFuente } from '@/components/Fuente'
+import { OfrecerDonacion } from '@/components/formularios/OfrecerDonacion'
+import { useUnirseACentro } from '@/datos/consultas'
+import type { Necesidad } from '@/dominio/modelos'
 import { usePreferencias } from '@/state/preferencias'
 import { useCentros } from '@/datos/consultas'
 import { useSesion } from '@/state/sesion'
@@ -27,6 +40,20 @@ export function Centro() {
   const { id } = useParams<{ id: string }>()
   const { ubicacion } = usePreferencias()
   const { sesion } = useSesion()
+
+  const unirse = useUnirseACentro()
+  const [ofreciendo, setOfreciendo] = useState<Necesidad | null>(null)
+  const [accesoAbierto, setAccesoAbierto] = useState(false)
+
+  /** Unirse exige sesión: si no la hay, se abre el acceso en vez de fallar. */
+  function pedirUnirse() {
+    if (!id) return
+    if (!sesion) {
+      setAccesoAbierto(true)
+      return
+    }
+    unirse.mutate(id)
+  }
 
   // El centro se localiza primero en la lista global para deducir su municipio;
   // así el enlace directo a /centro/:id funciona aunque el usuario nunca haya
@@ -110,6 +137,10 @@ export function Centro() {
               <ArrowLeft size={18} />
               <span>Volver</span>
             </Link>
+            <button type="button" className="btn" onClick={pedirUnirse} disabled={unirse.isPending}>
+              <UserPlus size={18} />
+              <span>{unirse.isPending ? 'Enviando…' : 'Unirme al equipo'}</span>
+            </button>
             {mapa && (
               <a className="btn btn--primary" href={mapa} target="_blank" rel="noopener noreferrer">
                 <Navigation size={18} />
@@ -122,6 +153,13 @@ export function Centro() {
 
       <div className="container">
         <div className="stack">
+          {unirse.isSuccess && (
+            <Notice tono="info" icono={CircleCheck}>
+              <strong>Solicitud enviada.</strong> Quien coordina este centro la verá y te
+              contactará. Si la mandas otra vez no se duplica.
+            </Notice>
+          )}
+          {unirse.error ? <AvisoError error={unirse.error} origen="AP" /> : null}
           <AvisoTelefonos />
         </div>
 
@@ -285,6 +323,16 @@ export function Centro() {
                             Reportado {desde(n.creadaEn)}
                           </div>
                         </div>
+                        {/* Ofrecer contra ESTA necesidad: el ofrecimiento queda
+                            ligado a ella, así el centro sabe qué cubre. */}
+                        <button
+                          type="button"
+                          className="btn btn--sm btn--primary"
+                          style={{ flexShrink: 0 }}
+                          onClick={() => setOfreciendo(n)}
+                        >
+                          <span>Yo tengo</span>
+                        </button>
                       </li>
                     ))}
                 </ul>
@@ -309,10 +357,24 @@ export function Centro() {
           </div>
         </section>
       </div>
+
+      {datos.ciudad && (
+        <OfrecerDonacion
+          abierto={ofreciendo !== null}
+          alCerrar={() => setOfreciendo(null)}
+          ciudadId={datos.ciudad.id}
+          ciudadNombre={datos.ciudad.nombre}
+          necesidad={ofreciendo}
+          centroId={centro.id}
+          centroNombre={centro.nombre}
+        />
+      )}
+      <Acceso abierto={accesoAbierto} alCerrar={() => setAccesoAbierto(false)} />
     </>
   )
 }
 
+/* Los diálogos van fuera del flujo del documento: se montan al final. */
 function peso(p: string): number {
   return p === 'urgente' ? 3 : p === 'alta' ? 2 : 1
 }

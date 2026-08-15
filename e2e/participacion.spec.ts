@@ -159,6 +159,81 @@ test.describe('ofrecer una donación', () => {
   })
 })
 
+test.describe('inventario del municipio', () => {
+  test.use({ storageState: { cookies: [], origins: [] } })
+
+  test('cada categoría dice dónde está y quién la pide', async ({ page }) => {
+    await page.addInitScript(() => {
+      try {
+        localStorage.setItem('ac.ciudad', 'dosquebradas')
+      } catch {
+        /* sin almacenamiento */
+      }
+    })
+    await page.goto('/inventario')
+    await page.waitForSelector('.panel li button[aria-expanded]', { timeout: 25_000 })
+
+    const categorias = page.locator('.panel li button[aria-expanded]')
+    expect(await categorias.count()).toBeGreaterThan(0)
+
+    // Cerrada por defecto: la lista completa cabe en una pantalla.
+    await expect(categorias.first()).toHaveAttribute('aria-expanded', 'false')
+
+    await categorias.first().click()
+    await expect(categorias.first()).toHaveAttribute('aria-expanded', 'true')
+
+    // Al abrir aparecen las dos mitades que dan sentido a la pantalla.
+    await expect(page.getByText('Dónde está').first()).toBeVisible()
+    await expect(page.getByText('Quién lo pide').first()).toBeVisible()
+  })
+
+  test('el formulario de transporte solo ofrece carga del origen elegido', async ({ page }) => {
+    await page.addInitScript(() => {
+      try {
+        localStorage.setItem('ac.ciudad', 'dosquebradas')
+      } catch {
+        /* sin almacenamiento */
+      }
+    })
+    await page.goto('/inventario')
+    await page.waitForSelector('.page-header__title')
+    await page.getByRole('button', { name: 'Nuevo transporte' }).click()
+
+    const dialogo = page.getByRole('dialog')
+    await expect(dialogo).toBeVisible()
+
+    // Sin origen, la carga no se puede elegir: evita programar un viaje por
+    // algo que ese centro no tiene.
+    await expect(dialogo.getByLabel('Qué lleva')).toBeDisabled()
+    await expect(dialogo.getByText(/Elige primero de dónde sale/)).toBeVisible()
+  })
+})
+
+test.describe('acciones sobre un centro', () => {
+  test('cada necesidad se puede cubrir desde la ficha, y se puede pedir unirse', async ({
+    page,
+  }) => {
+    await page.goto('/ciudad/dosquebradas')
+    await page.waitForSelector('[data-tipo="centro"]', { timeout: 25_000 })
+    await page.locator('.card__link').first().click()
+    await page.waitForURL(/\/centro\//)
+    await page.waitForSelector('.page-header__title')
+
+    await expect(page.getByRole('button', { name: /Unirme al equipo/ })).toBeVisible()
+
+    const yoTengo = page.getByRole('button', { name: 'Yo tengo' })
+    expect(await yoTengo.count()).toBeGreaterThan(0)
+
+    // Al ofrecer contra una necesidad, la categoría ya viene decidida y no se
+    // vuelve a preguntar.
+    await yoTengo.first().click()
+    const dialogo = page.getByRole('dialog')
+    await expect(dialogo).toBeVisible()
+    await expect(dialogo.getByLabel('¿Qué tipo de ayuda es?')).toHaveCount(0)
+    await expect(dialogo.getByLabel('¿Qué puedes aportar?')).toBeVisible()
+  })
+})
+
 test.describe('voluntariado y vehículo', () => {
   test('sin sesión se avisa antes de rellenar, no después', async ({ page }) => {
     await abrirCiudad(page)

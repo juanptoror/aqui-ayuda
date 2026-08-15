@@ -1,4 +1,12 @@
-import type { Centro, Ciudad, ItemInventario, Necesidad, Prioridad } from '@/dominio/modelos'
+import type {
+  Centro,
+  Ciudad,
+  EstadoTransporte,
+  ItemInventario,
+  Necesidad,
+  Prioridad,
+  Transporte,
+} from '@/dominio/modelos'
 import type {
   BorradorOfrecimiento,
   BorradorTransporte,
@@ -14,6 +22,7 @@ import type {
   FilaCiudad,
   FilaInventario,
   FilaNecesidad,
+  FilaTransporte,
 } from './esquema'
 
 /**
@@ -83,6 +92,32 @@ export function aItemInventario(f: FilaInventario): ItemInventario {
     cantidad: Number(f.cantidad) || 0,
     unidad: f.unidad?.trim() || 'unidades',
     actualizadoEn: f.updated_at,
+  }
+}
+
+const ESTADOS_TRANSPORTE: EstadoTransporte[] = [
+  'programado',
+  'en_ruta',
+  'entregado',
+  'cancelado',
+]
+
+export function aTransporte(f: FilaTransporte): Transporte {
+  return {
+    id: f.id,
+    ciudadId: f.ciudad_id,
+    origenId: f.origen_id,
+    destinoId: f.destino_id,
+    destinoTexto: limpio(f.destino_texto),
+    carga: limpio(f.carga),
+    vehiculo: limpio(f.vehiculo),
+    conductor: limpio(f.conductor),
+    estado: ESTADOS_TRANSPORTE.includes(f.estado as EstadoTransporte)
+      ? (f.estado as EstadoTransporte)
+      : 'programado',
+    salida: f.salida,
+    notas: limpio(f.notas),
+    creadoEn: f.created_at,
   }
 }
 
