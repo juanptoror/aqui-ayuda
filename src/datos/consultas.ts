@@ -11,7 +11,10 @@ import type {
   Centro,
   Ciudad,
   ItemInventario,
+  ComentarioPeticion,
   Necesidad,
+  OfrecimientoPersona,
+  PeticionPersona,
   Transporte,
   TransporteItem,
   Vehiculo,
@@ -114,6 +117,55 @@ export function useTransporteItems(): UseQueryResult<TransporteItem[]> {
       const b = backendPrincipalPara('leer:transporte-items')
       if (!b?.leer.transporteItems) faltaProveedor('el contenido de los transportes')
       return b.leer.transporteItems()
+    },
+  })
+}
+
+/**
+ * Personas pidiendo ayuda en el tablon de la comunidad.
+ *
+ * Se filtran aqui, y no en la pantalla, los estados que NO deben publicarse:
+ * la fuente marca 12 reportes como `informacion_falsa` y 10 como `duplicado`.
+ * Republicar un aviso señalado como falso en plena emergencia es hacer daño, y
+ * dejar los duplicados manda a dos personas al mismo sitio a lo mismo.
+ */
+const ESTADOS_NO_PUBLICABLES = new Set(['informacion_falsa', 'duplicado', 'resuelto'])
+
+export function usePeticionesPersona(): UseQueryResult<PeticionPersona[]> {
+  return useQuery({
+    queryKey: ['peticiones-persona'],
+    ...BASE,
+    queryFn: async () => {
+      const b = backendPrincipalPara('leer:peticiones-persona')
+      if (!b?.leer.peticionesPersona) faltaProveedor('las peticiones de la comunidad')
+      const todas = await b.leer.peticionesPersona()
+      return todas.filter((p) => !ESTADOS_NO_PUBLICABLES.has(p.estado.toLowerCase().trim()))
+    },
+  })
+}
+
+export function useOfrecimientosPersona(): UseQueryResult<OfrecimientoPersona[]> {
+  return useQuery({
+    queryKey: ['ofrecimientos-persona'],
+    ...BASE,
+    queryFn: async () => {
+      const b = backendPrincipalPara('leer:ofrecimientos-persona')
+      if (!b?.leer.ofrecimientosPersona) faltaProveedor('los ofrecimientos de la comunidad')
+      const todos = await b.leer.ofrecimientosPersona()
+      // `ocultada`: alguien retiró su ofrecimiento a propósito. Se respeta.
+      return todos.filter((o) => o.activo)
+    },
+  })
+}
+
+export function useComentariosPeticion(): UseQueryResult<ComentarioPeticion[]> {
+  return useQuery({
+    queryKey: ['comentarios-peticion'],
+    ...BASE,
+    queryFn: async () => {
+      const b = backendPrincipalPara('leer:comentarios')
+      if (!b?.leer.comentarios) faltaProveedor('los comentarios')
+      return b.leer.comentarios()
     },
   })
 }

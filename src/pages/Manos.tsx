@@ -15,6 +15,7 @@ import { ApuntarseVoluntario } from '@/components/formularios/ApuntarseVoluntari
 import { ApuntarVehiculo } from '@/components/formularios/ApuntarVehiculo'
 import { usePreferencias } from '@/state/preferencias'
 import { useMunicipios, useVehiculos, useVoluntarios } from '@/datos/consultas'
+import { VecinosQueOfrecen } from '@/components/VecinosQueOfrecen'
 import { conteo } from '@/lib/format'
 
 /**
@@ -168,9 +169,14 @@ export function Manos() {
           </section>
         )}
 
+        {/* Primero los contactables. Una lista de nombres sin telefono no
+            resuelve nada, y era justo la queja: "no tengo forma de
+            contactarlos". */}
+        <VecinosQueOfrecen municipio={ciudad?.nombre ?? null} />
+
         <section className="section">
           <SectionHead
-            titulo="Personas"
+            titulo="Personas apuntadas en los centros"
             conteo={cargando ? undefined : conteo(voluntarios.length, 'apuntada', 'apuntadas')}
           />
           {cargando ? (

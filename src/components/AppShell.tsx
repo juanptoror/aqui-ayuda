@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import {
+  BedDouble,
   Boxes,
   Building2,
   ChevronsUpDown,
@@ -42,6 +43,7 @@ const DESTINOS: Destino[] = [
 const SECUNDARIOS: Destino[] = [
   { a: '/mapa', etiqueta: 'Mapa de la ayuda', etiquetaCorta: 'Mapa', icono: MapPin },
   { a: '/manos', etiqueta: 'Quién puede ayudar', etiquetaCorta: 'Manos', icono: Users },
+  { a: '/vivienda', etiqueta: 'Vivienda en arriendo', etiquetaCorta: 'Vivienda', icono: BedDouble },
   { a: '/como-ayudar', etiqueta: 'Cómo ayudar', etiquetaCorta: 'Guía', icono: HeartHandshake },
 ]
 

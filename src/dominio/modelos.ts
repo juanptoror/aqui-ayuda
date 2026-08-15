@@ -184,3 +184,55 @@ export const FRANJAS_DISPONIBILIDAD = [
   'Fines de semana',
   'A cualquier hora',
 ] as const
+
+/**
+ * Una persona pidiendo ayuda, geolocalizada y con teléfono público.
+ *
+ * Es la forma que comparten fuentes distintas —Corag y Pereira Unida— cuando
+ * quien pide no es una organización sino alguien concreto. La app las presenta
+ * juntas porque para quien va a ayudar son lo mismo, pero cada una lleva su
+ * sello de origen: si el dato está mal, hay que saber a quién reclamar.
+ */
+export interface PeticionPersona {
+  id: string
+  titulo: string
+  descripcion: string | null
+  categoria: string
+  urgente: boolean
+  /** Texto tal cual lo publica la fuente: "buscando", "activa", "resuelto". */
+  estado: string
+  municipio: string | null
+  departamento: string | null
+  lugar: string | null
+  lat: number | null
+  lng: number | null
+  /** Público en origen. No lo desbloqueamos nosotros: ya está publicado allí. */
+  telefono: string | null
+  fotos: string[]
+  creadaEn: string
+  /** Última vez que alguien de la comunidad confirmó que sigue vigente. */
+  confirmadaEn: string | null
+}
+
+/** Alguien que ofrece echar una mano, con su teléfono y lo que sabe hacer. */
+export interface OfrecimientoPersona {
+  id: string
+  nombre: string
+  /** Qué ofrece: "alimentacion", "transporte", "medica"… */
+  habilidad: string
+  descripcion: string | null
+  telefono: string | null
+  municipio: string | null
+  departamento: string | null
+  activo: boolean
+  creadoEn: string
+}
+
+/** Un comentario de la comunidad sobre una petición. */
+export interface ComentarioPeticion {
+  id: string
+  peticionId: string
+  autor: string | null
+  texto: string
+  creadoEn: string
+}

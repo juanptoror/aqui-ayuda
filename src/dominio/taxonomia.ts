@@ -62,6 +62,7 @@ export type Subcategoria =
   | 'transporte'
   | 'voluntariado'
   | 'acopio'
+  | 'servicios-tecnicos'
   | 'otros'
 
 export interface DefinicionSub {
@@ -107,6 +108,13 @@ export const SUBCATEGORIAS: Record<Subcategoria, DefinicionSub> = {
   transporte: { id: 'transporte', nombre: 'Transporte', general: 'servicios' },
   voluntariado: { id: 'voluntariado', nombre: 'Voluntariado', general: 'servicios' },
   acopio: { id: 'acopio', nombre: 'Centro de acopio', general: 'servicios' },
+  /* Peritaje estructural, ingenieria y asesoria legal. Es un servicio
+     profesional: nadie lo guarda en una bodega ni lo lleva en una caja. */
+  'servicios-tecnicos': {
+    id: 'servicios-tecnicos',
+    nombre: 'Revision tecnica y legal',
+    general: 'servicios',
+  },
   otros: { id: 'otros', nombre: 'Otros', general: 'otros' },
 }
 
@@ -163,7 +171,43 @@ function clave(texto: string): string {
   return texto.trim().toLowerCase().normalize('NFD').replace(DIACRITICOS, '')
 }
 
-export type OrigenCategoria = 'ayudas-pereira' | 'corag'
+/**
+ * Vocabulario propio de Pereira Unida, medido sobre sus 282 reportes y 296
+ * ofrecimientos. Dos etiquetas no encajan en ninguna categoría de las otras
+ * fuentes y por eso importan:
+ *
+ * - `revision_ingenieria` (13 reportes): alguien pide que un ingeniero mire si
+ *   su casa se puede habitar. Es un servicio profesional, no un material, y
+ *   cruzarlo contra inventario sería absurdo.
+ * - `psicologia` (43 ofrecimientos): apoyo emocional. Cae en Salud a nivel
+ *   general, pero no en Medicamentos: quien ofrece escuchar no tiene cajas.
+ */
+const DESDE_PEREIRA_UNIDA: Record<string, Subcategoria> = {
+  alimentos: 'alimentos-no-perecederos',
+  alimentacion: 'comidas-listas',
+  agua: 'agua',
+  medicinas: 'medicamentos',
+  medico: 'salud-general',
+  enfermeria: 'salud-general',
+  psicologia: 'salud-general',
+  ropa: 'ropa',
+  refugio: 'alojamiento',
+  herramientas: 'herramienta-menor',
+  herramientas_rescate: 'herramienta-menor',
+  rescate: 'voluntariado',
+  mascotas: 'mascotas',
+  transporte: 'transporte',
+  transporte_logistica: 'transporte',
+  voluntariado: 'voluntariado',
+  oficios: 'voluntariado',
+  revision_ingenieria: 'servicios-tecnicos',
+  ingenieria: 'servicios-tecnicos',
+  legal: 'servicios-tecnicos',
+  otro: 'otros',
+  otros: 'otros',
+}
+
+export type OrigenCategoria = 'ayudas-pereira' | 'corag' | 'pereira-unida'
 
 /**
  * Traduce la categoría de un backend a la taxonomía común.
@@ -172,7 +216,12 @@ export type OrigenCategoria = 'ayudas-pereira' | 'corag'
  */
 export function aSubcategoria(categoria: string, origen: OrigenCategoria): Subcategoria {
   const k = clave(categoria)
-  const tabla = origen === 'corag' ? DESDE_CORAG : DESDE_AYUDAS_PEREIRA
+  const tabla =
+    origen === 'corag'
+      ? DESDE_CORAG
+      : origen === 'pereira-unida'
+        ? DESDE_PEREIRA_UNIDA
+        : DESDE_AYUDAS_PEREIRA
   if (tabla[k]) return tabla[k]
 
   // Coincidencia parcial: los datos traen etiquetas libres ("ropa talla 3").

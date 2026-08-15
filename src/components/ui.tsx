@@ -1,7 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { AlertTriangle, Info, X, type LucideIcon } from 'lucide-react'
-import { mensajeDe } from '@/lib/errores'
+import { mensajeDe, type OrigenError } from '@/lib/errores'
 
 /* ------------------------------ Cabecera ---------------------------------- */
 
@@ -181,7 +181,7 @@ export function AvisoError({
   alReintentar,
 }: {
   error: unknown
-  origen?: 'AP' | 'CG' | 'APP'
+  origen?: OrigenError
   alReintentar?: () => void
 }) {
   const info = mensajeDe(error, origen)

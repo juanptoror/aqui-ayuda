@@ -1,16 +1,16 @@
-import { Database, Network } from 'lucide-react'
+import { Database, Network, Users } from 'lucide-react'
 
 /**
  * Sello de procedencia del dato.
  *
- * La app junta dos backends independientes y eso el usuario tiene derecho a
+ * La app junta tres backends independientes y eso el usuario tiene derecho a
  * saberlo: si un teléfono no responde o una dirección está mal, hay que poder
  * decir a QUIÉN reclamar. Además, cada fuente tiene reglas distintas —los
  * centros los publica un equipo local, las peticiones de Corag las publica
  * cualquiera— y esa diferencia cambia cuánto te puedes fiar de lo que lees.
  */
 
-export type Origen = 'ayudas-pereira' | 'corag'
+export type Origen = 'ayudas-pereira' | 'corag' | 'pereira-unida'
 
 interface InfoFuente {
   nombre: string
@@ -39,6 +39,14 @@ export const FUENTES: Record<Origen, InfoFuente> = {
     quienPublica: 'Cualquier persona, sin registrarse.',
     url: 'https://ayuda.corag.app',
     icono: Network,
+  },
+  'pereira-unida': {
+    nombre: 'Pereira Unida',
+    tipo: 'Tablon de la comunidad',
+    descripcion: 'Vecinos que piden ayuda y vecinos que se ofrecen, con su telefono.',
+    quienPublica: 'Cualquier persona, sin registrarse.',
+    url: 'https://pereiraunida.com',
+    icono: Users,
   },
 }
 
