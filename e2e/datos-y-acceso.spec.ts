@@ -160,8 +160,8 @@ test.describe('acceso por código', () => {
     await expect(dialogo).toBeVisible()
   })
 
-  test('la app explica qué desbloquea entrar, sin bloquear el resto', async ({ page }) => {
-    await page.goto('/acerca')
+  test('el estado del sistema explica qué desbloquea entrar', async ({ page }) => {
+    await page.goto('/estado')
     await page.waitForSelector('.page-header__title')
 
     await expect(
@@ -172,5 +172,28 @@ test.describe('acceso por código', () => {
     const filas = page.locator('.panel li')
     await expect(filas.filter({ hasText: 'ciudades' }).first()).toContainText('filas')
     await expect(filas.filter({ hasText: 'centros' }).first()).toContainText('filas')
+  })
+
+  test('acerca está escrito para cualquiera y no filtra datos por error', async ({ page }) => {
+    await page.goto('/acerca')
+    await page.waitForSelector('.page-header__title')
+
+    // El mensaje que ordena la página tiene que estar arriba del todo.
+    await expect(page.getByText('Nosotros no guardamos nada tuyo')).toBeVisible()
+
+    // Las condiciones de ambas fuentes, con su contacto real de ejercicio de
+    // derechos: sin esto la página sería una declaración vacía.
+    await expect(
+      page.getByRole('heading', { name: 'Condiciones de Ayudas Pereira' }),
+    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Condiciones de Corag' })).toBeVisible()
+    await expect(page.locator('a[href^="mailto:"]').first()).toBeVisible()
+    await expect(page.locator('a[href="https://corag.app/privacy/"]').first()).toBeVisible()
+
+    // Y no debe colarse jerga de implementación en la página para el público.
+    const texto = (await page.locator('main').innerText()).toLowerCase()
+    for (const jerga of ['supabase', 'postgrest', '42501', 'select(', 'grant']) {
+      expect(texto, `"${jerga}" no debería aparecer en Acerca`).not.toContain(jerga)
+    }
   })
 })

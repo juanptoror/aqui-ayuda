@@ -8,15 +8,18 @@ export function PageHeader({
   titulo,
   subtitulo,
   acciones,
+  estrecho,
 }: {
   eyebrow?: ReactNode
   titulo: string
   subtitulo?: ReactNode
   acciones?: ReactNode
+  /** Alinea la cabecera con un contenido de lectura (container--narrow). */
+  estrecho?: boolean
 }) {
   return (
     <header className="page-header">
-      <div className="container">
+      <div className={estrecho ? 'container container--narrow' : 'container'}>
         <div className="page-header__inner">
           <div className="page-header__text">
             {eyebrow && <div className="page-header__eyebrow">{eyebrow}</div>}

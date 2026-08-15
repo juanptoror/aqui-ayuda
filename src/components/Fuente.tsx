@@ -14,7 +14,9 @@ export type Origen = 'ayudas-pereira' | 'corag'
 
 interface InfoFuente {
   nombre: string
-  backend: string
+  /** Qué es, en palabras de cualquiera. El nombre del proveedor técnico no
+      aparece aquí: eso vive en /estado, que es donde le sirve a alguien. */
+  tipo: string
   descripcion: string
   quienPublica: string
   url: string | null
@@ -24,17 +26,17 @@ interface InfoFuente {
 export const FUENTES: Record<Origen, InfoFuente> = {
   'ayudas-pereira': {
     nombre: 'Ayudas Pereira',
-    backend: 'Supabase',
-    descripcion: 'Centros de acopio: dónde llevar o recoger donaciones.',
+    tipo: 'Centros de acopio',
+    descripcion: 'Dónde llevar o recoger donaciones, y qué necesita cada centro.',
     quienPublica: 'El equipo que coordina cada centro.',
     url: 'https://alluda.online',
     icono: Database,
   },
   corag: {
     nombre: 'Corag',
-    backend: 'API pública de Corag',
-    descripcion: 'Ayuda directa: personas concretas que piden u ofrecen algo.',
-    quienPublica: 'Cualquier persona, sin registro.',
+    tipo: 'Ayuda entre personas',
+    descripcion: 'Personas concretas que piden u ofrecen algo, con su WhatsApp.',
+    quienPublica: 'Cualquier persona, sin registrarse.',
     url: 'https://ayuda.corag.app',
     icono: Network,
   },
@@ -47,7 +49,7 @@ export function SelloFuente({ origen }: { origen: Origen }) {
     <span
       className="sello-fuente"
       data-origen={origen}
-      title={`Dato de ${f.nombre} · ${f.backend}`}
+      title={`Dato de ${f.nombre} · ${f.tipo}`}
     >
       <f.icono size={11} strokeWidth={2.5} />
       {f.nombre}
@@ -70,7 +72,7 @@ export function TarjetaFuente({ origen, extra }: { origen: Origen; extra?: strin
             <h3 className="card__title" style={{ fontSize: '1.0625rem' }}>
               {f.nombre}
             </h3>
-            <span className="deflist__label">{f.backend}</span>
+            <span className="deflist__label">{f.tipo}</span>
           </div>
         </div>
 
