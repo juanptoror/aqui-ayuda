@@ -155,9 +155,9 @@ export function Ciudades() {
                   <h3 className="card__title">{c.nombre}</h3>
                 </div>
                 <div className="card__footer">
-                  <span style={{ fontWeight: 650, color: 'var(--brand)' }}>Ver centros</span>
+                  <span style={{ fontWeight: 650, color: 'var(--accion)' }}>Ver centros</span>
                   <div className="spacer" />
-                  <ChevronRight size={17} style={{ color: 'var(--brand)' }} />
+                  <ChevronRight size={17} style={{ color: 'var(--accion)' }} />
                 </div>
               </Link>
             ))}

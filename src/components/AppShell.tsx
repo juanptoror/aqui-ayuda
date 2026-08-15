@@ -5,7 +5,6 @@ import {
   HeartHandshake,
   Home,
   Info,
-  LifeBuoy,
   Moon,
   Sun,
   TriangleAlert,
@@ -13,6 +12,7 @@ import {
 import type { ReactNode } from 'react'
 import { usePreferencias } from '@/state/preferencias'
 import { BotonAcceso } from './Acceso'
+import { PinAA } from './Marca'
 
 interface Destino {
   a: string
@@ -52,10 +52,10 @@ function MarcaCompacta() {
   return (
     <Link to="/" className="sidebar__brand" style={{ marginBottom: 0 }}>
       <span className="brand-mark">
-        <LifeBuoy size={20} strokeWidth={2.25} />
+        <PinAA size={32} colorPin="var(--amarillo)" title="AquíAyuda" />
       </span>
       <span className="brand-text">
-        <span className="brand-text__name">Ayudas Colombia</span>
+        <span className="brand-text__name">AquíAyuda</span>
       </span>
     </Link>
   )
@@ -73,11 +73,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       <nav className="sidebar" aria-label="Navegación principal">
         <Link to="/" className="sidebar__brand">
           <span className="brand-mark">
-            <LifeBuoy size={21} strokeWidth={2.25} />
+            <PinAA size={34} colorPin="var(--amarillo)" title="AquíAyuda" />
           </span>
           <span className="brand-text">
-            <span className="brand-text__name">Ayudas Colombia</span>
-            <span className="brand-text__tag">Centros de acopio</span>
+            <span className="brand-text__name">AquíAyuda</span>
+            <span className="brand-text__tag">Todo lo que necesites</span>
           </span>
         </Link>
 

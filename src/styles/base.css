@@ -73,18 +73,19 @@ figcaption {
   overflow-wrap: break-word;
 }
 
-/* El color de acción es grafito, no un azul: los enlaces de texto necesitan el
-   subrayado para distinguirse del párrafo que los rodea. */
+/* Los enlaces NUNCA son amarillos: sobre fondo claro el amarillo de marca
+   contrasta 1.07:1 con el blanco y sería ilegible. Usan el color de acción
+   (negro en claro, amarillo en oscuro) y siempre van subrayados. */
 a {
-  color: var(--brand);
-  text-decoration-color: color-mix(in srgb, var(--brand) 55%, transparent);
+  color: var(--accion);
+  text-decoration-color: color-mix(in srgb, var(--accion) 45%, transparent);
   text-underline-offset: 0.18em;
   cursor: pointer;
   transition: color var(--dur-fast) var(--ease);
 }
 
 a:hover {
-  color: var(--brand-hover);
+  color: var(--accion-hover);
   text-decoration-color: currentColor;
 }
 
@@ -116,7 +117,7 @@ svg {
 
 /* Anillo de foco único para toda la app — visible en ambos temas. */
 :focus-visible {
-  outline: 2px solid var(--brand);
+  outline: 3px solid var(--accion);
   outline-offset: 2px;
   border-radius: var(--r-sm);
 }
@@ -179,16 +180,17 @@ svg {
   z-index: var(--z-toast);
   padding: var(--sp-3) var(--sp-5);
   background: var(--brand);
-  color: var(--text-inverse);
-  border-radius: var(--r-md);
-  font-weight: 600;
+  color: var(--on-brand);
+  border: 1px solid var(--on-brand);
+  border-radius: var(--r-btn);
+  font-weight: 700;
   box-shadow: var(--shadow-3);
   transition: top var(--dur) var(--ease);
 }
 
 .skip-link:focus-visible {
   top: var(--sp-4);
-  color: var(--text-inverse);
+  color: var(--on-brand);
 }
 
 /* El truco de una sola línea: los hijos flex deben poder encogerse o

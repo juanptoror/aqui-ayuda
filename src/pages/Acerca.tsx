@@ -33,8 +33,8 @@ export function Acerca() {
             Acerca del proyecto
           </>
         }
-        titulo="Ayudas Colombia"
-        subtitulo="Directorio abierto de centros de acopio. Sin registro obligatorio y sin publicidad: entras, ves qué falta cerca de ti y actúas."
+        titulo="AquíAyuda"
+        subtitulo="Una iniciativa para centralizar la información de las ayudas y dar mayor eficiencia a las regiones afectadas por el terremoto. Sin registro obligatorio y sin publicidad."
       />
 
       <div className="container">

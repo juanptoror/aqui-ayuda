@@ -308,7 +308,7 @@ function TarjetaAyuda({ ayuda }: { ayuda: AyudaCorag }) {
                   height: '100%',
                   width: `${Math.min(100, Math.max(3, cobertura))}%`,
                   borderRadius: 'var(--r-full)',
-                  background: cobertura >= 100 ? 'var(--success)' : 'var(--brand)',
+                  background: cobertura >= 100 ? 'var(--success-solid)' : 'var(--accion)',
                 }}
               />
             </div>
