@@ -6,6 +6,8 @@ import type {
   Necesidad,
   Prioridad,
   Transporte,
+  Vehiculo,
+  Voluntario,
 } from '@/dominio/modelos'
 import type {
   BorradorOfrecimiento,
@@ -23,6 +25,8 @@ import type {
   FilaInventario,
   FilaNecesidad,
   FilaTransporte,
+  FilaVehiculo,
+  FilaVoluntario,
 } from './esquema'
 
 /**
@@ -118,6 +122,39 @@ export function aTransporte(f: FilaTransporte): Transporte {
     salida: f.salida,
     notas: limpio(f.notas),
     creadoEn: f.created_at,
+  }
+}
+
+/** El backend guarda las listas como texto separado por comas. */
+function aLista(v: string | null): string[] {
+  return (v ?? '')
+    .split(',')
+    .map((t) => t.trim())
+    .filter(Boolean)
+}
+
+export function aVoluntario(f: FilaVoluntario): Voluntario {
+  return {
+    id: f.id,
+    ciudadId: f.ciudad_id,
+    centroId: f.centro_id,
+    nombre: limpio(f.nombre) ?? 'Sin nombre',
+    puedeAyudarEn: aLista(f.puede_ayudar_en),
+    disponibilidad: aLista(f.disponibilidad),
+    notas: limpio(f.notas),
+    disponible: f.disponible,
+  }
+}
+
+export function aVehiculo(f: FilaVehiculo): Vehiculo {
+  return {
+    id: f.id,
+    ciudadId: f.ciudad_id,
+    nombre: limpio(f.nombre) ?? 'Sin nombre',
+    vehiculo: limpio(f.vehiculo) ?? 'Vehículo sin detallar',
+    capacidad: limpio(f.capacidad),
+    zona: limpio(f.zona),
+    disponible: f.disponible,
   }
 }
 

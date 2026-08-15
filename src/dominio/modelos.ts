@@ -70,6 +70,28 @@ export interface CentroVista extends Centro {
   distanciaKm: number | null
 }
 
+export interface Voluntario {
+  id: string
+  ciudadId: string | null
+  centroId: string | null
+  nombre: string
+  /** Tareas que marcó, ya separadas. */
+  puedeAyudarEn: string[]
+  disponibilidad: string[]
+  notas: string | null
+  disponible: boolean
+}
+
+export interface Vehiculo {
+  id: string
+  ciudadId: string | null
+  nombre: string
+  vehiculo: string
+  capacidad: string | null
+  zona: string | null
+  disponible: boolean
+}
+
 export type EstadoTransporte = 'programado' | 'en_ruta' | 'entregado' | 'cancelado'
 
 export interface Transporte {

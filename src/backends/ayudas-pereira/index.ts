@@ -1,5 +1,13 @@
 import type { Backend } from '@/backends/contrato'
-import type { Centro, Ciudad, ItemInventario, Necesidad, Transporte } from '@/dominio/modelos'
+import type {
+  Centro,
+  Ciudad,
+  ItemInventario,
+  Necesidad,
+  Transporte,
+  Vehiculo,
+  Voluntario,
+} from '@/dominio/modelos'
 import { ErrorApp, comoErrorApp, traducirError } from '@/lib/errores'
 import { clienteAP, configuracionIncompleta, usuarioActual } from './cliente'
 import {
@@ -8,12 +16,16 @@ import {
   COLUMNAS_INVENTARIO,
   COLUMNAS_NECESIDAD,
   COLUMNAS_TRANSPORTE,
+  COLUMNAS_VEHICULO,
+  COLUMNAS_VOLUNTARIO,
   COLUMNA_TELEFONO,
   type FilaCentro,
   type FilaCiudad,
   type FilaInventario,
   type FilaNecesidad,
   type FilaTransporte,
+  type FilaVehiculo,
+  type FilaVoluntario,
 } from './esquema'
 import {
   aCentro,
@@ -21,6 +33,8 @@ import {
   aItemInventario,
   aNecesidad,
   aTransporte,
+  aVehiculo,
+  aVoluntario,
   deOfrecimiento,
   deTransporte,
   deVehiculo,
@@ -95,6 +109,8 @@ export const ayudasPereira: Backend = {
       'leer:necesidades',
       'leer:inventario',
       'leer:transportes',
+      'leer:voluntarios',
+      'leer:vehiculos',
       'escribir:ofrecimiento',
       'escribir:voluntario',
       'escribir:vehiculo',
@@ -138,6 +154,16 @@ export const ayudasPereira: Backend = {
     async transportes(): Promise<Transporte[]> {
       const filas = await leer<FilaTransporte>('transportes', COLUMNAS_TRANSPORTE)
       return filas.map(aTransporte)
+    },
+
+    async voluntarios(): Promise<Voluntario[]> {
+      const filas = await leer<FilaVoluntario>('voluntarios', COLUMNAS_VOLUNTARIO)
+      return filas.map(aVoluntario)
+    },
+
+    async vehiculos(): Promise<Vehiculo[]> {
+      const filas = await leer<FilaVehiculo>('vehiculos', COLUMNAS_VEHICULO)
+      return filas.map(aVehiculo)
     },
   },
 
