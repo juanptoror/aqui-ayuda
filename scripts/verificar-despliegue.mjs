@@ -6,7 +6,16 @@
 import { chromium } from '@playwright/test'
 
 const BASE = process.argv[2] ?? 'https://ayudas-colombia-web.vercel.app'
-const RUTAS = ['/', '/ciudades', '/ciudad/dosquebradas', '/ayuda-directa', '/que-falta', '/acerca']
+const RUTAS = [
+  '/',
+  '/ciudades',
+  '/ciudad/dosquebradas',
+  '/ayuda-directa',
+  '/que-falta',
+  '/inventario',
+  '/acerca',
+  '/estado',
+]
 
 console.log(`--- HTTP (recarga directa de cada ruta) ---`)
 let fallos = 0
@@ -34,11 +43,12 @@ page.on('console', (m) => {
 page.on('pageerror', (e) => errores.push(`pageerror: ${e.message.slice(0, 160)}`))
 
 await page.goto(`${BASE}/ciudad/dosquebradas`, { waitUntil: 'domcontentloaded' })
-await page.waitForSelector('.card__title', { timeout: 30_000 })
+await page.waitForSelector('[data-tipo="centro"]', { timeout: 30_000 })
 await page.waitForTimeout(1200)
 
 const titulo = await page.locator('.page-header__title').innerText()
-const tarjetas = await page.locator('.card--interactive').count()
+// Solo tarjetas de centro: la pantalla tiene además tarjetas de acción.
+const tarjetas = await page.locator('[data-tipo="centro"]').count()
 const subtitulo = await page.locator('.page-header__subtitle').innerText()
 
 console.log(`titulo:    ${titulo}`)
