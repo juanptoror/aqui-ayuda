@@ -18,6 +18,7 @@ import { Estado } from '@/pages/Estado'
 import { Inventario } from '@/pages/Inventario'
 import { Manos } from '@/pages/Manos'
 import { Mapa } from '@/pages/Mapa'
+import { Vivienda } from '@/pages/Vivienda'
 
 const cliente = new QueryClient({
   defaultOptions: {
@@ -115,6 +116,7 @@ export function App() {
                   <Route path="/ayuda-directa" element={<AyudaDirecta />} />
                   <Route path="/manos" element={<Manos />} />
                   <Route path="/mapa" element={<Mapa />} />
+                  <Route path="/vivienda" element={<Vivienda />} />
                   <Route path="/como-ayudar" element={<ComoAyudar />} />
                   <Route path="/acerca" element={<Acerca />} />
                   <Route path="/estado" element={<Estado />} />

@@ -149,3 +149,77 @@ hay.
 | `ofrecimientos` (lectura) | Se escriben pero no se listan: la lista sin teléfono no permite actuar, y el teléfono exige sesión |
 | `perfiles`, `asignaciones`, `admins_ciudad` | RLS: devuelven 0 filas sin sesión. Son de la herramienta de coordinación, no de la vista pública |
 | `POST /mcp` de Corag | Servidor MCP para agentes. No aporta nada que la API REST no dé ya |
+
+## Pereira Unida (Supabase)
+
+Tercera fuente. Su REST no expone el OpenAPI con la clave publicable, así que el
+esquema se descubrió probando ~700 nombres de tabla. La convención es **inglés
+en snake_case**, al revés que Ayudas Pereira.
+
+| Tabla | Filas | Leemos | Dónde |
+|---|---|---|---|
+| `reports` | 282 | Sí | Personas pidiendo ayuda, con coordenada y teléfono |
+| `help_offers` | 296 | Sí | Vecinos que se ofrecen. **Pantalla "Quién puede ayudar"** |
+| `comments` | 68 | Declarado | Comentarios sobre un reporte, por `report_id` |
+| `collection_points` | 0 | No | Existe pero está vacía |
+
+**No hay permisos por columna**: `SELECT *` devuelve 200 en las cuatro y ninguna
+da 42501. El teléfono es público en las dos tablas que lo tienen, y esa es la
+diferencia que hace útil esta fuente: los voluntarios de Ayudas Pereira no se
+pueden contactar sin sesión, y estos sí.
+
+### Lo que se filtra antes de mostrarlo
+
+La fuente marca estados que **no se deben republicar**, y el filtro está en la
+consulta y no en la pantalla, para que no se olvide en la siguiente vista:
+
+- `reports.status`: `informacion_falsa` (12 filas) y `duplicado` (10). Publicar
+  un aviso señalado como falso en plena emergencia es hacer daño; los duplicados
+  mandan a dos personas al mismo sitio a resolver lo mismo. También se oculta
+  `resuelto` (62), que ya no necesita a nadie.
+- `help_offers.status`: `ocultada` (53 filas). Alguien retiró su ofrecimiento.
+
+### Vocabulario propio
+
+`reports.category`: alimentos (148) · otros (41) · medicinas (33) ·
+voluntariado (16) · transporte_logistica (14) · **revision_ingenieria (13)** ·
+herramientas (10) · mascotas (8) · herramientas_rescate (1).
+
+`help_offers.skill`: otro (92) · alimentacion (59) · **psicologia (43)** ·
+transporte (32) · rescate (26) · medico (18) · oficios (12) · enfermeria (6) ·
+legal (5) · ingenieria (3).
+
+Dos etiquetas no existían en las otras fuentes y obligaron a ampliar la
+taxonomía con la subcategoría **`servicios-tecnicos`**: `revision_ingenieria`
+(que un ingeniero mire si la casa se puede habitar) y `legal`. Son servicios
+profesionales, así que nunca se cruzan contra inventario.
+
+## Vivienda (Supabase)
+
+Cuarta fuente, y la única que no habla de la emergencia sino de dónde vivir
+después. Una sola tabla, `inmuebles`, con 30 filas.
+
+**El esquema está duplicado en español y en inglés y solo el inglés tiene
+datos.** `titulo`, `precio`, `ciudad`, `direccion`, `imagenes`, `latitude`,
+`longitude` y otras 40 columnas están vacías en las 30 filas. Se leen únicamente:
+`title, description, price, type, city, neighborhood, area, bedrooms, bathrooms,
+parking, images, owner_whatsapp, contact_count`.
+
+Tres medidas que cambian lo que la pantalla puede prometer:
+
+| Dato | Realidad medida | Qué hace la app |
+|---|---|---|
+| `lat`/`lng` | **Falsas.** `lat` es 4.7 en las 30 filas; `lng` solo vale -74.05 (Bogotá) o 0. Los inmuebles están en Armenia, a 150 km | **No se dibuja mapa** y el enlace se hace por barrio y ciudad, no por coordenada |
+| `price` | Solo 7 de 30 lo traen; el resto escribe el canon dentro de la descripción | Se rescata del texto para enseñarlo, y el filtro avisa a cuántos deja fuera |
+| `bedrooms`/`bathrooms` | Solo 8 y 6 de 30 son mayores que 0 | Un 0 no se enseña: significa "no lo rellenaron", no "no tiene" |
+
+`habitaciones`, `banos`, `parqueaderos` y `garages` son columnas muertas
+rellenas de ceros: el dato vive en `bedrooms`, `bathrooms` y `parking`.
+
+Las imágenes de `images` sí son reales: URLs públicas del Storage del propio
+proyecto, comprobadas con un GET (200, `image/jpeg`).
+
+**Escritura sin verificar.** El formulario de publicación escribe en las columnas
+en inglés, pero no se ha comprobado si la clave pública tiene permiso: hacerlo
+exigía insertar una fila en una base de datos de producción ajena. Si no lo
+tiene, el error sale traducido con su código de soporte.

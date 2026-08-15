@@ -485,6 +485,14 @@
   --fuente-bg: var(--lima);
 }
 
+.sello-fuente[data-origen='pereira-unida'] {
+  --fuente-bg: var(--naranja);
+}
+
+.card__accent[data-origen='pereira-unida'] {
+  background: var(--naranja);
+}
+
 .card__accent[data-origen='ayudas-pereira'] {
   background: var(--amarillo);
 }
@@ -1520,4 +1528,15 @@
 .fila-pulsable:hover .fila-pulsable__flecha {
   transform: translateX(2px);
   color: var(--text);
+}
+
+/* Foto de portada de una tarjeta. `aspect-ratio` fijo para que la rejilla no
+   baile mientras cargan: sin él, cada imagen empuja su fila al llegar. */
+.card__foto {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  background: var(--surface-3);
+  border-bottom: 1px solid var(--border);
 }

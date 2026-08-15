@@ -117,8 +117,11 @@ test.describe('quién puede ayudar', () => {
     await page.waitForTimeout(2500)
 
     // Hubo un momento en que esta pantalla medía 11.794 px de alto a 375 px.
+    // Hay ~164 voluntarios, ~180 vehiculos y ~260 vecinos disponibles para este
+    // municipio: lo que se comprueba es que se muestre una porcion, no el volcado.
     const tarjetas = await page.locator('.card').count()
-    expect(tarjetas).toBeLessThanOrEqual(20)
+    expect(tarjetas).toBeGreaterThan(0)
+    expect(tarjetas).toBeLessThanOrEqual(45)
   })
 
   test('nunca enseña teléfonos sin sesión', async ({ page }) => {
@@ -246,5 +249,89 @@ test.describe('cómo llegar', () => {
       }).length,
     )
     expect(vacios).toBe(0)
+  })
+})
+
+test.describe('vivienda en arriendo', () => {
+  test('lista inmuebles reales y los filtros acotan', async ({ page }) => {
+    await page.goto('/vivienda')
+    // Los esqueletos de carga tambien llevan .card: hay que esperar a un titulo,
+    // que solo existe cuando la fila es real. Si no, se cuentan 6 esqueletos.
+    await page.waitForSelector('.card__title', { timeout: 45_000 })
+
+    const antes = await page.locator('.card').count()
+    expect(antes).toBeGreaterThan(0)
+
+    await page.locator('.chip').filter({ hasText: 'Casa' }).first().click()
+    await page.waitForTimeout(600)
+    const despues = await page.locator('.card').count()
+    expect(despues).toBeGreaterThan(0)
+    expect(despues).toBeLessThan(antes)
+  })
+
+  test('un campo vacío nunca se enseña como un cero', async ({ page }) => {
+    await page.goto('/vivienda')
+    // Los esqueletos de carga tambien llevan .card: hay que esperar a un titulo,
+    // que solo existe cuando la fila es real. Si no, se cuentan 6 esqueletos.
+    await page.waitForSelector('.card__title', { timeout: 45_000 })
+
+    /* 22 de los 30 anuncios traen bedrooms=0. Ese 0 significa "no lo
+       rellenaron", no "no tiene habitaciones": escribirlo sería inventar. */
+    const textos = await page.locator('.card').allInnerTexts()
+    expect(textos.filter((t) => /\b0 (habitaci|baño|parqueadero)/.test(t))).toHaveLength(0)
+  })
+
+  test('no se dibuja un mapa con coordenadas falsas', async ({ page }) => {
+    await page.goto('/vivienda')
+    // Los esqueletos de carga tambien llevan .card: hay que esperar a un titulo,
+    // que solo existe cuando la fila es real. Si no, se cuentan 6 esqueletos.
+    await page.waitForSelector('.card__title', { timeout: 45_000 })
+
+    /* La fuente pone lat 4.7 / lng -74.05 (Bogotá) en inmuebles de Armenia.
+       Un pin ahí manda a alguien a 150 km del sitio. */
+    expect(await page.locator('.mapa').count()).toBe(0)
+
+    const enlaces = await page.$$eval('a[href*="google.com/maps"]', (n) =>
+      n.map((e) => e.getAttribute('href') ?? ''),
+    )
+    expect(enlaces.length).toBeGreaterThan(0)
+    expect(enlaces.filter((h) => /query=4\.7,/.test(h))).toHaveLength(0)
+  })
+
+  test('avisa de a cuántos anuncios deja fuera el filtro de precio', async ({ page }) => {
+    await page.goto('/vivienda')
+    // Los esqueletos de carga tambien llevan .card: hay que esperar a un titulo,
+    // que solo existe cuando la fila es real. Si no, se cuentan 6 esqueletos.
+    await page.waitForSelector('.card__title', { timeout: 45_000 })
+
+    await page.locator('.chip').filter({ hasText: /hasta/ }).first().click()
+    await page.waitForTimeout(500)
+
+    // Sin este aviso, "no hay nada barato" y "no lo sabemos" se confunden.
+    await expect(page.getByText(/no ponen el precio en su campo/i)).toBeVisible()
+  })
+})
+
+test.describe('vecinos contactables', () => {
+  test('el tablón de la comunidad sí deja escribir', async ({ page }) => {
+    await conCiudad(page, 'pereira-2')
+    await page.goto('/manos')
+    await page.waitForSelector('.card', { timeout: 45_000 })
+    await page.waitForTimeout(2000)
+
+    /* Era la queja concreta: los voluntarios de los centros no se pueden
+       contactar porque su teléfono está denegado al rol público. Esta otra
+       fuente sí lo publica, y con eso la pantalla deja de ser un callejón. */
+    const wa = await page.locator('a[href*="wa.me"]').count()
+    expect(wa).toBeGreaterThan(0)
+  })
+
+  test('no se republica lo que la fuente marcó como falso', async ({ page }) => {
+    await page.goto('/ayuda-directa')
+    await page.waitForTimeout(3000)
+
+    // `informacion_falsa` y `duplicado` se filtran en la consulta.
+    const texto = await page.locator('main').innerText()
+    expect(texto).not.toMatch(/informacion_falsa|duplicado/i)
   })
 })

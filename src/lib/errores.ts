@@ -11,7 +11,7 @@
  * que soporte pueda agrupar incidencias, y no lleva datos personales.
  */
 
-export type OrigenError = 'AP' | 'CG' | 'AP-AUTH' | 'APP'
+export type OrigenError = 'AP' | 'CG' | 'PU' | 'VI' | 'AP-AUTH' | 'APP'
 
 export interface ErrorParaElUsuario {
   /** Qué pasó, en una frase, sin jerga. */

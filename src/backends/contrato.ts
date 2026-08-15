@@ -4,6 +4,9 @@ import type {
   Coordenada,
   ItemInventario,
   Necesidad,
+  ComentarioPeticion,
+  OfrecimientoPersona,
+  PeticionPersona,
   Transporte,
   TransporteItem,
   Vehiculo,
@@ -23,7 +26,7 @@ import type {
  * cambia, porque las pantallas preguntan por capacidades, no por nombres.
  */
 
-export type IdBackend = 'ayudas-pereira' | 'corag'
+export type IdBackend = 'ayudas-pereira' | 'corag' | 'pereira-unida'
 
 /**
  * Lo que un backend sabe hacer. La UI pregunta por esto antes de ofrecer un
@@ -39,6 +42,9 @@ export type Capacidad =
   | 'leer:vehiculos'
   | 'leer:transportes'
   | 'leer:transporte-items'
+  | 'leer:peticiones-persona'
+  | 'leer:ofrecimientos-persona'
+  | 'leer:comentarios'
   | 'escribir:ofrecimiento'
   | 'escribir:voluntario'
   | 'escribir:vehiculo'
@@ -70,6 +76,11 @@ export interface LecturasBackend {
   transportes?: () => Promise<Transporte[]>
   /** Desglose de qué viaja en cada transporte, por categoría. */
   transporteItems?: () => Promise<TransporteItem[]>
+  /** Personas concretas pidiendo ayuda, no organizaciones. */
+  peticionesPersona?: () => Promise<PeticionPersona[]>
+  /** Personas que se ofrecen a echar una mano. */
+  ofrecimientosPersona?: () => Promise<OfrecimientoPersona[]>
+  comentarios?: () => Promise<ComentarioPeticion[]>
   voluntarios?: () => Promise<Voluntario[]>
   vehiculos?: () => Promise<Vehiculo[]>
 }
