@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import type { Coordenada } from '@/types'
+import type { Coordenada } from '@/dominio/modelos'
 
 type Tema = 'light' | 'dark'
 

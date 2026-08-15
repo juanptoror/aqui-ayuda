@@ -1,8 +1,16 @@
 import { useMemo } from 'react'
-import { useCentros, useCiudades, useInventario, useNecesidades } from './queries'
+import { useCentros, useInventario, useMunicipios, useNecesidades } from './consultas'
 import { useSesion } from '@/state/sesion'
 import { coordenadaDeCiudad, distanciaKm } from '@/lib/geo'
-import type { CentroVista, Ciudad, Coordenada, Necesidad } from '@/types'
+import type { CentroVista, Ciudad, Coordenada } from '@/dominio/modelos'
+
+/**
+ * Composición de todo lo que necesita la pantalla de un municipio.
+ *
+ * Junta lo que devuelven varias consultas y calcula en cliente lo que la UI
+ * pinta: distancias, urgencias y el resumen. Las pantallas reciben datos ya
+ * listos y no hacen cuentas.
+ */
 
 export interface ResumenCiudad {
   centros: number
@@ -15,27 +23,25 @@ export interface ResumenCiudad {
 
 export interface DatosCiudad {
   cargando: boolean
-  error: Error | null
+  error: unknown
   ciudad: Ciudad | null
   /** Slug destino cuando la ciudad pedida fue fusionada en otra. */
   redirigirA: string | null
-  /** true cuando el slug no existe en el catálogo. */
   noEncontrada: boolean
   centros: CentroVista[]
   resumen: ResumenCiudad
   categoriasUrgentes: { categoria: string; total: number }[]
 }
 
-/** Ciudades listables, con su distancia al usuario si se conoce. */
 export interface CiudadCercana extends Ciudad {
   distanciaKm: number | null
 }
 
 export function useCiudadesCercanas(ubicacion: Coordenada | null) {
-  const q = useCiudades()
+  const q = useMunicipios()
 
   const ciudades = useMemo<CiudadCercana[]>(() => {
-    const listables = (q.data ?? []).filter((c) => c.activa && c.fusionada_en === null)
+    const listables = (q.data ?? []).filter((c) => c.activa && c.fusionadaEn === null)
 
     const conDistancia = listables.map((c) => {
       const coord = coordenadaDeCiudad(c.slug)
@@ -60,12 +66,12 @@ export function useCiudadesCercanas(ubicacion: Coordenada | null) {
     })
   }, [q.data, ubicacion])
 
-  return { ciudades, cargando: q.isLoading, error: q.error as Error | null, refetch: q.refetch }
+  return { ciudades, cargando: q.isLoading, error: q.error, refetch: q.refetch }
 }
 
 export function useDatosCiudad(slug: string | undefined, ubicacion: Coordenada | null): DatosCiudad {
   const { sesion } = useSesion()
-  const qCiudades = useCiudades()
+  const qCiudades = useMunicipios()
   const qCentros = useCentros(!!sesion)
   const qNecesidades = useNecesidades()
   const qInventario = useInventario()
@@ -77,25 +83,23 @@ export function useDatosCiudad(slug: string | undefined, ubicacion: Coordenada |
     const ciudades = qCiudades.data ?? []
     const ciudad = slug ? (ciudades.find((c) => c.slug === slug) ?? null) : null
 
-    // Ciudad fusionada en otra: se resuelve el destino para redirigir en vez de
-    // mostrar una pantalla vacía sin explicación.
-    let redirigirA: string | null = null
-    if (ciudad && ciudad.fusionada_en) {
-      redirigirA = ciudades.find((c) => c.id === ciudad.fusionada_en)?.slug ?? null
-    }
+    // Ciudad fusionada en otra: se redirige en vez de mostrar una pantalla vacía.
+    const redirigirA = ciudad?.fusionadaEn
+      ? (ciudades.find((c) => c.id === ciudad.fusionadaEn)?.slug ?? null)
+      : null
 
     const noEncontrada = !!slug && !cargando && ciudades.length > 0 && !ciudad
 
     const centrosBase = ciudad
-      ? (qCentros.data ?? []).filter((c) => c.ciudad_id === ciudad.id)
+      ? (qCentros.data ?? []).filter((c) => c.ciudadId === ciudad.id)
       : []
 
     const ids = new Set(centrosBase.map((c) => c.id))
-    const necesidades = (qNecesidades.data ?? []).filter((n) => ids.has(n.centro_id))
-    const inventario = (qInventario.data ?? []).filter((i) => ids.has(i.centro_id))
+    const necesidades = (qNecesidades.data ?? []).filter((n) => ids.has(n.centroId))
+    const inventario = (qInventario.data ?? []).filter((i) => ids.has(i.centroId))
 
-    const porCentroNec = agrupar(necesidades, (n) => n.centro_id)
-    const porCentroInv = agrupar(inventario, (i) => i.centro_id)
+    const porCentroNec = agrupar(necesidades, (n) => n.centroId)
+    const porCentroInv = agrupar(inventario, (i) => i.centroId)
 
     const centros: CentroVista[] = centrosBase
       .map((c) => {
@@ -103,12 +107,6 @@ export function useDatosCiudad(slug: string | undefined, ubicacion: Coordenada |
         const pendientes = necs.filter((n) => n.estado === 'pendiente')
         return {
           ...c,
-          // Los nombres y direcciones vienen con espacios sobrantes del
-          // formulario de captura; se limpian aquí y no en cada vista.
-          nombre: c.nombre?.trim() || 'Centro sin nombre',
-          direccion: c.direccion?.trim() || null,
-          responsable: c.responsable?.trim() || null,
-          notas: c.notas?.trim() || null,
           necesidades: necs,
           inventario: porCentroInv.get(c.id) ?? [],
           urgentes: pendientes.filter((n) => n.prioridad === 'urgente').length,
@@ -119,8 +117,8 @@ export function useDatosCiudad(slug: string | undefined, ubicacion: Coordenada |
               : null,
         }
       })
-      // Orden: los abiertos primero (ir a uno cerrado es un viaje perdido),
-      // luego por cercanía, y a igualdad por urgencia.
+      // Los abiertos primero (ir a uno cerrado es un viaje perdido), luego por
+      // cercanía y, a igualdad, los que más urgen.
       .sort((a, b) => {
         if (a.abierto !== b.abierto) return a.abierto ? -1 : 1
         if (a.distanciaKm != null && b.distanciaKm != null) return a.distanciaKm - b.distanciaKm
@@ -144,8 +142,8 @@ export function useDatosCiudad(slug: string | undefined, ubicacion: Coordenada |
       .sort((a, b) => b.total - a.total)
 
     const fechas = [
-      ...necesidades.map((n) => n.created_at),
-      ...inventario.map((i) => i.updated_at),
+      ...necesidades.map((n) => n.creadaEn),
+      ...inventario.map((i) => i.actualizadoEn),
     ].filter(Boolean)
 
     const resumen: ResumenCiudad = {
@@ -157,12 +155,9 @@ export function useDatosCiudad(slug: string | undefined, ubicacion: Coordenada |
       actualizado: fechas.length ? fechas.sort()[fechas.length - 1] : null,
     }
 
-    const errorDuro =
-      (qCiudades.error as Error | null) ?? (qCentros.error as Error | null) ?? null
-
     return {
       cargando,
-      error: errorDuro,
+      error: qCiudades.error ?? qCentros.error ?? null,
       ciudad,
       redirigirA,
       noEncontrada,
@@ -195,8 +190,4 @@ function agrupar<T>(items: T[], clave: (item: T) => string): Map<string, T[]> {
     else mapa.set(k, [item])
   }
   return mapa
-}
-
-export function categoriasPresentes(necesidades: Necesidad[]): string[] {
-  return [...new Set(necesidades.map((n) => n.categoria))]
 }

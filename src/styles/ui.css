@@ -1202,6 +1202,21 @@
   margin-inline-start: 1.15rem;
 }
 
+/* Código de soporte: se dicta por teléfono, así que se muestra en monoespacio
+   y separado del texto para que se lea sin confundir caracteres. */
+.codigo-soporte {
+  display: inline-block;
+  padding: 1px var(--sp-2);
+  border-radius: var(--r-sm);
+  border: 1px solid currentColor;
+  font-family: ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', monospace;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  user-select: all;
+}
+
 /* ------------------------------ Divisores --------------------------------- */
 
 .hr {

@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { AlertTriangle, Info, X, type LucideIcon } from 'lucide-react'
+import { mensajeDe } from '@/lib/errores'
 
 /* ------------------------------ Cabecera ---------------------------------- */
 
@@ -142,6 +143,41 @@ export function Notice({
       <I size={17} strokeWidth={2.25} />
       <div className="notice__text">{children}</div>
       {accion}
+    </div>
+  )
+}
+
+/* --------------------------- Aviso de error ------------------------------- */
+
+/**
+ * Único sitio por el que un error llega a la pantalla.
+ *
+ * Muestra qué pasó y qué hacer, y el código corto para soporte. Nunca el
+ * mensaje crudo: quien acaba de perder su casa no tiene por qué leer
+ * "PostgREST 42501".
+ */
+export function AvisoError({
+  error,
+  origen,
+  alReintentar,
+}: {
+  error: unknown
+  origen?: 'AP' | 'CG' | 'APP'
+  alReintentar?: () => void
+}) {
+  const info = mensajeDe(error, origen)
+  return (
+    <div className={`notice notice--${info.reintentable ? 'warning' : 'critical'}`} role="alert">
+      <AlertTriangle size={17} strokeWidth={2.25} />
+      <div className="notice__text">
+        <strong>{info.mensaje}</strong> {info.sugerencia}{' '}
+        <code className="codigo-soporte">{info.codigo}</code>
+      </div>
+      {info.reintentable && alReintentar && (
+        <button type="button" className="btn btn--sm" onClick={alReintentar}>
+          <span>Reintentar</span>
+        </button>
+      )}
     </div>
   )
 }

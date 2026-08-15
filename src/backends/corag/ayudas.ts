@@ -1,5 +1,5 @@
 import { useMutation, useQuery, type UseQueryResult } from '@tanstack/react-query'
-import type { Coordenada } from '@/types'
+import type { Coordenada } from '@/dominio/modelos'
 
 /**
  * Segunda fuente de datos: la API pública de Corag (ayuda.corag.app).

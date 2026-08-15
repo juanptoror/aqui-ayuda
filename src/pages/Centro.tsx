@@ -16,10 +16,10 @@ import { PageHeader, EmptyState, Badge, SkeletonLinea } from '@/components/ui'
 import { AvisoTelefonos } from '@/components/Acceso'
 import { SelloFuente } from '@/components/Fuente'
 import { usePreferencias } from '@/state/preferencias'
-import { useCentros } from '@/data/queries'
+import { useCentros } from '@/datos/consultas'
 import { useSesion } from '@/state/sesion'
-import { useDatosCiudad } from '@/data/useDatos'
-import { useCiudades } from '@/data/queries'
+import { useDatosCiudad } from '@/datos/useDatosCiudad'
+import { useMunicipios } from '@/datos/consultas'
 import { formatearDistancia } from '@/lib/geo'
 import { conteo, desde, enlaceMapa, enlaceTelefono, numero } from '@/lib/format'
 
@@ -32,10 +32,10 @@ export function Centro() {
   // así el enlace directo a /centro/:id funciona aunque el usuario nunca haya
   // pasado por la página de la ciudad.
   const qCentros = useCentros(!!sesion)
-  const qCiudades = useCiudades()
+  const qCiudades = useMunicipios()
   const centroSuelto = (qCentros.data ?? []).find((c) => c.id === id) ?? null
   const slug =
-    (qCiudades.data ?? []).find((c) => c.id === centroSuelto?.ciudad_id)?.slug ?? undefined
+    (qCiudades.data ?? []).find((c) => c.id === centroSuelto?.ciudadId)?.slug ?? undefined
 
   const datos = useDatosCiudad(slug, ubicacion)
   const centro = datos.centros.find((c) => c.id === id) ?? null
@@ -282,7 +282,7 @@ export function Centro() {
                             </div>
                           )}
                           <div style={{ color: 'var(--text-subtle)', fontSize: 'var(--text-sm)' }}>
-                            Reportado {desde(n.created_at)}
+                            Reportado {desde(n.creadaEn)}
                           </div>
                         </div>
                       </li>

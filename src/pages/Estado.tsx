@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom'
 import { Activity, CircleCheck, Database, Lock, TriangleAlert } from 'lucide-react'
 import { PageHeader, SectionHead, Notice, SkeletonLinea } from '@/components/ui'
-import { useCentros, useCiudades, useInventario, useNecesidades } from '@/data/queries'
-import { useAyudas, useEmergencias } from '@/data/corag'
+import { useCentros, useMunicipios, useInventario, useNecesidades } from '@/datos/consultas'
+import { useAyudas, useEmergencias } from '@/backends/corag'
 import { useSesion } from '@/state/sesion'
 import { usePreferencias } from '@/state/preferencias'
 import { conteo } from '@/lib/format'
@@ -17,7 +17,7 @@ export function Estado() {
   const { sesion } = useSesion()
   const { ubicacion } = usePreferencias()
 
-  const ciudades = useCiudades()
+  const ciudades = useMunicipios()
   const centros = useCentros(!!sesion)
   const necesidades = useNecesidades()
   const inventario = useInventario()

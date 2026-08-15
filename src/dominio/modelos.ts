@@ -1,0 +1,105 @@
+/**
+ * Modelos del dominio. No dependen de ningún backend.
+ *
+ * Si mañana Ayudas Pereira renombra una columna o entra un tercer proveedor,
+ * lo que cambia es el mapeador de ese backend, no estos tipos ni la UI.
+ */
+
+export type Prioridad = 'urgente' | 'alta' | 'normal'
+export type EstadoNecesidad = 'pendiente' | 'cubierta'
+
+export interface Coordenada {
+  lat: number
+  lng: number
+}
+
+export interface Ciudad {
+  id: string
+  nombre: string
+  departamento: string
+  slug: string
+  activa: boolean
+  /** Si no es null, esta ciudad fue fusionada en otra y no debe listarse. */
+  fusionadaEn: string | null
+}
+
+export interface Centro {
+  id: string
+  ciudadId: string | null
+  nombre: string
+  direccion: string | null
+  responsable: string | null
+  /** Texto libre donde los centros escriben horario y qué reciben. */
+  notas: string | null
+  activo: boolean
+  /** Si está recibiendo ahora mismo. Lo primero antes de desplazarse. */
+  abierto: boolean
+  lat: number | null
+  lng: number | null
+  foto: string | null
+  /** Solo llega con sesión: el backend restringe esta columna. */
+  telefono?: string | null
+}
+
+export interface Necesidad {
+  id: string
+  centroId: string
+  categoria: string
+  descripcion: string | null
+  prioridad: Prioridad
+  estado: EstadoNecesidad
+  creadaEn: string
+}
+
+export interface ItemInventario {
+  id: string
+  centroId: string
+  categoria: string
+  cantidad: number
+  unidad: string
+  actualizadoEn: string
+}
+
+/** Centro enriquecido con lo que se calcula en cliente para la UI. */
+export interface CentroVista extends Centro {
+  necesidades: Necesidad[]
+  inventario: ItemInventario[]
+  urgentes: number
+  pendientes: number
+  /** Kilómetros hasta el usuario, o null si falta alguna coordenada. */
+  distanciaKm: number | null
+}
+
+/** Las 10 categorías que aparecen en los datos reales. */
+export const CATEGORIAS = [
+  'Agua',
+  'Alimentos no perecederos',
+  'Comidas listas para comer',
+  'Aseo e higiene',
+  'Pañales y bebés',
+  'Medicamentos',
+  'Cobijas y colchonetas',
+  'Ropa y franelas',
+  'Linternas y pilas',
+  'Otros',
+] as const
+
+export type Categoria = (typeof CATEGORIAS)[number]
+
+/** Tareas de voluntariado, tal como las ofrece Ayudas Pereira. */
+export const TAREAS_VOLUNTARIO = [
+  'Clasificar y empacar',
+  'Cargar y descargar',
+  'Cocinar',
+  'Atender a la gente',
+  'Inventario y listas',
+  'Aseo',
+] as const
+
+export const FRANJAS_DISPONIBILIDAD = [
+  'Mañanas',
+  'Tardes',
+  'Noches',
+  'Fines de semana',
+  'A cualquier hora',
+] as const
