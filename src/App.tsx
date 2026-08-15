@@ -6,7 +6,7 @@ import { AppShell } from '@/components/AppShell'
 import { PageHeader, EmptyState } from '@/components/ui'
 import { ProveedorPreferencias } from '@/state/preferencias'
 import { ProveedorSesion } from '@/state/sesion'
-import { Home } from '@/pages/Home'
+import { Landing } from '@/pages/Landing'
 import { Ciudad } from '@/pages/Ciudad'
 import { Ciudades } from '@/pages/Ciudades'
 import { Centro } from '@/pages/Centro'
@@ -102,7 +102,7 @@ export function App() {
             <AppShell>
               <LimiteDeError>
                 <Routes>
-                  <Route path="/" element={<Home />} />
+                  <Route path="/" element={<Landing />} />
                   <Route path="/ciudades" element={<Ciudades />} />
                   <Route path="/ciudad/:slug" element={<Ciudad />} />
                   <Route path="/centro/:id" element={<Centro />} />

@@ -41,7 +41,7 @@ for (const tema of ['light', 'dark']) {
 
     for (const r of RUTAS) {
       await page.goto(BASE + r.url, { waitUntil: 'domcontentloaded' })
-      await page.waitForSelector('.page-header__title', { timeout: 20_000 })
+      await page.waitForSelector('.page-header__title, .hero__titulo', { timeout: 20_000 })
       await page.waitForLoadState('networkidle').catch(() => {})
       await page.waitForTimeout(400)
       const archivo = path.join(DESTINO, `${tema}-${a.nombre}-${r.nombre}.png`)

@@ -59,7 +59,7 @@ for (const tema of TEMAS) {
 
     for (const ruta of RUTAS) {
       await pagina.goto(BASE + ruta.url, { waitUntil: 'domcontentloaded' })
-      await pagina.waitForSelector('.page-header__title', { timeout: 20_000 })
+      await pagina.waitForSelector('.page-header__title, .hero__titulo', { timeout: 20_000 })
       await pagina.waitForLoadState('networkidle').catch(() => {})
       // Deja terminar la animación de entrada de las tarjetas.
       await pagina.waitForTimeout(450)

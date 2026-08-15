@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { PageHeader, EmptyState, Badge, SkeletonLinea } from '@/components/ui'
 import { AvisoTelefonos } from '@/components/Acceso'
+import { SelloFuente } from '@/components/Fuente'
 import { usePreferencias } from '@/state/preferencias'
 import { useCentros } from '@/data/queries'
 import { useSesion } from '@/state/sesion'
@@ -134,6 +135,7 @@ export function Centro() {
               )}
               <h2 className="panel__title">Cómo llegar y contactar</h2>
               <div className="spacer" />
+              <SelloFuente origen="ayudas-pereira" />
               {centro.abierto ? (
                 <Badge tono="success">Abierto</Badge>
               ) : (

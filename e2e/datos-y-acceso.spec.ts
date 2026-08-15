@@ -65,6 +65,59 @@ test.describe('lectura pública de centros', () => {
   })
 })
 
+test.describe('procedencia de los datos', () => {
+  /**
+   * La app mezcla dos backends. Si un dato no lleva su sello, el usuario no
+   * puede saber quién lo publicó ni a quién reclamar cuando algo falla.
+   */
+  test('cada centro declara que viene de Ayudas Pereira', async ({ page }) => {
+    await page.goto('/ciudad/dosquebradas')
+    await page.waitForSelector('.card__title', { timeout: 20_000 })
+
+    const tarjetas = page.locator('.card--interactive')
+    const total = await tarjetas.count()
+    expect(total).toBeGreaterThan(0)
+
+    const sellos = page.locator('.sello-fuente[data-origen="ayudas-pereira"]')
+    expect(
+      await sellos.count(),
+      'hay tarjetas de centro sin sello de procedencia',
+    ).toBe(total)
+
+    // Y ningún centro puede aparecer marcado como si viniera de Corag.
+    expect(await page.locator('.sello-fuente[data-origen="corag"]').count()).toBe(0)
+  })
+
+  test('la portada explica las dos fuentes y las distingue', async ({ page }) => {
+    await page.goto('/')
+    await page.waitForSelector('.hero__titulo')
+
+    await expect(page.getByRole('heading', { name: 'De dónde salen los datos' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Ayudas Pereira' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Corag', exact: true })).toBeVisible()
+
+    // Cada ficha enlaza a su origen real, no a una descripción genérica.
+    await expect(page.locator('a[href="https://alluda.online"]')).toHaveCount(1)
+    await expect(page.locator('a[href="https://ayuda.corag.app"]')).toHaveCount(1)
+  })
+
+  test('la portada pone la acción antes que el relato', async ({ page }) => {
+    await page.goto('/')
+    await page.waitForSelector('.hero__titulo')
+
+    // El botón de ubicación tiene que estar por encima del bloque explicativo:
+    // quien entra en una emergencia no viene a leer.
+    const accion = await page.getByRole('button', { name: /Usar mi ubicación/ }).boundingBox()
+    const relato = await page
+      .getByRole('heading', { name: 'Cómo funciona' })
+      .boundingBox()
+
+    expect(accion, 'no se encontró el botón de ubicación').not.toBeNull()
+    expect(relato, 'no se encontró la sección explicativa').not.toBeNull()
+    expect(accion!.y).toBeLessThan(relato!.y)
+  })
+})
+
 test.describe('acceso por código', () => {
   test('la hoja de acceso pide correo y luego código', async ({ page }) => {
     await page.goto('/ciudad/dosquebradas')

@@ -460,6 +460,49 @@
   z-index: 0;
 }
 
+/* --------------------------- Sello de procedencia -------------------------- */
+/* Cada backend tiene su color propio para que la diferencia se capte sin leer:
+   Ayudas Pereira en amarillo de marca, Corag en lima. */
+
+.sello-fuente {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  padding: 2px var(--sp-2);
+  border-radius: var(--r-full);
+  border: 1px solid var(--on-brand);
+  background: var(--fuente-bg, var(--brand));
+  color: var(--on-brand);
+  font-size: var(--text-micro);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.sello-fuente[data-origen='corag'] {
+  --fuente-bg: var(--lima);
+}
+
+.card__accent[data-origen='ayudas-pereira'] {
+  background: var(--amarillo);
+}
+
+.card__accent[data-origen='corag'] {
+  background: var(--lima);
+}
+
+.kpi__icon[data-origen='ayudas-pereira'] {
+  background: var(--amarillo);
+  color: var(--on-brand);
+}
+
+.kpi__icon[data-origen='corag'] {
+  background: var(--lima);
+  color: var(--on-brand);
+}
+
 /* Franja de estado a la izquierda: comunica urgencia sin gritar. */
 .card__accent {
   position: absolute;
@@ -1015,6 +1058,112 @@
   margin-top: calc(var(--sp-3) * -1);
   margin-bottom: var(--sp-4);
   max-width: 68ch;
+}
+
+/* -------------------------------- Portada --------------------------------- */
+/* El hero es el único bloque que rompe la retícula de paneles: es la carta de
+   presentación de la marca. Aun así el contenido sigue dentro del contenedor
+   centrado — lo que se extiende de lado a lado es el fondo, no el texto. */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border);
+  background:
+    radial-gradient(900px 420px at 50% -30%, var(--brand-soft) 0%, transparent 70%),
+    var(--surface);
+}
+
+.hero__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--sp-4);
+  padding-block: clamp(var(--sp-8), 7vw, var(--sp-10));
+}
+
+.hero__titulo {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 1.6rem + 4vw, 4.5rem);
+  font-weight: 700;
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+  margin-top: var(--sp-2);
+}
+
+.hero__texto {
+  max-width: 54ch;
+  font-size: clamp(1rem, 0.95rem + 0.3vw, 1.1875rem);
+  color: var(--text-muted);
+}
+
+.hero__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  justify-content: center;
+  margin-top: var(--sp-2);
+  width: 100%;
+}
+
+/* Igual que en las cabeceras: los botones no se comprimen por debajo de su
+   texto; si no caben, envuelven. */
+@media (max-width: 639px) {
+  .hero__acciones > * {
+    flex: 1 1 auto;
+    min-width: max-content;
+  }
+}
+
+.hero__pie {
+  font-size: var(--text-sm);
+  color: var(--text-subtle);
+  font-weight: 600;
+}
+
+.paso__numero {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-full);
+  background: var(--brand);
+  border: 1px solid var(--on-brand);
+  color: var(--on-brand);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.cierre {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--sp-4);
+  padding: clamp(var(--sp-8), 6vw, var(--sp-10)) var(--sp-5);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  background:
+    radial-gradient(600px 240px at 50% 0%, var(--brand-soft) 0%, transparent 72%),
+    var(--surface);
+  box-shadow: var(--shadow-2);
+}
+
+.cierre__titulo {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 1.2rem + 1.6vw, 2.25rem);
+  font-weight: 700;
+  letter-spacing: var(--tracking-display);
+}
+
+.cierre__texto {
+  color: var(--text-muted);
+  max-width: 48ch;
 }
 
 /* ------------------------------ Divisores --------------------------------- */
