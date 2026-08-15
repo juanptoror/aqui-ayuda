@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Boxes,
@@ -22,9 +22,9 @@ import { Acceso } from '@/components/Acceso'
 import { ProgramarTransporte } from '@/components/formularios/ProgramarTransporte'
 import { usePreferencias } from '@/state/preferencias'
 import { useInventarioCiudad, useTransportesCiudad } from '@/datos/useInventarioCiudad'
-import { useInventario } from '@/datos/consultas'
+import { useInventario, useTransporteItems } from '@/datos/consultas'
 import { conteo, desde, numero } from '@/lib/format'
-import type { ResumenCategoria } from '@/dominio/modelos'
+import type { ResumenCategoria, TransporteItem } from '@/dominio/modelos'
 
 /**
  * Qué hay en el municipio, dónde está y qué se está moviendo.
@@ -44,6 +44,19 @@ export function Inventario() {
   const datos = useInventarioCiudad(ciudadGuardada ?? undefined)
   const { transportes, cargando: cargandoTransportes } = useTransportesCiudad(datos.ciudad?.id)
   const qInventario = useInventario()
+  const qItems = useTransporteItems()
+
+  /* Se agrupa una vez para todos los viajes: recorrer la lista completa dentro
+     del render de cada fila sería cuadrático sin ninguna necesidad. */
+  const porTransporte = useMemo(() => {
+    const m = new Map<string, TransporteItem[]>()
+    for (const it of qItems.data ?? []) {
+      const lista = m.get(it.transporteId)
+      if (lista) lista.push(it)
+      else m.set(it.transporteId, [it])
+    }
+    return m
+  }, [qItems.data])
 
   if (!ciudadGuardada) {
     return (
@@ -86,6 +99,11 @@ export function Inventario() {
 
   const { ciudad, resumen, cargando, centros } = datos
   const activos = transportes.filter((t) => t.estado === 'programado' || t.estado === 'en_ruta')
+  /* Los entregados también se muestran. No es relleno: saber qué llegó ya —y
+     con qué desglose— evita mandar dos veces lo mismo al mismo sitio. Los
+     cancelados no aparecen: un viaje que no ocurrió no informa de nada. */
+  const entregados = transportes.filter((t) => t.estado === 'entregado').slice(0, 5)
+  const viajes = [...activos, ...entregados]
 
   return (
     <>
@@ -133,7 +151,13 @@ export function Inventario() {
         <section className="section" style={{ marginTop: 0 }}>
           <SectionHead
             titulo="Se está moviendo"
-            conteo={cargandoTransportes ? undefined : conteo(activos.length, 'viaje', 'viajes')}
+            conteo={
+              cargandoTransportes
+                ? undefined
+                : activos.length > 0
+                  ? conteo(activos.length, 'viaje en curso', 'viajes en curso')
+                  : conteo(entregados.length, 'ya entregado', 'ya entregados')
+            }
           />
           {cargandoTransportes ? (
             <div className="panel">
@@ -142,7 +166,7 @@ export function Inventario() {
                 <SkeletonLinea alto={40} />
               </div>
             </div>
-          ) : activos.length === 0 ? (
+          ) : viajes.length === 0 ? (
             <EmptyState
               icono={Truck}
               titulo="No hay nada en ruta ahora mismo"
@@ -160,7 +184,7 @@ export function Inventario() {
           ) : (
             <div className="panel">
               <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-                {activos.map((t, i) => (
+                {viajes.map((t, i) => (
                   <li
                     key={t.id}
                     style={{
@@ -170,8 +194,20 @@ export function Inventario() {
                     }}
                   >
                     <div className="row row--wrap" style={{ marginBottom: 'var(--sp-2)' }}>
-                      <Badge tono={t.estado === 'en_ruta' ? 'success' : 'warning'}>
-                        {t.estado === 'en_ruta' ? 'En ruta' : 'Programado'}
+                      <Badge
+                        tono={
+                          t.estado === 'en_ruta'
+                            ? 'success'
+                            : t.estado === 'entregado'
+                              ? 'neutral'
+                              : 'warning'
+                        }
+                      >
+                        {t.estado === 'en_ruta'
+                          ? 'En ruta'
+                          : t.estado === 'entregado'
+                            ? 'Entregado'
+                            : 'Programado'}
                       </Badge>
                       <span className="min0 truncate" style={{ fontWeight: 650, flex: '1 1 auto' }}>
                         {t.carga ?? 'Carga sin detallar'}
@@ -194,6 +230,29 @@ export function Inventario() {
                       {t.vehiculo ? ` · ${t.vehiculo}` : ''}
                       {t.conductor ? ` · ${t.conductor}` : ''}
                     </div>
+
+                    {/* El desglose real: `carga` es texto libre y no dice si lo
+                        que viaja es lo que hace falta al otro lado. Esto sí. */}
+                    {(porTransporte.get(t.id) ?? []).length > 0 && (
+                      <div className="chips" style={{ marginTop: 'var(--sp-3)' }}>
+                        {(porTransporte.get(t.id) ?? []).map((it) => (
+                          <span
+                            key={it.id}
+                            className="badge badge--neutral"
+                            style={{ textTransform: 'none' }}
+                          >
+                            {it.categoria}
+                            {it.cantidad > 0 && (
+                              <>
+                                {' · '}
+                                <span className="num">{it.cantidad}</span>
+                                {it.unidad ? ` ${it.unidad}` : ''}
+                              </>
+                            )}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>

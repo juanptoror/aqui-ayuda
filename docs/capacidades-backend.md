@@ -12,11 +12,11 @@ queda por conectar. Verificado contra la API, no contra la documentación.
 | `necesidades` | Sí | — | Qué falta, prioridades, "qué falta" |
 | `inventario` | Sí | — | Qué tiene cada centro |
 | `ofrecimientos` | **Legible, sin usar** | Sí | Se puede listar quién ofrece qué. Ojo: la fecha es `creado_at`, no `created_at` |
-| `voluntarios` | **Legible, sin usar** | Sí | Se puede listar quién puede ayudar, en qué y cuándo |
-| `vehiculos` | **Legible, sin usar** | Sí | Se puede listar qué vehículos hay, capacidad y zona |
+| `voluntarios` | Sí | Sí | Pantalla "Quién puede ayudar". 1.000 filas, 998 disponibles |
+| `vehiculos` | Sí | Sí | La misma pantalla. 183 filas, todas disponibles |
 | `solicitudes` | No (RLS) | Sí | "Unirme al equipo". Upsert: pulsar dos veces no duplica |
 | `transportes` | Sí | Sí | Pantalla de inventario: lista lo que va en ruta y permite programar |
-| `transporte_items` | **Legible, sin usar** | No | `transporte_id, categoria, cantidad, unidad`: el desglose de cada viaje |
+| `transporte_items` | Sí | No | Desglose de cada viaje en la pantalla de inventario |
 | `perfiles` | No (RLS) | No | Devuelve 0 filas sin sesión |
 | `asignaciones` | No (RLS) | No | Devuelve 0 filas sin sesión |
 | `admins_ciudad` | No (RLS) | No | Devuelve 0 filas sin sesión |
@@ -49,11 +49,19 @@ eso es deliberado: en una emergencia el trámite es el enemigo.
 | `GET /help?view=list` | Sí | — | Ayuda directa entre personas |
 | `POST /help` | — | Sí | Publicar solicitud u ofrecimiento |
 | `GET /help?view=detail&id=` | **Disponible, sin usar** | — | Ficha completa de una publicación |
-| `GET /help?view=panorama` | **Disponible, sin usar** | — | `counts` y `quantities` agregados de la emergencia |
+| `GET /help?view=panorama` | Sí | — | Cifras de la emergencia en la portada |
 | `/api/logistics-operations` | Disponible, vacío | — | Devuelve 0 operaciones y `canManage: false` |
 | `POST /mcp` | No | — | Servidor MCP, sin conectar |
 
-Lo que devuelve `panorama` hoy y no se está mostrando en ninguna parte:
+### El límite que devuelve 400
+
+`limit` acepta hasta **100**. Con 101 responde `400 Revisa los filtros enviados`,
+y `type` es **obligatorio**: sin él también es 400. Los dos fallos comparten el
+mismo síntoma —una lista vacía que se lee como "no hay nadie pidiendo ayuda"— así
+que el recorte está en el cliente, en [`LIMITE_MAX`](../src/backends/corag/ayudas.ts),
+y no en cada pantalla.
+
+Lo que devuelve `panorama`, ya en la portada:
 
 ```
 counts:     229 solicitudes activas · 38 urgentes · 182 ofertas · 50 completadas
@@ -72,8 +80,8 @@ por separado no dicen nada.
 |---|---|---|
 | Petición de Corag ↔ existencia en un centro | "Lo que pides está a 1,2 km, en el centro X" | Tabla de equivalencias entre categorías |
 | Ofrecimiento de Corag ↔ necesidad de un centro | 182 ofertas sueltas contra necesidades concretas | La misma tabla de equivalencias |
-| Vehículo de Ayudas Pereira ↔ petición de Corag que necesita transporte | El cuello de botella real | Leer `vehiculos` y cruzar por zona |
-| Mapa único | Centros y personas en una sola vista | Ambos traen `lat`/`lng`; falta la pantalla |
+| Vehículo de Ayudas Pereira ↔ petición de Corag que necesita transporte | El cuello de botella real | Cruzar por zona: `zona` es texto libre y no hay coordenada |
+| ~~Mapa único~~ | **Hecho**: [/mapa](../src/pages/Mapa.tsx) pinta las dos fuentes | — |
 
 ### Resuelto: taxonomía de dos niveles
 
@@ -131,3 +139,13 @@ Las pantallas preguntan *"¿quién sabe leer municipios?"* al registro, nunca
 importan un backend por su nombre. Un proveedor puede implementar solo parte
 del contrato: todos los métodos son opcionales y las capacidades declaran qué
 hay.
+
+## Lo que queda, y por qué
+
+| Pendiente | Por qué no está |
+|---|---|
+| `GET /help?view=detail&id=` | La lista ya trae todo lo que se muestra; la ficha solo añadiría confirmaciones y no hay pantalla que las pida |
+| Vehículo ↔ petición que necesita transporte | `vehiculos.zona` es texto libre ("Cuba y alrededores") y no hay coordenada: no se puede cruzar sin inventarse la geografía |
+| `ofrecimientos` (lectura) | Se escriben pero no se listan: la lista sin teléfono no permite actuar, y el teléfono exige sesión |
+| `perfiles`, `asignaciones`, `admins_ciudad` | RLS: devuelven 0 filas sin sesión. Son de la herramienta de coordinación, no de la vista pública |
+| `POST /mcp` de Corag | Servidor MCP para agentes. No aporta nada que la API REST no dé ya |

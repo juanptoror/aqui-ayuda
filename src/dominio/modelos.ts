@@ -111,6 +111,21 @@ export interface Transporte {
   creadoEn: string
 }
 
+/**
+ * Qué va exactamente dentro de un transporte.
+ *
+ * `carga` es texto libre —"varias cosas", "lo del sábado"— y no sirve para
+ * saber si lo que viaja es lo que hace falta al otro lado. Esto sí: categoría,
+ * cantidad y unidad, que es lo que se puede cruzar contra una necesidad.
+ */
+export interface TransporteItem {
+  id: string
+  transporteId: string
+  categoria: string
+  cantidad: number
+  unidad: string | null
+}
+
 /** Una categoría con dónde está y cuánto hay. Alimenta la vista de inventario. */
 export interface ExistenciaPorCentro {
   centroId: string

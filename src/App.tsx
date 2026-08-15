@@ -16,6 +16,8 @@ import { ComoAyudar } from '@/pages/ComoAyudar'
 import { Acerca } from '@/pages/Acerca'
 import { Estado } from '@/pages/Estado'
 import { Inventario } from '@/pages/Inventario'
+import { Manos } from '@/pages/Manos'
+import { Mapa } from '@/pages/Mapa'
 
 const cliente = new QueryClient({
   defaultOptions: {
@@ -111,6 +113,8 @@ export function App() {
                   <Route path="/que-falta" element={<QueFalta />} />
                   <Route path="/inventario" element={<Inventario />} />
                   <Route path="/ayuda-directa" element={<AyudaDirecta />} />
+                  <Route path="/manos" element={<Manos />} />
+                  <Route path="/mapa" element={<Mapa />} />
                   <Route path="/como-ayudar" element={<ComoAyudar />} />
                   <Route path="/acerca" element={<Acerca />} />
                   <Route path="/estado" element={<Estado />} />

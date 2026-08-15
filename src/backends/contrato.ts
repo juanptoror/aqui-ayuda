@@ -5,6 +5,7 @@ import type {
   ItemInventario,
   Necesidad,
   Transporte,
+  TransporteItem,
   Vehiculo,
   Voluntario,
 } from '@/dominio/modelos'
@@ -37,6 +38,7 @@ export type Capacidad =
   | 'leer:voluntarios'
   | 'leer:vehiculos'
   | 'leer:transportes'
+  | 'leer:transporte-items'
   | 'escribir:ofrecimiento'
   | 'escribir:voluntario'
   | 'escribir:vehiculo'
@@ -66,6 +68,8 @@ export interface LecturasBackend {
   necesidades?: () => Promise<Necesidad[]>
   inventario?: () => Promise<ItemInventario[]>
   transportes?: () => Promise<Transporte[]>
+  /** Desglose de qué viaja en cada transporte, por categoría. */
+  transporteItems?: () => Promise<TransporteItem[]>
   voluntarios?: () => Promise<Voluntario[]>
   vehiculos?: () => Promise<Vehiculo[]>
 }

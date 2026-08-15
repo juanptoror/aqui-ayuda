@@ -11,8 +11,9 @@ import {
 } from 'lucide-react'
 import { SectionHead, EmptyState, SkeletonLinea, Notice } from '@/components/ui'
 import { SelectorCiudad } from '@/components/SelectorCiudad'
-import { PinAA } from '@/components/Marca'
+import { Isotipo, LockupVertical } from '@/components/Marca'
 import { TarjetaFuente } from '@/components/Fuente'
+import { PanoramaCorag } from '@/components/PanoramaCorag'
 import { usePreferencias } from '@/state/preferencias'
 import { useCiudadesCercanas } from '@/datos/useDatosCiudad'
 import { obtenerUbicacion, formatearDistancia, coordenadaDeCiudad } from '@/lib/geo'
@@ -77,7 +78,11 @@ export function Landing() {
       {/* ------------------------------- HERO ------------------------------- */}
       <header className="hero">
         <div className="container hero__inner">
-          <PinAA size={72} colorPin="var(--amarillo)" title="AquíAyuda" />
+          {/* La portada es el único sitio donde el nombre no aparece ya escrito
+              al lado, así que aquí va el lockup completo y no el pin suelto.
+              De una tinta, con `--brand-on-soft`: negro sobre el claro y
+              amarillo sobre el oscuro, que es la regla del kit. */}
+          <LockupVertical alto={132} color="var(--brand-on-soft)" title="AquíAyuda" />
 
           <h1 className="hero__titulo">
             Tú puedes
@@ -162,6 +167,11 @@ export function Landing() {
             </div>
           )}
         </div>
+
+        {/* Las cifras van ANTES de los caminos: primero se ve el tamaño de lo
+            que pasa, y solo después se pregunta qué quiere hacer uno. Al revés
+            —la crítica que ya nos hicieron— era pedir una decisión a ciegas. */}
+        <PanoramaCorag />
 
         {/* --------------------------- LOS DOS CAMINOS --------------------------- */}
         <section className="section">
@@ -341,7 +351,7 @@ export function Landing() {
         {/* -------------------------------- CIERRE ------------------------------ */}
         <section className="section">
           <div className="cierre">
-            <PinAA size={44} colorPin="var(--amarillo)" />
+            <Isotipo alto={44} />
             <h2 className="cierre__titulo">Cualquiera puede ayudar</h2>
             <p className="cierre__texto">
               No hace falta traer nada: compartir esta página con quien esté cerca de un centro ya
