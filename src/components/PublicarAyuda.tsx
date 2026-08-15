@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { CircleCheck, LocateFixed, ShieldCheck, TriangleAlert } from 'lucide-react'
 import { Sheet, Notice } from './ui'
 import { usePreferencias } from '@/state/preferencias'
+import { publicarReporte } from '@/backends/pereira-unida'
 import { obtenerUbicacion } from '@/lib/geo'
 import {
   CATEGORIAS_CORAG,
@@ -67,6 +68,14 @@ export function PublicarAyuda({
   const [consiente, setConsiente] = useState(false)
   const [errorUbicacion, setErrorUbicacion] = useState<string | null>(null)
   const [enviado, setEnviado] = useState(false)
+  /* Publicar en los dos tablones a la vez. Marcado por defecto porque duplica
+     a quién llega la petición sin coste para quien la escribe, pero es una
+     casilla y no una decisión nuestra: son datos de una persona. */
+  const [tambienTablon, setTambienTablon] = useState(true)
+  /* El segundo envío es de mejor esfuerzo. Si falla, la petición YA está
+     publicada en Corag y eso es lo que hay que contarle a la persona: decir
+     "no se pudo publicar" cuando sí se pudo la mandaría a repetirlo todo. */
+  const [falloTablon, setFalloTablon] = useState(false)
 
   // Un id por apertura del formulario: es la clave de la idempotencia.
   const [externalId, setExternalId] = useState(nuevoExternalId)
@@ -131,6 +140,31 @@ export function PublicarAyuda({
 
     try {
       await publicar.mutateAsync({ borrador, externalId })
+
+      /* Segundo envío, de mejor esfuerzo y solo para solicitudes: el tablón de
+         Pereira Unida no tiene ofrecimientos con esta forma. Va DESPUÉS y en
+         su propio try: si falla, la petición ya está publicada en Corag, y
+         decir "no se pudo" mandaría a la persona a repetirlo todo por nada. */
+      if (tambienTablon && esSolicitud) {
+        try {
+          await publicarReporte({
+            titulo,
+            descripcion,
+            categoria,
+            urgente: urgencia === 'urgent',
+            municipio: '',
+            departamento: '',
+            lugar: direccion,
+            lat: ubicacion?.lat ?? null,
+            lng: ubicacion?.lng ?? null,
+            telefono: whatsapp,
+          })
+        } catch (err) {
+          setFalloTablon(true)
+          console.error('[AquíAyuda] no se pudo replicar en Pereira Unida', err)
+        }
+      }
+
       setEnviado(true)
       alPublicar?.()
     } catch {
@@ -144,7 +178,11 @@ export function PublicarAyuda({
         abierta={abierto}
         alCerrar={alCerrar}
         titulo="Publicado"
-        subtitulo="Ya aparece en el listado público."
+        subtitulo={
+          tambienTablon && esSolicitud && !falloTablon
+            ? 'Queda en los dos tablones de la emergencia.'
+            : 'Ya aparece en el listado público.'
+        }
         pie={
           <button type="button" className="btn btn--primary" onClick={alCerrar}>
             <span>Cerrar</span>
@@ -166,6 +204,13 @@ export function PublicarAyuda({
             Quien pueda ayudar te escribirá por WhatsApp. Si se resuelve, avisa para que la
             retiren y nadie repita el esfuerzo.
           </p>
+          {falloTablon && (
+            <p className="empty__text" style={{ color: 'var(--text-muted)' }}>
+              Solo pudimos publicarla en <strong>Corag</strong>: el tablón de Pereira Unida no
+              aceptó la copia. Tu petición está publicada igualmente y se ve desde esta
+              aplicación.
+            </p>
+          )}
         </div>
       </Sheet>
     )
@@ -374,6 +419,35 @@ export function PublicarAyuda({
         </div>
 
         {/* El consentimiento es una decisión explícita: nunca viene marcado. */}
+        {esSolicitud && (
+          <label
+            className="panel panel--inset"
+            style={{
+              display: 'flex',
+              gap: 'var(--sp-3)',
+              padding: 'var(--sp-4)',
+              cursor: 'pointer',
+              alignItems: 'flex-start',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={tambienTablon}
+              onChange={(e) => setTambienTablon(e.target.checked)}
+              style={{ width: 20, height: 20, marginTop: 2, flexShrink: 0, cursor: 'pointer' }}
+            />
+            <span className="min0">
+              <span style={{ display: 'block', fontWeight: 650, marginBottom: 2 }}>
+                Publicar también en el tablón de Pereira Unida
+              </span>
+              <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
+                Son dos comunidades distintas de la misma emergencia. Publicar en las dos duplica a
+                cuánta gente le llega tu petición, y solo la escribes una vez.
+              </span>
+            </span>
+          </label>
+        )}
+
         <label
           className="panel panel--inset"
           style={{

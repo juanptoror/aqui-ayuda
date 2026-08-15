@@ -411,3 +411,63 @@ test.describe('vivienda unificada', () => {
     expect(origenes.length).toBe(2)
   })
 })
+
+test.describe('tengo algo que dar', () => {
+  test('cruza contra las tres fuentes y ordena por urgencia', async ({ page }) => {
+    await page.addInitScript(() => {
+      try {
+        localStorage.setItem('ac.ubicacion', JSON.stringify({ lat: 4.8133, lng: -75.6961 }))
+      } catch {
+        /* sin almacenamiento */
+      }
+    })
+    await page.goto('/quiero-ayudar')
+    await page.waitForSelector('.chips .chip', { timeout: 45_000 })
+
+    await page.locator('.chip').filter({ hasText: 'Comida' }).first().click()
+    await page.waitForSelector('.panel li', { timeout: 45_000 })
+    await page.waitForTimeout(3500)
+
+    const origenes = await page.$$eval('.panel li .sello-fuente', (n) =>
+      [...new Set(n.map((e) => e.getAttribute('data-origen')))].sort(),
+    )
+    expect(origenes.length).toBeGreaterThanOrEqual(2)
+
+    // Lo urgente arriba: es el orden en que se decide con el carro cargado.
+    const primeras = await page.locator('.panel li').first().innerText()
+    expect(primeras).toMatch(/urgente/i)
+  })
+
+  test('ofrecer manos no devuelve inventario de bodega', async ({ page }) => {
+    await page.goto('/quiero-ayudar')
+    await page.waitForSelector('.chips .chip', { timeout: 45_000 })
+
+    await page.locator('.chip').filter({ hasText: 'Mis manos' }).first().click()
+    await page.waitForTimeout(4000)
+
+    /* Un servicio no se cruza contra necesidades de material: nadie guarda
+       cajas de voluntariado, y ofrecer las manos no llena una bodega. */
+    const origenes = await page.$$eval('.panel li .sello-fuente', (n) =>
+      n.map((e) => e.getAttribute('data-origen')),
+    )
+    expect(origenes.filter((o) => o === 'ayudas-pereira')).toHaveLength(0)
+  })
+})
+
+test.describe('publicar una petición', () => {
+  test('ofrece publicarla en los dos tablones y pide el consentimiento aparte', async ({ page }) => {
+    await page.goto('/ayuda-directa')
+    await page.waitForSelector('.card__title', { timeout: 45_000 })
+
+    await page.getByRole('button', { name: 'Publicar' }).first().click()
+    await page.waitForSelector('.sheet', { timeout: 10_000 })
+
+    const hoja = page.locator('.sheet')
+    await expect(hoja.getByText(/tablón de Pereira Unida/i)).toBeVisible()
+    // El teléfono se publica solo si la persona lo autoriza: dos casillas, no una.
+    await expect(hoja.getByText(/Autorizo publicar mi nombre y mi WhatsApp/i)).toBeVisible()
+
+    const casillas = await hoja.locator('input[type="checkbox"]').count()
+    expect(casillas).toBeGreaterThanOrEqual(2)
+  })
+})

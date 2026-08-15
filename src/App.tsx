@@ -19,6 +19,7 @@ import { Inventario } from '@/pages/Inventario'
 import { Manos } from '@/pages/Manos'
 import { Mapa } from '@/pages/Mapa'
 import { Vivienda } from '@/pages/Vivienda'
+import { QuieroAyudar } from '@/pages/QuieroAyudar'
 
 const cliente = new QueryClient({
   defaultOptions: {
@@ -117,6 +118,7 @@ export function App() {
                   <Route path="/manos" element={<Manos />} />
                   <Route path="/mapa" element={<Mapa />} />
                   <Route path="/vivienda" element={<Vivienda />} />
+                  <Route path="/quiero-ayudar" element={<QuieroAyudar />} />
                   <Route path="/como-ayudar" element={<ComoAyudar />} />
                   <Route path="/acerca" element={<Acerca />} />
                   <Route path="/estado" element={<Estado />} />
