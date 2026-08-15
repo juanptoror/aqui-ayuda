@@ -1,0 +1,14 @@
+node_modules
+dist
+dist-ssr
+*.local
+.env
+.env.local
+.DS_Store
+playwright-report
+test-results
+tsconfig.*.tsbuildinfo
+capturas
+capturas-viewport
+capturas-interaccion
+capturas-original

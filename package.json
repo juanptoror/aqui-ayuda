@@ -1,0 +1,41 @@
+{
+  "name": "ayudas-colombia",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20.12.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b --pretty false",
+    "test": "playwright test",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install chromium",
+    "capturas": "node scripts/capturas.mjs",
+    "capturas:viewport": "node scripts/capturas-viewport.mjs",
+    "capturas:interaccion": "node scripts/capturas-interaccion.mjs",
+    "diag:overflow": "node scripts/diag-overflow.mjs"
+  },
+  "dependencies": {
+    "@fontsource-variable/outfit": "^5.3.0",
+    "@fontsource-variable/public-sans": "^5.1.0",
+    "@supabase/supabase-js": "^2.45.4",
+    "@tanstack/react-query": "^5.59.0",
+    "lucide-react": "^0.451.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0",
+    "@types/node": "^26.2.0",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.2",
+    "typescript": "^5.6.2",
+    "vite": "^6.0.0"
+  }
+}

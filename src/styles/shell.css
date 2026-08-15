@@ -1,0 +1,571 @@
+/* ============================================================================
+   SHELL — escritorio con barra lateral, móvil con navegación inferior.
+   El punto de corte es 1024px: por encima existe la lateral, por debajo se
+   sustituye por una barra superior compacta + navegación inferior fija.
+   ========================================================================== */
+
+.shell {
+  display: flex;
+  min-height: 100dvh;
+  align-items: stretch;
+}
+
+/* ------------------------------ Barra lateral ----------------------------- */
+
+.sidebar {
+  display: none;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  height: 100dvh;
+  width: var(--sidebar-w);
+  flex: 0 0 var(--sidebar-w);
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-5) var(--sp-4);
+  background: var(--surface);
+  border-inline-end: 1px solid var(--border);
+  box-shadow: var(--shadow-1);
+  z-index: var(--z-nav);
+}
+
+@media (min-width: 1024px) {
+  .sidebar {
+    display: flex;
+  }
+}
+
+.sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2);
+  margin-bottom: var(--sp-4);
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+  border-radius: var(--r-md);
+}
+
+.sidebar__brand:hover {
+  color: inherit;
+}
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r-md);
+  background: linear-gradient(
+    155deg,
+    var(--brand) 0%,
+    color-mix(in srgb, var(--brand) 78%, var(--text-inverse)) 100%
+  );
+  /* El icono usa el color inverso al de la marca para seguir siendo visible
+     cuando el grafito se invierte a blanco hueso en el tema oscuro. */
+  color: var(--text-inverse);
+  box-shadow: var(--shadow-2);
+  border: 1px solid color-mix(in srgb, var(--brand) 70%, var(--text-inverse));
+}
+
+.brand-text {
+  min-width: 0;
+  /* Sin esto los dos <span> quedan en línea y el nombre se monta sobre la
+     coletilla: el bug se ve en cuanto la barra lateral se estrecha. */
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.brand-text__name {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.0625rem;
+  letter-spacing: var(--tracking-display);
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.brand-text__tag {
+  display: block;
+  font-size: var(--text-micro);
+  font-weight: 700;
+  letter-spacing: var(--tracking-micro);
+  text-transform: uppercase;
+  line-height: 1.2;
+  color: var(--text-subtle);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar__label {
+  padding: var(--sp-4) var(--sp-3) var(--sp-2);
+  font-size: var(--text-micro);
+  font-weight: 700;
+  letter-spacing: var(--tracking-micro);
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+.navlink {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-weight: 620;
+  font-size: var(--text-body);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur) var(--ease);
+}
+
+.navlink svg {
+  flex-shrink: 0;
+}
+
+.navlink > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.navlink:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+.navlink--active {
+  background: var(--brand-soft);
+  color: var(--brand-on-soft);
+  border-color: color-mix(in srgb, var(--brand) 22%, transparent);
+  box-shadow: var(--shadow-1);
+}
+
+.navlink--active:hover {
+  background: var(--brand-soft-hover);
+  color: var(--brand-on-soft);
+}
+
+.navlink__badge {
+  margin-inline-start: auto;
+  flex-shrink: 0;
+  min-width: 22px;
+  padding-inline: 6px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-full);
+  background: var(--critical);
+  color: #fff;
+  font-size: var(--text-micro);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.sidebar__foot {
+  margin-top: auto;
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+/* ------------------------------ Zona principal ---------------------------- */
+
+.main-col {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.main {
+  flex: 1 1 auto;
+  min-width: 0;
+  /* Espacio para la navegación inferior en móvil (incluye el área segura). */
+  padding-bottom: calc(
+    var(--bottomnav-h) + env(safe-area-inset-bottom, 0px) + var(--sp-6)
+  );
+}
+
+@media (min-width: 1024px) {
+  .main {
+    padding-bottom: var(--sp-9);
+  }
+}
+
+/* ----------------------------- Barra superior ----------------------------- */
+/* Solo en móvil/tablet: marca compacta + acciones. El título grande vive en la
+   cabecera de página, no aquí. */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: var(--topbar-h);
+  padding-inline: clamp(var(--sp-4), 3vw, var(--sp-7));
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  backdrop-filter: blur(12px) saturate(1.4);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  border-bottom: 1px solid var(--border);
+}
+
+@media (min-width: 1024px) {
+  .topbar {
+    display: none;
+  }
+}
+
+/* --------------------------- Navegación inferior -------------------------- */
+
+.bottomnav {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: var(--z-nav);
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: var(--sp-1);
+  padding: var(--sp-2) var(--sp-2) calc(var(--sp-2) + env(safe-area-inset-bottom, 0px));
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(14px) saturate(1.5);
+  -webkit-backdrop-filter: blur(14px) saturate(1.5);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.08);
+}
+
+@media (min-width: 1024px) {
+  .bottomnav {
+    display: none;
+  }
+}
+
+.bottomnav__item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+  min-height: 52px;
+  padding: var(--sp-1);
+  border-radius: var(--r-md);
+  color: var(--text-subtle);
+  text-decoration: none;
+  font-size: var(--text-micro);
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease);
+}
+
+.bottomnav__item > span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bottomnav__item:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+.bottomnav__item--active {
+  color: var(--brand);
+  background: var(--brand-soft);
+}
+
+.bottomnav__dot {
+  position: absolute;
+  top: 6px;
+  inset-inline-end: calc(50% - 18px);
+  width: 7px;
+  height: 7px;
+  border-radius: var(--r-full);
+  background: var(--critical);
+  border: 1.5px solid var(--surface);
+}
+
+/* ------------------------------ Diálogo / hoja ---------------------------- */
+/* Escritorio: diálogo centrado. Móvil: hoja inferior que sube desde abajo. */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  background: var(--overlay-bg);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: overlay-in var(--dur) var(--ease);
+}
+
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.sheet {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: min(88dvh, 780px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-start-start-radius: var(--r-xl);
+  border-start-end-radius: var(--r-xl);
+  box-shadow: var(--shadow-3);
+  animation: sheet-up var(--dur-slow) var(--ease);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(6%);
+    opacity: 0.6;
+  }
+}
+
+@media (min-width: 768px) {
+  .overlay {
+    align-items: center;
+    padding: var(--sp-6);
+  }
+
+  .sheet {
+    max-width: 560px;
+    max-height: min(86dvh, 760px);
+    border-radius: var(--r-xl);
+    border-bottom: 1px solid var(--border);
+    animation: dialog-in var(--dur) var(--ease);
+    padding-bottom: 0;
+  }
+
+  @keyframes dialog-in {
+    from {
+      transform: scale(0.97);
+      opacity: 0;
+    }
+  }
+}
+
+.sheet__grab {
+  width: 40px;
+  height: 4px;
+  border-radius: var(--r-full);
+  background: var(--border-strong);
+  margin: var(--sp-3) auto 0;
+  flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .sheet__grab {
+    display: none;
+  }
+}
+
+.sheet__header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-5) var(--sp-5) var(--sp-4);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.sheet__titles {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.sheet__title {
+  font-family: var(--font-display);
+  font-size: var(--text-h2);
+  font-weight: 750;
+  letter-spacing: var(--tracking-tight);
+  overflow-wrap: break-word;
+}
+
+.sheet__subtitle {
+  margin-top: var(--sp-1);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.sheet__body {
+  padding: var(--sp-5);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.sheet__footer {
+  display: flex;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-5);
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
+  flex-shrink: 0;
+}
+
+.sheet__footer > .btn {
+  flex: 1 1 auto;
+}
+
+@media (min-width: 768px) {
+  .sheet__footer {
+    justify-content: flex-end;
+  }
+  .sheet__footer > .btn {
+    flex: 0 0 auto;
+  }
+}
+
+/* -------------------------------- Toasts ---------------------------------- */
+
+.toasts {
+  position: fixed;
+  z-index: var(--z-toast);
+  inset-inline: 0;
+  bottom: calc(var(--bottomnav-h) + env(safe-area-inset-bottom, 0px) + var(--sp-3));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  padding-inline: var(--sp-4);
+  pointer-events: none;
+}
+
+@media (min-width: 1024px) {
+  .toasts {
+    inset-inline: auto 0;
+    bottom: var(--sp-5);
+    align-items: flex-end;
+    padding-inline: var(--sp-5);
+  }
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  max-width: 420px;
+  width: 100%;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-3);
+  pointer-events: auto;
+  animation: toast-in var(--dur) var(--ease);
+  min-width: 0;
+}
+
+@keyframes toast-in {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+}
+
+.toast__text {
+  min-width: 0;
+  flex: 1 1 auto;
+  font-size: var(--text-sm);
+  overflow-wrap: break-word;
+}
+
+.toast--error {
+  border-color: var(--critical-border);
+  background: var(--critical-soft);
+  color: var(--critical-on-soft);
+}
+
+.toast--success {
+  border-color: var(--success-border);
+  background: var(--success-soft);
+  color: var(--success-on-soft);
+}
+
+/* ----------------------------- Banda de estado ---------------------------- */
+/* Aviso de conexión / datos desactualizados. Ocupa el ancho del contenedor,
+   no de la ventana. */
+
+.notice {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-md);
+  border: 1px solid var(--notice-border, var(--border));
+  background: var(--notice-bg, var(--surface-3));
+  color: var(--notice-fg, var(--text-muted));
+  font-size: var(--text-sm);
+  min-width: 0;
+}
+
+.notice > svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.notice__text {
+  min-width: 12rem;
+  flex: 1 1 12rem;
+  overflow-wrap: break-word;
+}
+
+/* El botón del aviso no se encoge: comprimido dejaba solo el icono y "Entrar"
+   desaparecía. Si no cabe al lado del texto, baja a la línea siguiente. */
+.notice > .btn {
+  flex: 0 0 auto;
+  margin-inline-start: auto;
+}
+
+.notice--warning {
+  --notice-bg: var(--warning-soft);
+  --notice-fg: var(--warning-on-soft);
+  --notice-border: var(--warning-border);
+}
+
+.notice--critical {
+  --notice-bg: var(--critical-soft);
+  --notice-fg: var(--critical-on-soft);
+  --notice-border: var(--critical-border);
+}
+
+.notice--info {
+  --notice-bg: var(--info-soft);
+  --notice-fg: var(--info-on-soft);
+  --notice-border: var(--info-border);
+}

@@ -1,0 +1,234 @@
+/* ============================================================================
+   BASE — reset con opinión + elementos
+   Nota deliberada: NO usamos `overflow-x: hidden` en html/body. Esconder el
+   desborde haría pasar los tests de overflow por la razón equivocada; los
+   desbordes se arreglan en su origen (min-width: 0, truncado, wrap).
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100dvh;
+  background-color: var(--canvas);
+  background-image: var(--canvas-grad);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: var(--leading-normal);
+  font-synthesis-weight: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+  color: var(--text);
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: var(--text-h1);
+}
+h2 {
+  font-size: var(--text-h2);
+}
+h3 {
+  font-size: var(--text-h3);
+}
+
+p {
+  text-wrap: pretty;
+}
+
+/* Palabras larguísimas (URLs, direcciones sin espacios) no deben empujar el
+   layout: rompen dentro de su contenedor. */
+p,
+li,
+dd,
+dt,
+address,
+figcaption {
+  overflow-wrap: break-word;
+}
+
+/* El color de acción es grafito, no un azul: los enlaces de texto necesitan el
+   subrayado para distinguirse del párrafo que los rodea. */
+a {
+  color: var(--brand);
+  text-decoration-color: color-mix(in srgb, var(--brand) 55%, transparent);
+  text-underline-offset: 0.18em;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease);
+}
+
+a:hover {
+  color: var(--brand-hover);
+  text-decoration-color: currentColor;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+button:disabled,
+[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* Anillo de foco único para toda la app — visible en ambos temas. */
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+::selection {
+  background: var(--brand-soft);
+  color: var(--brand-on-soft);
+}
+
+/* Barras de scroll discretas y coherentes con el tema. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--r-full);
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- utilidades ---------- */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Enlace de salto para teclado / lectores de pantalla. */
+.skip-link {
+  position: absolute;
+  left: var(--sp-4);
+  top: calc(var(--sp-4) * -4);
+  z-index: var(--z-toast);
+  padding: var(--sp-3) var(--sp-5);
+  background: var(--brand);
+  color: var(--text-inverse);
+  border-radius: var(--r-md);
+  font-weight: 600;
+  box-shadow: var(--shadow-3);
+  transition: top var(--dur) var(--ease);
+}
+
+.skip-link:focus-visible {
+  top: var(--sp-4);
+  color: var(--text-inverse);
+}
+
+/* El truco de una sola línea: los hijos flex deben poder encogerse o
+   provocan desborde horizontal. Se aplica donde hay texto variable. */
+.min0 {
+  min-width: 0;
+}
+
+.truncate {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Palabras que se omiten en pantallas estrechas para que dos acciones quepan
+   en una sola fila en vez de apilarse y empujar el contenido hacia abajo. */
+@media (max-width: 639px) {
+  .oculto-movil {
+    display: none;
+  }
+}

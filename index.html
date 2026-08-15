@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es-CO">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#0B1220" />
+    <meta
+      name="description"
+      content="Directorio de centros de acopio y ayuda humanitaria en Colombia. Encuentra el centro más cercano, qué necesita y cómo llegar."
+    />
+    <title>Ayudas Colombia — Centros de acopio y ayuda</title>
+    <script>
+      // Tema aplicado antes del primer pintado para evitar el destello de tema
+      // equivocado (FOUC) cuando el usuario ya eligió claro u oscuro.
+      (function () {
+        try {
+          var saved = localStorage.getItem('ac.theme')
+          var theme =
+            saved === 'light' || saved === 'dark'
+              ? saved
+              : window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light'
+          document.documentElement.setAttribute('data-theme', theme)
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'light')
+        }
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
