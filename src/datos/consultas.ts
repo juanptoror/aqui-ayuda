@@ -13,6 +13,7 @@ import type {
   ItemInventario,
   Necesidad,
   Transporte,
+  TransporteItem,
   Vehiculo,
   Voluntario,
 } from '@/dominio/modelos'
@@ -101,6 +102,18 @@ export function useTransportes(): UseQueryResult<Transporte[]> {
       const b = backendPrincipalPara('leer:transportes')
       if (!b?.leer.transportes) faltaProveedor('transportes')
       return b.leer.transportes()
+    },
+  })
+}
+
+export function useTransporteItems(): UseQueryResult<TransporteItem[]> {
+  return useQuery({
+    queryKey: ['transporte-items'],
+    ...BASE,
+    queryFn: async () => {
+      const b = backendPrincipalPara('leer:transporte-items')
+      if (!b?.leer.transporteItems) faltaProveedor('el contenido de los transportes')
+      return b.leer.transporteItems()
     },
   })
 }

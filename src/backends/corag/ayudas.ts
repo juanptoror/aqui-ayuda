@@ -120,8 +120,50 @@ export function useEmergencias(): UseQueryResult<Emergencia[]> {
   })
 }
 
+export interface Panorama {
+  counts: {
+    activeRequests: number
+    urgentRequests: number
+    inProcessRequests: number
+    activeOffers: number
+    completed: number
+    collectionCenters: number
+  }
+  quantities: {
+    required: number
+    committed: number
+    received: number
+    pending: number
+  }
+}
+
+/**
+ * Cifras agregadas de la emergencia.
+ *
+ * Es el dato más honesto que expone Corag: cuánto se ha pedido frente a cuánto
+ * hay comprometido. Un porcentaje bajo no es un fallo del sistema, es la
+ * realidad de la emergencia, y esconderlo sería maquillar.
+ */
+export function usePanorama(): UseQueryResult<Panorama> {
+  return useQuery({
+    queryKey: ['corag', 'panorama'],
+    staleTime: 2 * 60_000,
+    gcTime: 10 * 60_000,
+    retry: 1,
+    refetchOnWindowFocus: false,
+    queryFn: async ({ signal }) => pedir<Panorama>(`${BASE}?view=panorama`, signal),
+  })
+}
+
+/** Máximo que acepta la API. Por encima responde 400, no una lista recortada. */
+export const LIMITE_MAX = 100
+
 export interface FiltrosAyuda {
-  tipo: TipoAyuda | 'all'
+  /**
+   * Obligatorio. La API responde 400 si falta: no existe un "dame todo".
+   * Quien necesite las dos caras lanza dos consultas —así lo hace el mapa—.
+   */
+  tipo: TipoAyuda
   /** Con ubicación, la API filtra por radio y calcula la distancia real. */
   ubicacion: Coordenada | null
   radioKm: number
@@ -141,9 +183,12 @@ export function useAyudas(filtros: FiltrosAyuda): UseQueryResult<RespuestaLista>
       const p = new URLSearchParams({
         view: 'list',
         status: 'active',
-        limit: String(limite),
+        // Se recorta aquí y no en cada pantalla: pedir 101 devuelve 400 con
+        // "Revisa los filtros enviados", y el síntoma es una lista vacía que
+        // parece "no hay nadie pidiendo ayuda". Comprobado contra la API.
+        limit: String(Math.min(limite, LIMITE_MAX)),
       })
-      if (tipo !== 'all') p.set('type', tipo)
+      p.set('type', tipo)
       if (ubicacion) {
         p.set('latitude', String(ubicacion.lat))
         p.set('longitude', String(ubicacion.lng))

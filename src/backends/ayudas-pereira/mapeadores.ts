@@ -6,6 +6,7 @@ import type {
   Necesidad,
   Prioridad,
   Transporte,
+  TransporteItem,
   Vehiculo,
   Voluntario,
 } from '@/dominio/modelos'
@@ -25,6 +26,7 @@ import type {
   FilaInventario,
   FilaNecesidad,
   FilaTransporte,
+  FilaTransporteItem,
   FilaVehiculo,
   FilaVoluntario,
 } from './esquema'
@@ -122,6 +124,18 @@ export function aTransporte(f: FilaTransporte): Transporte {
     salida: f.salida,
     notas: limpio(f.notas),
     creadoEn: f.created_at,
+  }
+}
+
+export function aTransporteItem(f: FilaTransporteItem): TransporteItem {
+  return {
+    id: f.id,
+    transporteId: f.transporte_id,
+    // Sin categoría el renglón no se puede cruzar con nada, pero tampoco se
+    // descarta: que viaje "algo sin clasificar" sigue siendo información.
+    categoria: limpio(f.categoria) ?? 'Sin clasificar',
+    cantidad: Number(f.cantidad ?? 0),
+    unidad: limpio(f.unidad),
   }
 }
 

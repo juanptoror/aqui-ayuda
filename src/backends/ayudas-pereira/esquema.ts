@@ -40,6 +40,8 @@ export const COLUMNAS_INVENTARIO =
 export const COLUMNAS_TRANSPORTE =
   'id,ciudad_id,origen_id,destino_id,destino_texto,carga,vehiculo,conductor,estado,salida,notas,created_at' as const
 
+export const COLUMNAS_TRANSPORTE_ITEM = 'id,transporte_id,categoria,cantidad,unidad' as const
+
 /* `telefono` se omite en las tres: está denegado al rol público, igual que en
    `centros`. Pedirlo tumbaría la consulta entera. */
 export const COLUMNAS_VOLUNTARIO =
@@ -84,6 +86,14 @@ export interface FilaTransporte {
   salida: string | null
   notas: string | null
   created_at: string
+}
+
+export interface FilaTransporteItem {
+  id: string
+  transporte_id: string
+  categoria: string | null
+  cantidad: number | null
+  unidad: string | null
 }
 
 /* --------------------------- Filas tal como llegan ------------------------- */

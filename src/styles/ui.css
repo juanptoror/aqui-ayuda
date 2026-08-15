@@ -1334,3 +1334,90 @@
   min-width: 0;
   overflow-wrap: break-word;
 }
+
+/* ------------------------------ Barra de avance --------------------------- */
+/* El relleno nunca baja de 1% aunque el dato sea 0: una barra completamente
+   vacía se lee como "no hay dato" y aquí el cero es información real. */
+
+.barra {
+  position: relative;
+  height: 10px;
+  width: 100%;
+  overflow: hidden;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.barra__relleno {
+  display: block;
+  height: 100%;
+  min-width: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--success-solid) 0%, var(--lima) 100%);
+}
+
+/* ---------------------------------- Mapa ---------------------------------- */
+/* Sin tiles ni librería externa: en una emergencia la red es lo primero que
+   falla, y un mapa que depende de un CDN es un mapa que no está. Se dibujan
+   las posiciones relativas, que es lo que resuelve "quién está cerca de qué". */
+
+.mapa {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1) inset;
+  overflow: hidden;
+  touch-action: manipulation;
+}
+
+@media (min-width: 768px) {
+  .mapa {
+    aspect-ratio: 16 / 9;
+  }
+}
+
+.mapa__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.mapa__punto {
+  cursor: pointer;
+  transition: r var(--dur-fast) var(--ease);
+}
+
+.mapa__punto:hover,
+.mapa__punto:focus-visible {
+  outline: none;
+  stroke: var(--text);
+  stroke-width: 2;
+}
+
+.mapa__leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-4);
+  margin-top: var(--sp-3);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.mapa__leyenda span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.mapa__punto-leyenda {
+  width: 11px;
+  height: 11px;
+  flex: none;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+}

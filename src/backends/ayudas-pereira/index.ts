@@ -5,6 +5,7 @@ import type {
   ItemInventario,
   Necesidad,
   Transporte,
+  TransporteItem,
   Vehiculo,
   Voluntario,
 } from '@/dominio/modelos'
@@ -16,6 +17,7 @@ import {
   COLUMNAS_INVENTARIO,
   COLUMNAS_NECESIDAD,
   COLUMNAS_TRANSPORTE,
+  COLUMNAS_TRANSPORTE_ITEM,
   COLUMNAS_VEHICULO,
   COLUMNAS_VOLUNTARIO,
   COLUMNA_TELEFONO,
@@ -24,6 +26,7 @@ import {
   type FilaInventario,
   type FilaNecesidad,
   type FilaTransporte,
+  type FilaTransporteItem,
   type FilaVehiculo,
   type FilaVoluntario,
 } from './esquema'
@@ -33,6 +36,7 @@ import {
   aItemInventario,
   aNecesidad,
   aTransporte,
+  aTransporteItem,
   aVehiculo,
   aVoluntario,
   deOfrecimiento,
@@ -109,6 +113,7 @@ export const ayudasPereira: Backend = {
       'leer:necesidades',
       'leer:inventario',
       'leer:transportes',
+      'leer:transporte-items',
       'leer:voluntarios',
       'leer:vehiculos',
       'escribir:ofrecimiento',
@@ -154,6 +159,14 @@ export const ayudasPereira: Backend = {
     async transportes(): Promise<Transporte[]> {
       const filas = await leer<FilaTransporte>('transportes', COLUMNAS_TRANSPORTE)
       return filas.map(aTransporte)
+    },
+
+    async transporteItems(): Promise<TransporteItem[]> {
+      const filas = await leer<FilaTransporteItem>(
+        'transporte_items',
+        COLUMNAS_TRANSPORTE_ITEM,
+      )
+      return filas.map(aTransporteItem)
     },
 
     async voluntarios(): Promise<Voluntario[]> {

@@ -6,14 +6,16 @@ import {
   HeartHandshake,
   Home,
   Info,
+  MapPin,
   Moon,
   Sun,
   TriangleAlert,
+  Users,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { usePreferencias } from '@/state/preferencias'
 import { BotonAcceso } from './Acceso'
-import { PinAA } from './Marca'
+import { Isotipo, LockupHorizontal } from './Marca'
 
 interface Destino {
   a: string
@@ -34,6 +36,8 @@ const DESTINOS: Destino[] = [
 
 /** Destinos que solo aparecen en la barra lateral, por falta de sitio abajo. */
 const SECUNDARIOS: Destino[] = [
+  { a: '/mapa', etiqueta: 'Mapa de la ayuda', etiquetaCorta: 'Mapa', icono: MapPin },
+  { a: '/manos', etiqueta: 'Quién puede ayudar', etiquetaCorta: 'Manos', icono: Users },
   { a: '/como-ayudar', etiqueta: 'Cómo ayudar', etiquetaCorta: 'Guía', icono: HeartHandshake },
 ]
 
@@ -57,12 +61,10 @@ function BotonTema({ compacto }: { compacto?: boolean }) {
 function MarcaCompacta() {
   return (
     <Link to="/" className="sidebar__brand" style={{ marginBottom: 0 }}>
-      <span className="brand-mark">
-        <PinAA size={32} colorPin="var(--amarillo)" title="AquíAyuda" />
-      </span>
-      <span className="brand-text">
-        <span className="brand-text__name">AquíAyuda</span>
-      </span>
+      {/* La cabecera es una franja ancha y baja sin coletilla debajo: es el
+          caso exacto del lockup horizontal, así que aquí va la pieza entera
+          en vez de un pin y un texto que pueden descuadrarse entre sí. */}
+      <LockupHorizontal alto={26} color="var(--brand-on-soft)" title="AquíAyuda" />
     </Link>
   )
 }
@@ -79,7 +81,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <nav className="sidebar" aria-label="Navegación principal">
         <Link to="/" className="sidebar__brand">
           <span className="brand-mark">
-            <PinAA size={34} colorPin="var(--amarillo)" title="AquíAyuda" />
+            <Isotipo alto={32} title="AquíAyuda" />
           </span>
           <span className="brand-text">
             <span className="brand-text__name">AquíAyuda</span>
