@@ -1,0 +1,209 @@
+# Ayudas Colombia
+
+Directorio de centros de acopio y ayuda humanitaria. Web app en Vite + React +
+TypeScript conectada a Supabase.
+
+Diseñada bajo un supuesto: **quien la usa acaba de pasar por un terremoto**. Se
+entra, se dice dónde se está, y se ve qué centro está abierto, qué está pidiendo
+y cómo llegar. Sin registro obligatorio.
+
+```bash
+npm install
+npm run dev            # http://localhost:5180
+```
+
+---
+
+## 1. Diagnóstico
+
+### El hallazgo que condiciona toda la app
+
+**`public.centros` tiene los permisos concedidos POR COLUMNA, no sobre la tabla.**
+
+Consecuencia práctica, verificada contra la API:
+
+```
+GET /centros?select=*                       -> 401  42501 permission denied
+GET /centros?select=id,nombre,direccion,…   -> 200  18 filas
+GET /centros?select=id,telefono             -> 401  42501 permission denied
+```
+
+El rol público puede leer `id, ciudad_id, nombre, direccion, responsable, notas,
+activo, created_at, lat, lng, foto, abierto`. **`telefono` está reservada a
+sesiones iniciadas.**
+
+Esto es una trampa fácil de pisar: `select('*')` no falla "un poco", **tumba la
+consulta entera y la pantalla se queda sin ningún centro**. Por eso
+[queries.ts](src/data/queries.ts) pide siempre columnas explícitas y añade
+`telefono` solo cuando hay sesión, y hay un test dedicado que falla si alguien
+lo revierte ([datos-y-acceso.spec.ts](e2e/datos-y-acceso.spec.ts)).
+
+### Estado real de las fuentes
+
+| Tabla | Sin sesión | Notas |
+|---|---|---|
+| `ciudades` | 78 filas | 4 inactivas o fusionadas |
+| `centros` | legible por columnas | `telefono` requiere sesión |
+| `necesidades` | ~310 filas | prioridad: urgente / alta / normal |
+| `inventario` | ~310 filas | |
+| `voluntarios`, `transportes`, `ofrecimientos`, `vehiculos` | legibles | no los usa esta versión |
+
+Autenticación (`/auth/v1/settings`): **solo correo**. `anonymous_users: false`,
+`mailer_autoconfirm: false`. De ahí que el acceso sea por código de un solo uso.
+
+### Problemas de datos detectados
+
+- `ciudad-prueba-no-usar` (`activa=false`) es una ciudad de pruebas en producción.
+- `pereira` y `pareira` están fusionadas en `pereira-2`; `diaquebradas` en
+  `dosquebradas`. La app **redirige** en lugar de mostrar una pantalla vacía
+  ([Ciudad.tsx](src/pages/Ciudad.tsx), rama `redirigirA`).
+- Ruido de captura: `Arg`, `Altagracias`, `Vereda aurora` y `Vereda aurora valle`
+  como municipios distintos; algún centro llamado `Xxxx`. Se muestran tal cual:
+  limpiarlo es trabajo de moderación, no de frontend.
+- Nombres y direcciones llegan con espacios sobrantes del formulario; se
+  normalizan en [useDatos.ts](src/data/useDatos.ts), no en cada vista.
+- `ciudades` no guarda coordenadas, así que el orden por cercanía **entre
+  municipios** usa el catálogo local de [geo.ts](src/lib/geo.ts). Los centros sí
+  traen `lat`/`lng` reales. Las veredas sin ubicación fiable se muestran **sin
+  distancia** en vez de inventarles una posición.
+
+### Qué se corrigió respecto a la versión anterior
+
+Comparado con la app en producción, revisada renderizada:
+
+| Problema | Corrección |
+|---|---|
+| Emojis como iconografía (❤️ 🙌 🚗 🏠 🚨 🚚 🎁 📊) | Iconos SVG de trazo uniforme (lucide). Cero emojis. |
+| "¿Cómo quieres ayudar?" **antes** de los datos | El resumen va primero; la decisión es un control aparte |
+| Resumen en un bloque negro macizo | Cuatro KPIs sobre superficie clara, con etiqueta y contexto |
+| Peso visual: bordes negros de 2px por todas partes | Bordes hairline de 1px + sombra compuesta |
+| Fuente `system-ui` (la del sistema) | Archivo + Public Sans, autoalojadas |
+| Sin ordenar por cercanía | Haversine sobre `lat`/`lng` reales, abiertos primero |
+| No se distinguía un centro cerrado | Estado `abierto` en la tarjeta, atenuado y al final de la lista |
+
+---
+
+## 2. Dirección de diseño: "Puesto de Mando"
+
+Un tablero de operaciones de emergencia, no una app de consumo. Definida en
+[tokens.css](src/styles/tokens.css).
+
+- **Identidad heredada, peso quitado.** La versión anterior era negro, rojo
+  coral y verde. Se conserva esa paleta —grafito para la acción, coral para lo
+  urgente, verde para lo que está en marcha— pero el negro pasa de bloques
+  macizos y bordes de 2px a texto y botones sobre superficies claras.
+- **El color semántico nunca decora.** El color de acción es grafito y no un
+  azul de marca precisamente para que nada compita con el rojo: en una
+  emergencia el rojo solo puede significar una cosa.
+- **Profundidad real.** Borde hairline de 1px **y** sombra de dos o tres capas
+  (`--shadow-1/2/3`). Nada plano.
+- **Tipografía con intención.** *Archivo* para títulos y cifras; *Public Sans*
+  —la tipografía del sistema de diseño del gobierno de EE. UU., hecha para
+  servicios públicos— para el cuerpo. **Autoalojadas**: con red inestable, un
+  CDN de fuentes es un punto de fallo.
+- **Cifras tabulares**, para que los números no bailen al actualizarse.
+- **Hover, `cursor: pointer` y anillo de foco** en todo lo interactivo.
+- **Tema claro y oscuro completos**, aplicados antes del primer pintado por un
+  script en [index.html](index.html) para evitar el destello de tema incorrecto.
+
+---
+
+## 3. Reglas anti "celular estirado"
+
+| Regla | Dónde |
+|---|---|
+| Contenedor centrado con ancho máximo (1240px), nunca full-bleed | `.container` en [ui.css](src/styles/ui.css) |
+| Escritorio con barra lateral, móvil con navegación inferior | [shell.css](src/styles/shell.css), corte en 1024px |
+| Cabecera de página grande: antetítulo + título + subtítulo + acciones | `.page-header` |
+| Grilla multi-columna con tarjetas de altura uniforme por fila | `.grid--cards` + `.card { height: 100% }` |
+| Estados vacíos diseñados con tarjeta y CTA | `EmptyState` en [ui.tsx](src/components/ui.tsx) |
+| La estructura (KPIs, secciones) visible durante la carga | `Kpi cargando` + `SkeletonTarjeta` |
+| Diálogo centrado en escritorio, hoja inferior en móvil | `.overlay` / `.sheet`, mismo componente |
+| Textos largos con truncado o elipsis, sin desbordar | `.truncate`, `.clamp-2`, `min-width: 0` |
+
+`html` y `body` **no** llevan `overflow-x: hidden`. Esconder el desborde haría
+pasar los tests por la razón equivocada; los desbordes se arreglan en su origen.
+
+---
+
+## 4. Estructura de la pantalla de municipio
+
+La versión anterior mezclaba "cómo ayudar" con los datos. Ahora hay tres bloques
+separados:
+
+1. **Cabecera** — municipio, departamento y una línea de contexto: cuántos
+   centros están abiertos de cuántos, pedidos urgentes y hace cuánto se actualizó.
+2. **Resumen** — cuatro KPIs. Se dibujan siempre, con datos o sin ellos: un
+   hueco sin explicar es peor que un cero explícito.
+3. **La decisión** — control segmentado grande y aislado: *Quiero ayudar* /
+   *Necesito ayuda*. Cambia todo lo que viene debajo: qué falta vs. qué hay.
+
+Orden de los centros: **abiertos primero** (ir a uno cerrado es un viaje
+perdido), luego por cercanía real, y a igualdad por número de pedidos urgentes.
+
+---
+
+## 5. Acceso
+
+Código de un solo uso al correo ([sesion.tsx](src/state/sesion.tsx)). Se usa el
+código de 6 dígitos y no el enlace mágico porque el enlace exige que el origen
+esté dado de alta en las *Redirect URLs* del proyecto, y eso rompe en desarrollo
+y en cada despliegue nuevo. El código llega en el mismo correo y funciona desde
+cualquier origen.
+
+Entrar **solo** añade los teléfonos. Todo lo demás se ve sin sesión, y la app lo
+dice explícitamente en vez de mostrar huecos sin explicación.
+
+---
+
+## 6. Verificación
+
+```bash
+npm run build                  # tsc -b && vite build, sin errores
+npm run test:e2e:install       # una sola vez
+npm run test                   # 34 tests
+npm run capturas               # 36 PNG: 6 pantallas x 3 anchos x 2 temas
+npm run capturas:viewport      # primera pantalla, sin fullPage
+npm run capturas:interaccion   # diálogo, hoja, estados vacíos y de carga
+npm run diag:overflow -- http://localhost:5180/ 375   # quién desborda y por qué
+```
+
+Los tests fallan si:
+
+- el documento tiene scroll horizontal en 1440, 834 o 375px, en cualquier ruta;
+- **cualquier** elemento visible sobresale del borde derecho (el mensaje dice
+  qué elemento y en qué píxel se sale);
+- un nombre largo real (`Altagracia, vereda alegrias y yarumal`) rompe el layout;
+- la consulta de centros usa `select=*` o pide `telefono` sin sesión;
+- un centro no declara si está abierto o cerrado;
+- se rompe un flujo: elegir municipio, `/?ciudad=slug`, redirección de ciudad
+  fusionada, cambio de modo, persistencia del tema, o la navegación por
+  dispositivo.
+
+Contra el build de producción en vez del dev server:
+
+```bash
+npm run build
+npm run preview
+BASE_URL=http://localhost:4180 npx playwright test
+```
+
+---
+
+## 7. Estructura
+
+```
+src/
+  lib/          supabase, geo (haversine + coordenadas), formato
+  data/         queries (React Query) y composición por municipio
+  state/        sesión, tema, ubicación y municipio recordado
+  components/   shell, tarjetas, selector, acceso, piezas del sistema
+  pages/        Home, Ciudad, Ciudades, Centro, QueFalta, ComoAyudar, Acerca
+  styles/       tokens, base, ui, shell
+e2e/            overflow y flujos; datos y acceso
+scripts/        capturas y diagnóstico de overflow
+```
+
+**`/acerca` muestra el estado de cada fuente de datos en vivo.** Si una tabla
+deja de responder, la página dice cuál y por qué, en lugar de dejar la app "rara
+sin motivo".

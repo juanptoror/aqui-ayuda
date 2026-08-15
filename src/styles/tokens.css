@@ -1,0 +1,284 @@
+/* ============================================================================
+   DIRECCIÓN DE DISEÑO: "PUESTO DE MANDO" — paleta cálida
+   ----------------------------------------------------------------------------
+   Estructura de tablero de operaciones de emergencia (superficies en capas,
+   bordes hairline, sombras compuestas, cifras grandes y tabulares) sobre la
+   identidad cromática de corag.app: crema, rosa y burdeos.
+
+   Por qué cálida y no gris azulada: esto lo usa alguien que acaba de perder su
+   casa. Un panel de control frío es correcto para un operador; para un
+   damnificado, la temperatura del color es parte del mensaje. El crema y el
+   rosa bajan la tensión sin restar claridad, y el burdeos aporta la seriedad
+   institucional que el rosa por sí solo no tendría.
+
+   Jerarquía del rojo, que aquí es delicada porque la marca ya es roja:
+   - BURDEOS  #78020e  = acción y marca. Oscuro, casi marrón. Botones y enlaces.
+   - CORAL    #e5484d  = urgencia. Claro y saturado, salta sobre el burdeos.
+   Se distinguen por luminosidad (20% frente a 59%), no solo por matiz, así que
+   siguen siendo distinguibles en escala de grises y con daltonismo rojo-verde.
+
+   Reglas de la dirección:
+   1. Nada plano: toda superficie tiene borde + sombra o es explícitamente hueco.
+   2. El color semántico jamás decora. Si algo es coral, es urgente.
+   3. Los números son tabulares y grandes. Se leen de un vistazo, sin enfocar.
+   4. Sin emojis. Iconografía SVG de trazo uniforme (lucide).
+   ========================================================================== */
+
+:root {
+  /* ---------- Tipografía ---------- */
+  /* Outfit: geométrica redondeada, la voz de la referencia, para títulos.
+     Public Sans: diseñada para servicios públicos (USWDS), máxima legibilidad
+     en cuerpo de texto y condiciones de lectura difíciles. */
+  --font-display: 'Outfit Variable', 'Outfit', system-ui, sans-serif;
+  --font-body: 'Public Sans Variable', 'Public Sans', system-ui, sans-serif;
+
+  --text-display: clamp(2rem, 1.35rem + 2.4vw, 2.85rem);
+  --text-h1: clamp(1.5rem, 1.25rem + 1vw, 2rem);
+  --text-h2: clamp(1.1875rem, 1.1rem + 0.4vw, 1.375rem);
+  --text-h3: 1.0625rem;
+  --text-body: 0.9375rem;
+  --text-sm: 0.8438rem;
+  --text-xs: 0.75rem;
+  --text-micro: 0.6875rem;
+
+  --tracking-display: -0.022em;
+  --tracking-tight: -0.012em;
+  --tracking-micro: 0.085em;
+
+  --leading-tight: 1.15;
+  --leading-snug: 1.35;
+  --leading-normal: 1.55;
+
+  /* ---------- Espaciado (escala de 4) ---------- */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.25rem;
+  --sp-6: 1.5rem;
+  --sp-7: 2rem;
+  --sp-8: 2.5rem;
+  --sp-9: 3rem;
+  --sp-10: 4rem;
+
+  /* ---------- Radios ----------
+     La referencia usa botones de píldora y tarjetas muy redondeadas; se adopta
+     esa forma porque es la mitad de su carácter. */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+  --r-xl: 26px;
+  --r-full: 999px;
+  --r-btn: 999px;
+
+  /* ---------- Layout ---------- */
+  /* Regla anti "celular estirado": el contenido NUNCA ocupa el ancho completo. */
+  --container: 1240px;
+  --container-narrow: 780px;
+  --sidebar-w: 268px;
+  --bottomnav-h: 68px;
+  --topbar-h: 60px;
+
+  /* ---------- Movimiento ---------- */
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-fast: 120ms;
+  --dur: 190ms;
+  --dur-slow: 320ms;
+
+  --z-sticky: 20;
+  --z-nav: 40;
+  --z-overlay: 60;
+  --z-toast: 80;
+
+  /* ======================= TEMA CLARO (por defecto) ======================= */
+  --canvas: #fbf8f5;
+  --canvas-grad: radial-gradient(
+    1200px 520px at 50% -10%,
+    #ffe9ef 0%,
+    rgba(255, 233, 239, 0) 72%
+  );
+  --surface: #ffffff;
+  --surface-2: #fdfaf8;
+  --surface-3: #f6ede9;
+  --surface-inset: #faf4f1;
+
+  --border: #e8e0dc;
+  --border-strong: #d8c8c2;
+  --border-hairline: rgba(37, 31, 32, 0.08);
+
+  --text: #251f20;
+  --text-muted: #574f51;
+  --text-subtle: #8b8082;
+  --text-inverse: #ffffff;
+
+  /* Burdeos de acción, tomado del CTA principal de la referencia. */
+  --brand: #78020e;
+  --brand-hover: #5e010b;
+  --brand-active: #470108;
+  --brand-soft: #ffe2e9;
+  --brand-soft-hover: #ffd2dd;
+  --brand-on-soft: #78020e;
+  --brand-ring: rgba(120, 2, 14, 0.24);
+
+  /* Coral vivo: urgencia. Deliberadamente más claro que el burdeos. */
+  --critical: #e5484d;
+  --critical-soft: #ffeced;
+  --critical-on-soft: #b3242a;
+  --critical-border: #ffd0d2;
+
+  --warning: #b4530a;
+  --warning-soft: #fdf0e2;
+  --warning-on-soft: #90420a;
+  --warning-border: #f4dcc1;
+
+  --success: #1f6f4a;
+  --success-soft: #e4f4ec;
+  --success-on-soft: #175c3c;
+  --success-border: #c4e6d4;
+
+  --info: #78020e;
+  --info-soft: #ffe2e9;
+  --info-on-soft: #78020e;
+  --info-border: #ffc7d5;
+
+  --shadow-1: 0 1px 1px rgba(37, 31, 32, 0.04), 0 1px 3px rgba(37, 31, 32, 0.06);
+  --shadow-2: 0 1px 2px rgba(37, 31, 32, 0.05), 0 3px 8px rgba(37, 31, 32, 0.06),
+    0 8px 20px rgba(37, 31, 32, 0.05);
+  --shadow-3: 0 2px 4px rgba(37, 31, 32, 0.06), 0 10px 24px rgba(37, 31, 32, 0.09),
+    0 24px 56px rgba(37, 31, 32, 0.1);
+  --shadow-inner-top: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+
+  --skeleton-base: #f0e6e1;
+  --skeleton-sheen: #fbf5f2;
+  --overlay-bg: rgba(35, 21, 24, 0.44);
+}
+
+/* ======================= TEMA OSCURO =======================
+   Duplicado deliberadamente en dos selectores: la media query cubre a quien
+   nunca eligió tema, y el selector de atributo gana cuando el usuario eligió
+   explícitamente. LOS DOS BLOQUES DEBEN TENER LOS MISMOS VALORES: hay un test
+   que falla si se desincronizan. */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --canvas: #170f11;
+    --canvas-grad: radial-gradient(
+      1200px 520px at 50% -10%,
+      #34181f 0%,
+      rgba(52, 24, 31, 0) 72%
+    );
+    --surface: #231518;
+    --surface-2: #2b1b1f;
+    --surface-3: #382227;
+    --surface-inset: #1d1215;
+
+    --border: #3d2a2f;
+    --border-strong: #573c43;
+    --border-hairline: rgba(255, 255, 255, 0.08);
+
+    --text: #f7efec;
+    --text-muted: #c6b0b4;
+    --text-subtle: #9a868b;
+    --text-inverse: #231518;
+
+    /* Sobre fondo vinoso el burdeos desaparece: el papel de color de acción
+       pasa al rosa claro, que es el acento de la referencia en oscuro. */
+    --brand: #ffc7d5;
+    --brand-hover: #ffdde5;
+    --brand-active: #ffb3c6;
+    --brand-soft: rgba(255, 199, 213, 0.14);
+    --brand-soft-hover: rgba(255, 199, 213, 0.22);
+    --brand-on-soft: #ffc7d5;
+    --brand-ring: rgba(255, 199, 213, 0.38);
+
+    --critical: #ff8a85;
+    --critical-soft: rgba(255, 138, 133, 0.15);
+    --critical-on-soft: #ffb0ac;
+    --critical-border: rgba(255, 138, 133, 0.34);
+
+    --warning: #f0b429;
+    --warning-soft: rgba(240, 180, 41, 0.14);
+    --warning-on-soft: #f6cc6e;
+    --warning-border: rgba(240, 180, 41, 0.32);
+
+    --success: #5fd39a;
+    --success-soft: rgba(95, 211, 154, 0.14);
+    --success-on-soft: #92e5bb;
+    --success-border: rgba(95, 211, 154, 0.3);
+
+    --info: #ffc7d5;
+    --info-soft: rgba(255, 199, 213, 0.14);
+    --info-on-soft: #ffc7d5;
+    --info-border: rgba(255, 199, 213, 0.3);
+
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --shadow-2: 0 2px 4px rgba(0, 0, 0, 0.45), 0 8px 20px rgba(0, 0, 0, 0.45);
+    --shadow-3: 0 4px 8px rgba(0, 0, 0, 0.5), 0 16px 40px rgba(0, 0, 0, 0.55),
+      0 32px 64px rgba(0, 0, 0, 0.45);
+    --shadow-inner-top: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+    --skeleton-base: #332025;
+    --skeleton-sheen: #422a30;
+    --overlay-bg: rgba(12, 6, 8, 0.68);
+  }
+}
+
+:root[data-theme='dark'] {
+  --canvas: #170f11;
+  --canvas-grad: radial-gradient(
+    1200px 520px at 50% -10%,
+    #34181f 0%,
+    rgba(52, 24, 31, 0) 72%
+  );
+  --surface: #231518;
+  --surface-2: #2b1b1f;
+  --surface-3: #382227;
+  --surface-inset: #1d1215;
+
+  --border: #3d2a2f;
+  --border-strong: #573c43;
+  --border-hairline: rgba(255, 255, 255, 0.08);
+
+  --text: #f7efec;
+  --text-muted: #c6b0b4;
+  --text-subtle: #9a868b;
+  --text-inverse: #231518;
+
+  --brand: #ffc7d5;
+  --brand-hover: #ffdde5;
+  --brand-active: #ffb3c6;
+  --brand-soft: rgba(255, 199, 213, 0.14);
+  --brand-soft-hover: rgba(255, 199, 213, 0.22);
+  --brand-on-soft: #ffc7d5;
+  --brand-ring: rgba(255, 199, 213, 0.38);
+
+  --critical: #ff8a85;
+  --critical-soft: rgba(255, 138, 133, 0.15);
+  --critical-on-soft: #ffb0ac;
+  --critical-border: rgba(255, 138, 133, 0.34);
+
+  --warning: #f0b429;
+  --warning-soft: rgba(240, 180, 41, 0.14);
+  --warning-on-soft: #f6cc6e;
+  --warning-border: rgba(240, 180, 41, 0.32);
+
+  --success: #5fd39a;
+  --success-soft: rgba(95, 211, 154, 0.14);
+  --success-on-soft: #92e5bb;
+  --success-border: rgba(95, 211, 154, 0.3);
+
+  --info: #ffc7d5;
+  --info-soft: rgba(255, 199, 213, 0.14);
+  --info-on-soft: #ffc7d5;
+  --info-border: rgba(255, 199, 213, 0.3);
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-2: 0 2px 4px rgba(0, 0, 0, 0.45), 0 8px 20px rgba(0, 0, 0, 0.45);
+  --shadow-3: 0 4px 8px rgba(0, 0, 0, 0.5), 0 16px 40px rgba(0, 0, 0, 0.55),
+    0 32px 64px rgba(0, 0, 0, 0.45);
+  --shadow-inner-top: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+  --skeleton-base: #332025;
+  --skeleton-sheen: #422a30;
+  --overlay-bg: rgba(12, 6, 8, 0.68);
+}
