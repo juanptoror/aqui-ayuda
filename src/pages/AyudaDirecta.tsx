@@ -20,7 +20,11 @@ import {
   SkeletonTarjeta,
 } from '@/components/ui'
 import { PublicarAyuda } from '@/components/PublicarAyuda'
-import { SelloFuente } from '@/components/Fuente'
+import { SelloFuente, FuentesDeLaPantalla } from '@/components/Fuente'
+import { TarjetaPeticionVecino } from '@/components/TarjetaPeticionVecino'
+import { FichaAyuda } from '@/components/FichaAyuda'
+import { usePeticionesPersona } from '@/datos/consultas'
+import { distanciaKm as distancia } from '@/lib/geo'
 import { usePreferencias } from '@/state/preferencias'
 import { useAyudas, useEmergencias, enlaceWhatsapp, type AyudaCorag, type TipoAyuda } from '@/backends/corag'
 import { ComoLlegar } from '@/components/ComoLlegar'
@@ -43,14 +47,49 @@ export function AyudaDirecta() {
   const [tipo, setTipo] = useState<TipoAyuda>('request')
   const [radioKm, setRadioKm] = useState(50)
   const [publicando, setPublicando] = useState(false)
+  const [ficha, setFicha] = useState<AyudaCorag | null>(null)
+  const [verTodas, setVerTodas] = useState(false)
 
   const qEmergencias = useEmergencias()
   const q = useAyudas({ tipo, ubicacion, radioKm, limite: 60 })
+  /* La otra mitad de las peticiones. Corag y Pereira Unida publican lo mismo
+     —una persona concreta que necesita algo— y hasta ahora solo se veía una:
+     había 282 peticiones del tablón que esta pantalla no enseñaba. No hay
+     riesgo de duplicado porque son comunidades distintas, y cada tarjeta lleva
+     su sello para saber a quién reclamar si el dato está mal. */
+  const qVecinos = usePeticionesPersona()
 
   const items = q.data?.items ?? []
   const emergencia = qEmergencias.data?.[0]
 
   // Cruce con el inventario de los centros: la razón de tener las dos fuentes.
+  /* Solo al mirar peticiones: los ofrecimientos del tablón viven en "Quién
+     puede ayudar", que es donde se busca a alguien y no algo. */
+  const vecinos =
+    tipo === 'request'
+      ? (qVecinos.data ?? [])
+          .map((v) => ({
+            v,
+            km:
+              ubicacion && v.lat != null && v.lng != null
+                ? distancia(ubicacion, { lat: v.lat, lng: v.lng })
+                : null,
+          }))
+          .filter((x) => x.km == null || x.km <= radioKm)
+          .sort((a, b) => {
+            if (a.v.urgente !== b.v.urgente) return a.v.urgente ? -1 : 1
+            if (a.km != null && b.km != null) return a.km - b.km
+            return b.v.creadaEn.localeCompare(a.v.creadaEn)
+          })
+      : []
+
+  /* Juntas son 255 publicaciones. Volcarlas de una vez repite el error que ya
+     cometimos en "Quién puede ayudar": nadie las lee y la página se hace
+     interminable en el móvil. Van ordenadas por urgencia y cercanía, así que
+     las primeras son las que importan. */
+  const TOPE_VECINOS = 20
+  const vecinosVisibles = verTodas ? vecinos : vecinos.slice(0, TOPE_VECINOS)
+
   const cruces = useCrucesConCentros(items)
   const conCruce = items.filter((a) => cruces.has(a.id)).length
 
@@ -82,10 +121,14 @@ export function AyudaDirecta() {
       />
 
       <div className="container">
+        <FuentesDeLaPantalla
+          origenes={['corag', 'pereira-unida']}
+          nota="Dos tablones de la misma emergencia. En Corag el teléfono solo sale si la persona lo autorizó al publicar; en Pereira Unida es público en origen."
+        />
         <div className="stack">
           <Notice tono="info" icono={MessageCircle}>
-            Estas publicaciones vienen de <strong>Corag</strong>, no de los centros de acopio. Los
-            teléfonos se muestran porque cada persona autorizó publicarlos.
+            Aquí publican <strong>personas</strong>, no centros de acopio: a un centro se le lleva
+            una donación, a una persona se le escribe. Cada tarjeta dice de qué tablón sale.
           </Notice>
           {conCruce > 0 && (
             <Notice tono="info" icono={PackageSearch}>
@@ -227,12 +270,27 @@ export function AyudaDirecta() {
           ) : (
             <div className="grid grid--cards">
               {items.map((a) => (
-                <TarjetaAyuda key={a.id} ayuda={a} cruce={cruces.get(a.id)} />
+                <TarjetaAyuda key={a.id} ayuda={a} cruce={cruces.get(a.id)} alAbrir={setFicha} />
               ))}
+              {vecinosVisibles.map(({ v, km }) => (
+                <TarjetaPeticionVecino key={v.id} p={v} distanciaKm={km} />
+              ))}
+            </div>
+          )}
+
+          {!verTodas && vecinos.length > TOPE_VECINOS && (
+            <div className="row" style={{ marginTop: 'var(--sp-5)' }}>
+              <button type="button" className="btn" onClick={() => setVerTodas(true)}>
+                <span>
+                  Ver las {vecinos.length - TOPE_VECINOS} peticiones restantes del tablón
+                </span>
+              </button>
             </div>
           )}
         </section>
       </div>
+
+      <FichaAyuda ayuda={ficha} alCerrar={() => setFicha(null)} />
 
       <PublicarAyuda
         abierto={publicando}
@@ -260,7 +318,15 @@ function lugarDe(ayuda: AyudaCorag): string {
   return unicas.join(' · ')
 }
 
-function TarjetaAyuda({ ayuda, cruce }: { ayuda: AyudaCorag; cruce?: CruceAyuda }) {
+function TarjetaAyuda({
+  ayuda,
+  cruce,
+  alAbrir,
+}: {
+  ayuda: AyudaCorag
+  cruce?: CruceAyuda
+  alAbrir: (a: AyudaCorag) => void
+}) {
   const wa = enlaceWhatsapp(ayuda.contact?.whatsapp ?? null, ayuda.title)
   const cobertura = ayuda.quantities?.coveragePercentage ?? null
   const urgente = ayuda.urgency === 'urgent'
@@ -418,6 +484,12 @@ function TarjetaAyuda({ ayuda, cruce }: { ayuda: AyudaCorag; cruce?: CruceAyuda 
       </div>
 
       <div className="card__footer">
+        {/* La tarjeta resume; la ficha trae el desglose por recurso, las
+            confirmaciones de la comunidad y qué ha pasado con esta ayuda.
+            Todo eso ya venía cargado en la lista y no se estaba mirando. */}
+        <button type="button" className="btn btn--sm" onClick={() => alAbrir(ayuda)}>
+          <span>Ver detalle</span>
+        </button>
         <SelloFuente origen="corag" />
         {wa ? (
           <a

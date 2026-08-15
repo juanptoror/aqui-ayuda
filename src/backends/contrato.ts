@@ -1,4 +1,5 @@
 import type {
+  Alojamiento,
   Centro,
   Ciudad,
   Coordenada,
@@ -26,7 +27,7 @@ import type {
  * cambia, porque las pantallas preguntan por capacidades, no por nombres.
  */
 
-export type IdBackend = 'ayudas-pereira' | 'corag' | 'pereira-unida'
+export type IdBackend = 'ayudas-pereira' | 'corag' | 'pereira-unida' | 'vivienda'
 
 /**
  * Lo que un backend sabe hacer. La UI pregunta por esto antes de ofrecer un
@@ -45,12 +46,14 @@ export type Capacidad =
   | 'leer:peticiones-persona'
   | 'leer:ofrecimientos-persona'
   | 'leer:comentarios'
+  | 'leer:alojamientos'
   | 'escribir:ofrecimiento'
   | 'escribir:voluntario'
   | 'escribir:vehiculo'
   | 'escribir:transporte'
   | 'escribir:unirse-a-centro'
   | 'escribir:ayuda-directa'
+  | 'escribir:alojamiento'
   | 'sesion:correo'
 
 export interface DescripcionBackend {
@@ -81,6 +84,8 @@ export interface LecturasBackend {
   /** Personas que se ofrecen a echar una mano. */
   ofrecimientosPersona?: () => Promise<OfrecimientoPersona[]>
   comentarios?: () => Promise<ComentarioPeticion[]>
+  /** Sitios donde vivir. Dos fuentes publican arriendos y no se solapan. */
+  alojamientos?: () => Promise<Alojamiento[]>
   voluntarios?: () => Promise<Voluntario[]>
   vehiculos?: () => Promise<Vehiculo[]>
 }
@@ -135,6 +140,20 @@ export interface BorradorTransporte {
   notas: string
 }
 
+export interface BorradorAlojamiento {
+  titulo: string
+  descripcion: string
+  tipo: string
+  ciudad: string
+  barrio: string
+  precio: number | null
+  habitaciones: number
+  banos: number
+  parqueaderos: number
+  areaM2: number | null
+  whatsapp: string
+}
+
 export interface EscriturasBackend {
   ofrecimiento?: (b: BorradorOfrecimiento) => Promise<void>
   voluntario?: (b: BorradorVoluntario) => Promise<void>
@@ -142,6 +161,7 @@ export interface EscriturasBackend {
   transporte?: (b: BorradorTransporte) => Promise<void>
   /** Pide unirse al equipo de un centro. Idempotente por (centro, usuario). */
   unirseACentro?: (centroId: string) => Promise<void>
+  alojamiento?: (b: BorradorAlojamiento) => Promise<void>
 }
 
 export interface Backend {

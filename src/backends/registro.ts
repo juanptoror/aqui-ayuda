@@ -2,6 +2,7 @@ import type { Backend, Capacidad, IdBackend } from './contrato'
 import { ayudasPereira } from './ayudas-pereira'
 import { corag } from './corag'
 import { pereiraUnida } from './pereira-unida'
+import { vivienda } from './vivienda'
 
 /**
  * Registro de backends conectados.
@@ -14,7 +15,7 @@ import { pereiraUnida } from './pereira-unida'
  * Las pantallas preguntan "¿quién sabe leer municipios?" en vez de importar un
  * backend por su nombre, así que nada se rompe al sumar o quitar proveedores.
  */
-export const BACKENDS: readonly Backend[] = [ayudasPereira, corag, pereiraUnida]
+export const BACKENDS: readonly Backend[] = [ayudasPereira, corag, pereiraUnida, vivienda]
 
 export function backendPorId(id: IdBackend): Backend {
   const encontrado = BACKENDS.find((b) => b.descripcion.id === id)

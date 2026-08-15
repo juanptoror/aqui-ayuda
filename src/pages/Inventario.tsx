@@ -18,6 +18,7 @@ import {
   SkeletonLinea,
 } from '@/components/ui'
 import { SelectorCiudad } from '@/components/SelectorCiudad'
+import { FuentesDeLaPantalla } from '@/components/Fuente'
 import { Acceso } from '@/components/Acceso'
 import { ProgramarTransporte } from '@/components/formularios/ProgramarTransporte'
 import { usePreferencias } from '@/state/preferencias'
@@ -72,6 +73,8 @@ export function Inventario() {
           subtitulo="Elige un municipio y verás lo que tienen sus centros, quién lo está pidiendo y qué se está moviendo."
         />
         <div className="container">
+
+
           <EmptyState
             icono={Building2}
             titulo="Primero elige un municipio"
@@ -141,6 +144,10 @@ export function Inventario() {
       />
 
       <div className="container">
+        <FuentesDeLaPantalla
+          origenes={['ayudas-pereira']}
+          nota="Solo los centros de acopio llevan inventario: las otras fuentes publican personas, no bodegas."
+        />
         {datos.error ? (
           <div className="stack">
             <AvisoError error={datos.error} origen="AP" />

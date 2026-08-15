@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { Backend } from '@/backends/contrato'
 import type {
+  Alojamiento,
   ComentarioPeticion,
   OfrecimientoPersona,
   PeticionPersona,
@@ -9,9 +10,11 @@ import { ErrorApp, traducirError } from '@/lib/errores'
 import {
   COLUMNAS_COMENTARIO,
   COLUMNAS_OFERTA,
+  COLUMNAS_RENTAL,
   COLUMNAS_REPORTE,
   type FilaComentario,
   type FilaOferta,
+  type FilaRental,
   type FilaReporte,
 } from './esquema'
 
@@ -102,6 +105,42 @@ function aOfrecimiento(f: FilaOferta): OfrecimientoPersona {
   }
 }
 
+/* Un titulo legible: la fuente no lo tiene, y "Apartamento" a secas no
+   distingue una publicacion de otra en una rejilla de 82. */
+function tituloDe(f: FilaRental): string {
+  const tipo = f.property_type?.trim() || 'Vivienda'
+  const donde = limpio(f.neighborhood) ?? limpio(f.municipality)
+  return donde ? `${tipo} en ${donde}` : tipo
+}
+
+function aAlojamiento(f: FilaRental): Alojamiento {
+  return {
+    id: `pu-${f.id}`,
+    origen: 'pereira-unida',
+    titulo: tituloDe(f),
+    descripcion: limpio(f.address),
+    tipo: f.property_type?.trim() || 'Otro',
+    ciudad: limpio(f.municipality) ?? 'Sin ciudad',
+    departamento: limpio(f.department),
+    barrio: limpio(f.neighborhood),
+    direccion: limpio(f.address),
+    precioMes: f.monthly_rent && f.monthly_rent > 0 ? f.monthly_rent : null,
+    precioEnTexto: null,
+    amoblado: f.furnished,
+    habitaciones: null,
+    banos: null,
+    parqueaderos: null,
+    areaM2: null,
+    disponible: (f.status ?? 'disponible').toLowerCase().trim() === 'disponible',
+    lat: f.lat,
+    lng: f.lng,
+    fotos: Array.isArray(f.photo_urls) ? f.photo_urls.filter(Boolean) : [],
+    telefono: limpio(f.contact),
+    contactos: null,
+    publicadoEn: f.submitted_at ?? f.created_at,
+  }
+}
+
 function aComentario(f: FilaComentario): ComentarioPeticion {
   return {
     id: f.id,
@@ -120,7 +159,12 @@ export const pereiraUnida: Backend = {
     descripcion: 'Vecinos que piden ayuda y vecinos que se ofrecen, con su teléfono.',
     quienPublica: 'Cualquier persona, sin registrarse.',
     url: 'https://pereiraunida.com',
-    capacidades: ['leer:peticiones-persona', 'leer:ofrecimientos-persona', 'leer:comentarios'],
+    capacidades: [
+      'leer:peticiones-persona',
+      'leer:ofrecimientos-persona',
+      'leer:comentarios',
+      'leer:alojamientos',
+    ],
   },
 
   leer: {
@@ -140,6 +184,15 @@ export const pereiraUnida: Backend = {
         }),
       )
       return filas.map(aOfrecimiento)
+    },
+
+    async alojamientos(): Promise<Alojamiento[]> {
+      const filas = await leer<FilaRental>('rentals', COLUMNAS_RENTAL, (q) =>
+        (q as unknown as { order: (c: string, o: object) => unknown }).order('created_at', {
+          ascending: false,
+        }),
+      )
+      return filas.map(aAlojamiento)
     },
 
     async comentarios(): Promise<ComentarioPeticion[]> {

@@ -11,6 +11,7 @@ import {
 } from '@/components/ui'
 import { SelectorCiudad } from '@/components/SelectorCiudad'
 import { DetalleNecesidad } from '@/components/DetalleNecesidad'
+import { FuentesDeLaPantalla } from '@/components/Fuente'
 import { usePreferencias } from '@/state/preferencias'
 import { useDatosCiudad } from '@/datos/useDatosCiudad'
 import { conteo, desde, numero } from '@/lib/format'
@@ -39,6 +40,8 @@ export function QueFalta() {
           subtitulo="Elige un municipio y te mostramos lo que están pidiendo sus centros de acopio, ordenado por urgencia."
         />
         <div className="container">
+
+
           <EmptyState
             icono={Building2}
             titulo="Primero elige un municipio"
@@ -98,6 +101,10 @@ export function QueFalta() {
       />
 
       <div className="container">
+        <FuentesDeLaPantalla
+          origenes={['ayudas-pereira']}
+          nota="Lo que piden los centros de acopio. Lo que piden las personas está en Ayuda entre personas."
+        />
         {datos.error ? (
           <div className="stack">
             <AvisoError error={datos.error} origen="AP" />

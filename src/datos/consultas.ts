@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
-import { backendPrincipalPara } from '@/backends/registro'
+import { backendPrincipalPara, backendsCon } from '@/backends/registro'
 import type {
   BorradorOfrecimiento,
   BorradorTransporte,
@@ -13,6 +13,7 @@ import type {
   ItemInventario,
   ComentarioPeticion,
   Necesidad,
+  Alojamiento,
   OfrecimientoPersona,
   PeticionPersona,
   Transporte,
@@ -154,6 +155,36 @@ export function useOfrecimientosPersona(): UseQueryResult<OfrecimientoPersona[]>
       const todos = await b.leer.ofrecimientosPersona()
       // `ocultada`: alguien retiró su ofrecimiento a propósito. Se respeta.
       return todos.filter((o) => o.activo)
+    },
+  })
+}
+
+/**
+ * Todos los sitios donde vivir, de las fuentes que publiquen alguno.
+ *
+ * Se piden a TODOS los backends con la capacidad, no al principal: aqui hay dos
+ * y ninguna cubre a la otra —una tiene 30 inmuebles del Quindio con foto, la
+ * otra 82 de Risaralda con coordenada real y precio—. Quedarse con una sola
+ * dejaria fuera dos tercios de la oferta.
+ *
+ * Si una fuente falla, se muestran las demas: media lista es infinitamente mas
+ * util que un error, y quien busca techo no puede esperar a que se arregle.
+ */
+export function useAlojamientos(): UseQueryResult<Alojamiento[]> {
+  return useQuery({
+    queryKey: ['alojamientos'],
+    ...BASE,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const fuentes = backendsCon('leer:alojamientos').filter((b) => b.leer.alojamientos)
+      if (fuentes.length === 0) faltaProveedor('vivienda')
+
+      const partes = await Promise.allSettled(fuentes.map((b) => b.leer.alojamientos!()))
+      const todos = partes.flatMap((p) => (p.status === 'fulfilled' ? p.value : []))
+      if (todos.length === 0 && partes.every((p) => p.status === 'rejected')) {
+        throw (partes[0] as PromiseRejectedResult).reason
+      }
+      return todos.filter((a) => a.disponible)
     },
   })
 }

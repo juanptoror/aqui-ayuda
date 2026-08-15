@@ -236,3 +236,45 @@ export interface ComentarioPeticion {
   texto: string
   creadoEn: string
 }
+
+/**
+ * Un sitio donde vivir, venga de donde venga.
+ *
+ * Dos fuentes publican arriendos y ninguna cubre a la otra: el listado de
+ * `inmuebles` está en el Quindío, con foto y sin coordenada útil; los `rentals`
+ * de Pereira Unida están en Risaralda, con coordenada real y precio pero casi
+ * sin foto. Juntarlos no crea duplicados —no comparten ni departamento— y sí
+ * duplica largamente la oferta que ve alguien que se quedó sin casa.
+ *
+ * `lat`/`lng` son null cuando la fuente no tiene una coordenada de fiar. Es
+ * deliberado: un backend publica 4.7/-74.05 (Bogotá) para inmuebles de Armenia,
+ * y propagar eso pondría pines a 150 km del sitio real.
+ */
+export interface Alojamiento {
+  id: string
+  origen: 'vivienda' | 'pereira-unida'
+  titulo: string
+  descripcion: string | null
+  tipo: string
+  ciudad: string
+  departamento: string | null
+  barrio: string | null
+  direccion: string | null
+  /** Canon mensual en pesos, o null si la fuente no lo publica como número. */
+  precioMes: number | null
+  /** El canon rescatado del texto libre, cuando no está en su campo. */
+  precioEnTexto: string | null
+  amoblado: boolean | null
+  habitaciones: number | null
+  banos: number | null
+  parqueaderos: number | null
+  areaM2: number | null
+  disponible: boolean
+  lat: number | null
+  lng: number | null
+  fotos: string[]
+  telefono: string | null
+  /** Cuánta gente ya preguntó, si la fuente lo cuenta. */
+  contactos: number | null
+  publicadoEn: string
+}

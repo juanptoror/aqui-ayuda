@@ -1,4 +1,4 @@
-import { Database, Network, Users } from 'lucide-react'
+import { BedDouble, Database, Network, Users } from 'lucide-react'
 
 /**
  * Sello de procedencia del dato.
@@ -10,7 +10,7 @@ import { Database, Network, Users } from 'lucide-react'
  * cualquiera— y esa diferencia cambia cuánto te puedes fiar de lo que lees.
  */
 
-export type Origen = 'ayudas-pereira' | 'corag' | 'pereira-unida'
+export type Origen = 'ayudas-pereira' | 'corag' | 'pereira-unida' | 'vivienda'
 
 interface InfoFuente {
   nombre: string
@@ -47,6 +47,14 @@ export const FUENTES: Record<Origen, InfoFuente> = {
     quienPublica: 'Cualquier persona, sin registrarse.',
     url: 'https://pereiraunida.com',
     icono: Users,
+  },
+  vivienda: {
+    nombre: 'Encuéntralo a un Clic',
+    tipo: 'Vivienda en arriendo',
+    descripcion: 'Inmuebles en arriendo con fotos, sobre todo en el Quindio.',
+    quienPublica: 'Propietarios e inmobiliarias.',
+    url: 'https://encuentraloaunclic.com',
+    icono: BedDouble,
   },
 }
 
@@ -116,5 +124,57 @@ export function TarjetaFuente({ origen, extra }: { origen: Origen; extra?: strin
         </div>
       )}
     </article>
+  )
+}
+
+/**
+ * De dónde salen los datos de ESTA pantalla.
+ *
+ * Va una vez por pantalla, arriba, y no sustituye al sello de cada tarjeta:
+ * responde a otra pregunta. El sello dice "este dato concreto es de X"; esto
+ * dice "aquí estás viendo X e Y mezclados, y por eso hay cosas que en una
+ * aparecen y en la otra no".
+ *
+ * En una emergencia esa diferencia importa: si un teléfono no responde o una
+ * dirección está mal, hay que saber a quién reclamar, y si una lista parece
+ * corta hay que saber si es que falta oferta o que falta una fuente.
+ */
+export function FuentesDeLaPantalla({
+  origenes,
+  nota,
+}: {
+  origenes: Origen[]
+  nota?: string
+}) {
+  const unicos = [...new Set(origenes)]
+  if (unicos.length === 0) return null
+
+  return (
+    <div className="fuentes-pantalla">
+      <span className="fuentes-pantalla__label">
+        {unicos.length === 1 ? 'Datos de' : 'Datos de'}
+      </span>
+      <div className="fuentes-pantalla__sellos">
+        {unicos.map((o) => {
+          const f = FUENTES[o]
+          return f.url ? (
+            <a
+              key={o}
+              href={f.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={`${f.nombre}: ${f.descripcion} Publica: ${f.quienPublica}`}
+            >
+              <SelloFuente origen={o} />
+            </a>
+          ) : (
+            <span key={o} title={`${f.nombre}: ${f.descripcion} Publica: ${f.quienPublica}`}>
+              <SelloFuente origen={o} />
+            </span>
+          )
+        })}
+      </div>
+      {nota && <p className="fuentes-pantalla__nota">{nota}</p>}
+    </div>
   )
 }

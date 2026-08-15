@@ -1540,3 +1540,241 @@
   background: var(--surface-3);
   border-bottom: 1px solid var(--border);
 }
+
+/* ------------------------- Procedencia de la pantalla --------------------- */
+
+.fuentes-pantalla {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+  min-width: 0;
+  margin-bottom: var(--sp-5);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+
+.fuentes-pantalla__label {
+  font-size: var(--text-micro);
+  font-weight: 700;
+  letter-spacing: var(--tracking-micro);
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+.fuentes-pantalla__sellos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.fuentes-pantalla__sellos a {
+  text-decoration: none;
+}
+
+.fuentes-pantalla__nota {
+  flex: 1 1 18rem;
+  min-width: 0;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+/* ------------------------------- Filtros ---------------------------------- */
+/* Buscar siempre visible; el resto detrás de un desplegable. Ocho grupos de
+   chips a la vista empujan los resultados fuera de la primera pantalla, que es
+   justo lo que se ha venido a ver. */
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  align-items: flex-start;
+}
+
+.filtros__buscar {
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+.filtros__mas {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.filtros__mas > summary {
+  list-style: none;
+  user-select: none;
+}
+
+.filtros__mas > summary::-webkit-details-marker {
+  display: none;
+}
+
+.filtros__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  margin-top: var(--sp-3);
+  padding: var(--sp-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1);
+}
+
+/* En escritorio el panel flota sobre el contenido; en móvil empuja, porque
+   flotando taparía los resultados y no habría dónde tocar para cerrarlo. */
+@media (min-width: 768px) {
+  .filtros__mas {
+    position: relative;
+  }
+
+  .filtros__panel {
+    position: absolute;
+    z-index: var(--z-sticky);
+    inset-inline-end: 0;
+    width: min(30rem, 90vw);
+    box-shadow: var(--shadow-3);
+  }
+}
+
+@media (max-width: 767px) {
+  .filtros__mas {
+    flex: 1 1 100%;
+  }
+
+  .filtros__mas > summary {
+    width: 100%;
+  }
+}
+
+.filtros__grupo {
+  min-width: 0;
+}
+
+.filtros__grupo > .chips {
+  margin-top: var(--sp-2);
+}
+
+.filtros__aviso {
+  margin: var(--sp-2) 0 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+/* El filtro puesto se quita desde donde se ve, no volviendo a abrir el panel. */
+.chip--quitar {
+  background: var(--brand-soft);
+  border-color: color-mix(in srgb, var(--brand) 30%, transparent);
+  color: var(--brand-on-soft);
+  font-weight: 700;
+}
+
+.chip--quitar:hover {
+  background: var(--brand-soft-hover);
+}
+
+/* ------------------------------ Cifras -------------------------------- */
+/* Cuatro números en fila. En 375px caben dos por fila sin partir palabras. */
+
+.cifras {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-3);
+  margin-top: var(--sp-3);
+}
+
+@media (min-width: 560px) {
+  .cifras {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.cifras__dato {
+  min-width: 0;
+  padding: var(--sp-3);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+
+.cifras__valor {
+  display: block;
+  font-weight: 800;
+  font-size: 1.25rem;
+  line-height: 1.1;
+}
+
+.cifras__label {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--text-micro);
+  font-weight: 700;
+  letter-spacing: var(--tracking-micro);
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+/* --------------------------- Línea de tiempo ------------------------------ */
+/* La actividad de la comunidad sobre una petición. El hilo vertical conecta
+   los eventos: sin él son fichas sueltas y se pierde el orden. */
+
+.linea-tiempo {
+  list-style: none;
+  margin: var(--sp-3) 0 0;
+  padding: 0;
+}
+
+.linea-tiempo__evento {
+  position: relative;
+  display: flex;
+  gap: var(--sp-3);
+  min-width: 0;
+  padding: 0 0 var(--sp-4) 0;
+}
+
+.linea-tiempo__evento::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 12px;
+  top: 26px;
+  bottom: 0;
+  width: 1px;
+  background: var(--border);
+}
+
+.linea-tiempo__evento:last-child {
+  padding-bottom: 0;
+}
+
+.linea-tiempo__evento:last-child::before {
+  display: none;
+}
+
+.linea-tiempo__punto {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  border-radius: var(--r-full);
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.linea-tiempo__evento[data-tono='exito'] .linea-tiempo__punto {
+  background: var(--success-soft);
+  border-color: var(--success-border);
+  color: var(--success-on-soft);
+}
+
+.linea-tiempo__evento[data-tono='aviso'] .linea-tiempo__punto {
+  background: var(--warning-soft);
+  border-color: var(--warning-border);
+  color: var(--warning-on-soft);
+}

@@ -262,7 +262,10 @@ test.describe('vivienda en arriendo', () => {
     const antes = await page.locator('.card').count()
     expect(antes).toBeGreaterThan(0)
 
-    await page.locator('.chip').filter({ hasText: 'Casa' }).first().click()
+    // Los filtros viven detrás de un desplegable: ocho grupos de chips a la
+    // vista empujaban los resultados fuera de la primera pantalla.
+    await page.locator('.filtros__mas summary').click()
+    await page.locator('.filtros__panel .chip').filter({ hasText: 'Casa' }).first().click()
     await page.waitForTimeout(600)
     const despues = await page.locator('.card').count()
     expect(despues).toBeGreaterThan(0)
@@ -304,11 +307,12 @@ test.describe('vivienda en arriendo', () => {
     // que solo existe cuando la fila es real. Si no, se cuentan 6 esqueletos.
     await page.waitForSelector('.card__title', { timeout: 45_000 })
 
-    await page.locator('.chip').filter({ hasText: /hasta/ }).first().click()
+    await page.locator('.filtros__mas summary').click()
+    await page.locator('.filtros__panel .chip').filter({ hasText: /^\$/ }).first().click()
     await page.waitForTimeout(500)
 
     // Sin este aviso, "no hay nada barato" y "no lo sabemos" se confunden.
-    await expect(page.getByText(/no ponen el precio en su campo/i)).toBeVisible()
+    await expect(page.getByText(/no publican el canon como número/i)).toBeVisible()
   })
 })
 
@@ -333,5 +337,77 @@ test.describe('vecinos contactables', () => {
     // `informacion_falsa` y `duplicado` se filtran en la consulta.
     const texto = await page.locator('main').innerText()
     expect(texto).not.toMatch(/informacion_falsa|duplicado/i)
+  })
+})
+
+test.describe('ficha de una publicación de Corag', () => {
+  test('abre con cobertura, actividad y sin una segunda petición', async ({ page }) => {
+    const llamadas: string[] = []
+    page.on('request', (r) => {
+      if (r.url().includes('corag.app')) llamadas.push(r.url())
+    })
+
+    await page.goto('/ayuda-directa')
+    await page.waitForSelector('.card__title', { timeout: 45_000 })
+    await page.waitForTimeout(3000)
+
+    const antes = llamadas.filter((u) => u.includes('view=detail')).length
+    await page.locator('button:has-text("Ver detalle")').first().click()
+    await page.waitForSelector('.sheet', { timeout: 10_000 })
+    await page.waitForTimeout(1200)
+
+    /* view=detail devuelve EXACTAMENTE lo mismo que el elemento de la lista
+       —comprobado campo a campo sobre 20 publicaciones—, así que pedirlo otra
+       vez sería gastar una petición para no enterarse de nada nuevo. */
+    const despues = llamadas.filter((u) => u.includes('view=detail')).length
+    expect(despues).toBe(antes)
+
+    const hoja = await page.locator('.sheet').innerText()
+    expect(hoja).toMatch(/cubierto|requerido/i)
+    expect(await page.locator('.linea-tiempo__evento').count()).toBeGreaterThan(0)
+  })
+})
+
+test.describe('de dónde salen los datos', () => {
+  const RUTAS = ['/manos', '/mapa', '/inventario', '/que-falta', '/ayuda-directa', '/vivienda']
+
+  for (const ruta of RUTAS) {
+    test(`${ruta} dice de qué fuentes viene lo que muestra`, async ({ page }) => {
+      await page.addInitScript(() => {
+        try {
+          localStorage.setItem('ac.ciudad', 'pereira-2')
+        } catch {
+          /* sin almacenamiento */
+        }
+      })
+      await page.goto(ruta)
+      await page.waitForSelector('.fuentes-pantalla', { timeout: 45_000 })
+
+      // Un sello vacío es peor que ninguno: promete procedencia y no la da.
+      const sellos = await page.locator('.fuentes-pantalla .sello-fuente').count()
+      expect(sellos).toBeGreaterThan(0)
+    })
+  }
+})
+
+test.describe('vivienda unificada', () => {
+  test('junta las dos fuentes de arriendo y marca cada tarjeta', async ({ page }) => {
+    await page.goto('/vivienda')
+    await page.waitForSelector('.card__title', { timeout: 45_000 })
+    await page.waitForTimeout(2500)
+
+    /* Una fuente aporta 82 avisos de Risaralda con coordenada real; la otra 30
+       del Quindío con fotos. Quedarse con una sola dejaría fuera dos tercios de
+       la oferta a quien se acaba de quedar sin casa. */
+    const tarjetas = await page.locator('.card').count()
+    expect(tarjetas).toBeGreaterThan(60)
+
+    const conSello = await page.locator('.card .sello-fuente').count()
+    expect(conSello).toBe(tarjetas)
+
+    const origenes = await page.$$eval('.card .sello-fuente', (n) =>
+      [...new Set(n.map((e) => e.getAttribute('data-origen')))].sort(),
+    )
+    expect(origenes.length).toBe(2)
   })
 })
