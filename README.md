@@ -1,7 +1,17 @@
 # Ayudas Colombia
 
 Directorio de centros de acopio y ayuda humanitaria. Web app en Vite + React +
-TypeScript conectada a Supabase.
+TypeScript sobre **dos backends**:
+
+| Fuente | Qué aporta | Autenticación |
+|---|---|---|
+| **Supabase** | Centros de acopio (organizaciones) por municipio | Ninguna para leer; correo para ver teléfonos |
+| **API pública de Corag** | Ayuda directa entre personas, geolocalizada, con WhatsApp | Ninguna |
+
+Viven en pantallas separadas a propósito: a un centro se le lleva una donación,
+a una persona se le escribe. Cada pantalla declara de dónde salen sus datos.
+
+**En producción:** https://ayudas-colombia-web.vercel.app
 
 Diseñada bajo un supuesto: **quien la usa acaba de pasar por un terremoto**. Se
 entra, se dice dónde se está, y se ve qué centro está abierto, qué está pidiendo
@@ -142,6 +152,24 @@ Orden de los centros: **abiertos primero** (ir a uno cerrado es un viaje
 perdido), luego por cercanía real, y a igualdad por número de pedidos urgentes.
 
 ---
+
+## 4b. Segundo backend: Corag
+
+`/ayuda-directa` consume `https://ayuda.corag.app/api/public/v1/help`
+([corag.ts](src/data/corag.ts)). Tres rasgos de esa API condicionan el código:
+
+- **Sin autenticación.** Publicar es un POST directo.
+- **Idempotente por `source` + `externalId`.** Por eso el identificador se
+  genera **una vez por formulario** y se reutiliza en los reintentos: si se
+  regenerara en cada intento, un fallo de red se convertiría en publicaciones
+  duplicadas.
+- **`publishContact` exige consentimiento.** El teléfono se publica en abierto,
+  así que sale de una casilla que la persona marca a mano. Nunca viene marcada
+  y la mutación se niega a enviar sin ella.
+
+Si la API falla, la pantalla **lo dice**: un 500 no se presenta como "no hay
+nadie pidiendo ayuda". Esa distinción importa — decir que no hay necesidades
+cuando en realidad no se pudo preguntar es desinformar en plena emergencia.
 
 ## 5. Acceso
 
