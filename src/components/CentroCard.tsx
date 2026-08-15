@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { CircleSlash, MapPin, Navigation, Package, Phone, User } from 'lucide-react'
-import type { CentroVista } from '@/types'
+import type { CentroVista } from '@/dominio/modelos'
 import { formatearDistancia } from '@/lib/geo'
 import { conteo, enlaceMapa, enlaceTelefono } from '@/lib/format'
 import { Badge } from './ui'

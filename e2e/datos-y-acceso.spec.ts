@@ -168,10 +168,15 @@ test.describe('acceso por código', () => {
       page.getByRole('heading', { name: 'Por qué hay que entrar para ver los teléfonos' }),
     ).toBeVisible()
 
-    // Las tablas públicas siguen leyéndose sin sesión.
+    // Las tablas públicas siguen leyéndose sin sesión. Se da margen porque son
+    // varios cientos de filas y hasta que llegan se muestra el esqueleto.
     const filas = page.locator('.panel li')
-    await expect(filas.filter({ hasText: 'ciudades' }).first()).toContainText('filas')
-    await expect(filas.filter({ hasText: 'centros' }).first()).toContainText('filas')
+    await expect(filas.filter({ hasText: 'ciudades' }).first()).toContainText('filas', {
+      timeout: 20_000,
+    })
+    await expect(filas.filter({ hasText: 'centros' }).first()).toContainText('filas', {
+      timeout: 20_000,
+    })
   })
 
   test('acerca está escrito para cualquiera y no filtra datos por error', async ({ page }) => {

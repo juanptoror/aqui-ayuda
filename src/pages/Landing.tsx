@@ -14,7 +14,7 @@ import { SelectorCiudad } from '@/components/SelectorCiudad'
 import { PinAA } from '@/components/Marca'
 import { TarjetaFuente } from '@/components/Fuente'
 import { usePreferencias } from '@/state/preferencias'
-import { useCiudadesCercanas } from '@/data/useDatos'
+import { useCiudadesCercanas } from '@/datos/useDatosCiudad'
 import { obtenerUbicacion, formatearDistancia, coordenadaDeCiudad } from '@/lib/geo'
 import { conteo } from '@/lib/format'
 

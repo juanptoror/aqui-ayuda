@@ -12,7 +12,7 @@ import {
   type CategoriaCorag,
   type TipoAyuda,
   type Urgencia,
-} from '@/data/corag'
+} from '@/backends/corag'
 
 const ETIQUETA_CATEGORIA: Record<CategoriaCorag, string> = {
   alimentos: 'Alimentos',

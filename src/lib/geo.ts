@@ -1,4 +1,4 @@
-import type { Coordenada } from '@/types'
+import type { Coordenada } from '@/dominio/modelos'
 
 /**
  * Distancia sobre la superficie terrestre (haversine), en kilómetros.

@@ -21,7 +21,7 @@ import {
 import { PublicarAyuda } from '@/components/PublicarAyuda'
 import { SelloFuente } from '@/components/Fuente'
 import { usePreferencias } from '@/state/preferencias'
-import { useAyudas, useEmergencias, enlaceWhatsapp, type AyudaCorag, type TipoAyuda } from '@/data/corag'
+import { useAyudas, useEmergencias, enlaceWhatsapp, type AyudaCorag, type TipoAyuda } from '@/backends/corag'
 import { formatearDistancia } from '@/lib/geo'
 import { conteo, desde, numero } from '@/lib/format'
 

@@ -11,12 +11,19 @@ import {
   Share2,
   TriangleAlert,
 } from 'lucide-react'
-import { PageHeader, Kpi, Notice, SectionHead, EmptyState, SkeletonTarjeta } from '@/components/ui'
+import {
+  PageHeader,
+  Kpi,
+  AvisoError,
+  SectionHead,
+  EmptyState,
+  SkeletonTarjeta,
+} from '@/components/ui'
 import { CentroCard } from '@/components/CentroCard'
 import { SelectorCiudad } from '@/components/SelectorCiudad'
 import { AvisoTelefonos } from '@/components/Acceso'
 import { usePreferencias } from '@/state/preferencias'
-import { useDatosCiudad } from '@/data/useDatos'
+import { useDatosCiudad } from '@/datos/useDatosCiudad'
 import { conteo, desde, numero } from '@/lib/format'
 
 type Modo = 'ayudar' | 'recibir'
@@ -140,11 +147,7 @@ export function Ciudad() {
 
       <div className="container">
         <div className="stack">
-          {datos.error && (
-            <Notice tono="critical">
-              No pudimos cargar todos los datos: {datos.error.message}
-            </Notice>
-          )}
+          {datos.error ? <AvisoError error={datos.error} origen="AP" /> : null}
           <AvisoTelefonos />
         </div>
 

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Building2, ChevronRight, LocateFixed, MapPin, Search, TriangleAlert } from 'lucide-react'
 import { PageHeader, EmptyState, SkeletonLinea, Notice } from '@/components/ui'
 import { usePreferencias } from '@/state/preferencias'
-import { useCiudadesCercanas } from '@/data/useDatos'
+import { useCiudadesCercanas } from '@/datos/useDatosCiudad'
 import { coordenadaDeCiudad, formatearDistancia, obtenerUbicacion } from '@/lib/geo'
 import { conteo } from '@/lib/format'
 

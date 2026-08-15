@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Building2, MapPin, Search } from 'lucide-react'
 import { Sheet, EmptyState } from './ui'
-import { useCiudadesCercanas } from '@/data/useDatos'
+import { useCiudadesCercanas } from '@/datos/useDatosCiudad'
 import { usePreferencias } from '@/state/preferencias'
 import { coordenadaDeCiudad, formatearDistancia } from '@/lib/geo'
 

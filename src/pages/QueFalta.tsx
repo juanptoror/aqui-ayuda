@@ -1,10 +1,17 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Building2, ChevronRight, Package, TriangleAlert } from 'lucide-react'
-import { PageHeader, EmptyState, Notice, SectionHead, SkeletonLinea, Badge } from '@/components/ui'
+import {
+  PageHeader,
+  EmptyState,
+  AvisoError,
+  SectionHead,
+  SkeletonLinea,
+  Badge,
+} from '@/components/ui'
 import { SelectorCiudad } from '@/components/SelectorCiudad'
 import { usePreferencias } from '@/state/preferencias'
-import { useDatosCiudad } from '@/data/useDatos'
+import { useDatosCiudad } from '@/datos/useDatosCiudad'
 import { conteo, desde, numero } from '@/lib/format'
 
 /**
@@ -89,11 +96,11 @@ export function QueFalta() {
       />
 
       <div className="container">
-        {datos.error && (
+        {datos.error ? (
           <div className="stack">
-            <Notice tono="critical">No pudimos cargar los datos: {datos.error.message}</Notice>
+            <AvisoError error={datos.error} origen="AP" />
           </div>
-        )}
+        ) : null}
 
         <section className="section">
           <SectionHead
