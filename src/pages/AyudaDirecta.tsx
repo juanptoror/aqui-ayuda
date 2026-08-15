@@ -6,6 +6,7 @@ import {
   HandHeart,
   MapPin,
   MessageCircle,
+  PackageSearch,
   Plus,
   TriangleAlert,
   Users,
@@ -22,6 +23,7 @@ import { PublicarAyuda } from '@/components/PublicarAyuda'
 import { SelloFuente } from '@/components/Fuente'
 import { usePreferencias } from '@/state/preferencias'
 import { useAyudas, useEmergencias, enlaceWhatsapp, type AyudaCorag, type TipoAyuda } from '@/backends/corag'
+import { useCrucesConCentros, type CruceAyuda } from '@/datos/useCruces'
 import { formatearDistancia } from '@/lib/geo'
 import { conteo, desde, numero } from '@/lib/format'
 
@@ -46,6 +48,10 @@ export function AyudaDirecta() {
 
   const items = q.data?.items ?? []
   const emergencia = qEmergencias.data?.[0]
+
+  // Cruce con el inventario de los centros: la razón de tener las dos fuentes.
+  const cruces = useCrucesConCentros(items)
+  const conCruce = items.filter((a) => cruces.has(a.id)).length
 
   return (
     <>
@@ -80,6 +86,16 @@ export function AyudaDirecta() {
             Estas publicaciones vienen de <strong>Corag</strong>, no de los centros de acopio. Los
             teléfonos se muestran porque cada persona autorizó publicarlos.
           </Notice>
+          {conCruce > 0 && (
+            <Notice tono="info" icono={PackageSearch}>
+              <strong>
+                {conteo(conCruce, 'petición ya la puede cubrir', 'peticiones ya las pueden cubrir')}{' '}
+                un centro cercano.
+              </strong>{' '}
+              Lo cruzamos con el inventario de Ayudas Pereira: si alguien pide agua y un centro a
+              dos calles la tiene, aquí lo dice.
+            </Notice>
+          )}
           {q.error && (
             <Notice tono="critical">
               No pudimos cargar la ayuda directa: {(q.error as Error).message}
@@ -210,7 +226,7 @@ export function AyudaDirecta() {
           ) : (
             <div className="grid grid--cards">
               {items.map((a) => (
-                <TarjetaAyuda key={a.id} ayuda={a} />
+                <TarjetaAyuda key={a.id} ayuda={a} cruce={cruces.get(a.id)} />
               ))}
             </div>
           )}
@@ -243,7 +259,7 @@ function lugarDe(ayuda: AyudaCorag): string {
   return unicas.join(' · ')
 }
 
-function TarjetaAyuda({ ayuda }: { ayuda: AyudaCorag }) {
+function TarjetaAyuda({ ayuda, cruce }: { ayuda: AyudaCorag; cruce?: CruceAyuda }) {
   const wa = enlaceWhatsapp(ayuda.contact?.whatsapp ?? null, ayuda.title)
   const cobertura = ayuda.quantities?.coveragePercentage ?? null
   const urgente = ayuda.urgency === 'urgent'
@@ -329,6 +345,41 @@ function TarjetaAyuda({ ayuda }: { ayuda: AyudaCorag }) {
                 }}
               />
             </div>
+          </div>
+        )}
+
+        {/* EL CRUCE ENTRE LOS DOS BACKENDS.
+            Esta persona pide algo en Corag y un centro de Ayudas Pereira lo
+            tiene. Son dos bases de datos que no se hablan; esto las conecta. */}
+        {cruce && cruce.centros.length > 0 && (
+          <div className="cruce">
+            <div className="cruce__titulo">
+              <PackageSearch size={13} strokeWidth={2.6} />
+              {cruce.hayExacto ? 'Esto lo tienen cerca' : 'Hay algo parecido cerca'}
+            </div>
+            <ul className="cruce__lista">
+              {cruce.centros.map((c) => (
+                <li key={c.centroId + c.unidad}>
+                  <Link to={`/centro/${encodeURIComponent(c.centroId)}`}>{c.centroNombre}</Link>
+                  <span className="num" style={{ color: 'var(--text-muted)' }}>
+                    {' '}
+                    · {numero(c.cantidad)} {c.unidad}
+                  </span>
+                  {c.distanciaKm != null && (
+                    <span className="num" style={{ color: 'var(--text-subtle)' }}>
+                      {' '}
+                      · a {formatearDistancia(c.distanciaKm)}
+                    </span>
+                  )}
+                  {!c.abierto && (
+                    <span style={{ color: 'var(--text-subtle)' }}> · cerrado</span>
+                  )}
+                  {c.precision === 'aproximada' && (
+                    <span style={{ color: 'var(--text-subtle)' }}> · parecido</span>
+                  )}
+                </li>
+              ))}
+            </ul>
           </div>
         )}
 

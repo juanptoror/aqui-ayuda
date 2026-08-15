@@ -75,7 +75,32 @@ por separado no dicen nada.
 | Vehículo de Ayudas Pereira ↔ petición de Corag que necesita transporte | El cuello de botella real | Leer `vehiculos` y cruzar por zona |
 | Mapa único | Centros y personas en una sola vista | Ambos traen `lat`/`lng`; falta la pantalla |
 
-### El bloqueo: los vocabularios no coinciden
+### Resuelto: taxonomía de dos niveles
+
+[taxonomia.ts](../src/dominio/taxonomia.ts) traduce ambos vocabularios a uno
+común con **general → subcategoría**. El cruce se hace por subcategoría cuando
+hay equivalencia exacta y por general cuando solo son parientes, y la interfaz
+distingue ambos casos ("esto lo tienen cerca" frente a "hay algo parecido").
+
+Dos reglas evitan cruces absurdos:
+
+1. Lo marcado como **servicio** (`transporte`, `voluntariado`, `acopio`) nunca
+   se cruza contra inventario: nadie guarda cajas de voluntariado en una bodega.
+2. `otros` con `otros` **no** cuenta como parecido: no es un parecido, es que no
+   sabemos de qué habla ninguno de los dos.
+
+Dos decisiones que no son obvias y conviene revisar:
+
+- **`salud` de Corag no es `Medicamentos`**: puede ser atención, curaciones o
+  traslado sanitario. Tiene subcategoría propia dentro de la general "Salud", de
+  modo que cruza a nivel general pero no promete equivalencia exacta.
+- **`refugio` va a "Alojamiento", no a "Cobijas"**: quien pide refugio pide
+  dónde dormir, no una manta. Comparten la general "Abrigo y descanso".
+
+Resultado medido: **48 de 60 peticiones** de Corag tienen un centro de Ayudas
+Pereira que puede cubrirlas, la más cercana a 436 m.
+
+### El vocabulario de partida
 
 Ninguno de esos cruces funciona sin traducir categorías, y las dos listas son
 distintas:

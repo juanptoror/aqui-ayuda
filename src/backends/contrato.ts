@@ -5,6 +5,8 @@ import type {
   ItemInventario,
   Necesidad,
   Transporte,
+  Vehiculo,
+  Voluntario,
 } from '@/dominio/modelos'
 
 /**
@@ -64,6 +66,8 @@ export interface LecturasBackend {
   necesidades?: () => Promise<Necesidad[]>
   inventario?: () => Promise<ItemInventario[]>
   transportes?: () => Promise<Transporte[]>
+  voluntarios?: () => Promise<Voluntario[]>
+  vehiculos?: () => Promise<Vehiculo[]>
 }
 
 /* ------------------------------ Escrituras -------------------------------- */
