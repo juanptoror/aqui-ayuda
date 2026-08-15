@@ -10,6 +10,7 @@ import {
   Badge,
 } from '@/components/ui'
 import { SelectorCiudad } from '@/components/SelectorCiudad'
+import { DetalleNecesidad } from '@/components/DetalleNecesidad'
 import { usePreferencias } from '@/state/preferencias'
 import { useDatosCiudad } from '@/datos/useDatosCiudad'
 import { conteo, desde, numero } from '@/lib/format'
@@ -21,6 +22,7 @@ import { conteo, desde, numero } from '@/lib/format'
 export function QueFalta() {
   const { ubicacion, ciudadGuardada } = usePreferencias()
   const [selectorAbierto, setSelectorAbierto] = useState(false)
+  const [categoriaAbierta, setCategoriaAbierta] = useState<string | null>(null)
   const datos = useDatosCiudad(ciudadGuardada ?? undefined, ubicacion)
 
   if (!ciudadGuardada) {
@@ -145,10 +147,18 @@ export function QueFalta() {
                   <li
                     key={c.categoria}
                     style={{
-                      padding: 'var(--sp-4) var(--sp-5)',
                       borderTop: i === 0 ? 'none' : '1px solid var(--border)',
                     }}
                   >
+                    {/* Pulsable entera: la categoría sola no dice qué comprar
+                        ni a dónde llevarlo, y esas dos cosas ya estaban
+                        cargadas —solo faltaba abrirlas. */}
+                    <button
+                      type="button"
+                      className="fila-pulsable"
+                      onClick={() => setCategoriaAbierta(c.categoria)}
+                      aria-label={`Ver qué centros piden ${c.categoria}`}
+                    >
                     <div className="row" style={{ marginBottom: 'var(--sp-2)' }}>
                       <span
                         className="num"
@@ -172,6 +182,7 @@ export function QueFalta() {
                       >
                         {numero(c.total)}
                       </span>
+                      <ChevronRight size={17} className="fila-pulsable__flecha" />
                     </div>
                     {/* Barra proporcional: se ve de un vistazo qué falta más. */}
                     <div
@@ -192,6 +203,7 @@ export function QueFalta() {
                         }}
                       />
                     </div>
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -201,6 +213,11 @@ export function QueFalta() {
       </div>
 
       <SelectorCiudad abierto={selectorAbierto} alCerrar={() => setSelectorAbierto(false)} />
+      <DetalleNecesidad
+        categoria={categoriaAbierta}
+        centros={datos.centros}
+        alCerrar={() => setCategoriaAbierta(null)}
+      />
     </>
   )
 }

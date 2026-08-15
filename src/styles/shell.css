@@ -22,6 +22,11 @@
   flex: 0 0 var(--sidebar-w);
   flex-direction: column;
   gap: var(--sp-2);
+  /* Altura fija con contenido que crece: sin esto, en una pantalla de 720 px
+     el pie —tema, acerca y salir— se salía por debajo y no había forma de
+     alcanzarlo, porque un contenedor `sticky` no se desplaza con la página. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: var(--sp-5) var(--sp-4);
   background: var(--surface);
   border-inline-end: 1px solid var(--border);
@@ -560,4 +565,105 @@
   --notice-bg: var(--info-soft);
   --notice-fg: var(--info-on-soft);
   --notice-border: var(--info-border);
+}
+
+/* Los botones del pie usan .btn, que centra su contenido; los navlink no.
+   Puestos en la misma columna, el texto bailaba: tres elementos centrados
+   debajo de siete alineados a la izquierda. Aquí se les da la misma silueta
+   que un navlink sin duplicar el componente. */
+.sidebar__foot .btn {
+  justify-content: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+  /* Por variables y no por propiedades: si se aplanaran directamente, ganarían
+     por especificidad a .btn--soft y el unico punto de entrada al login se
+     pintaria como una fila gris mas, indistinguible de "Tema oscuro". */
+  --btn-bg: transparent;
+  --btn-border: transparent;
+  --btn-shadow: none;
+  --btn-fg: var(--text-muted);
+  font-weight: 620;
+}
+
+.sidebar__foot .btn:hover {
+  background: var(--surface-3);
+  color: var(--text);
+  box-shadow: none;
+  transform: none;
+}
+
+/* ------------------------------ Municipio --------------------------------- */
+/* Casi todo lo que enseña la app depende de esta elección, así que vive en el
+   marco y no dentro de una pantalla concreta. */
+
+.municipio {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  min-width: 0;
+  margin-bottom: var(--sp-5);
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease);
+}
+
+.municipio:hover {
+  background: var(--surface-3);
+  border-color: var(--border-strong);
+}
+
+.municipio svg {
+  flex: none;
+}
+
+.municipio__texto {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.municipio__label {
+  font-size: var(--text-micro);
+  font-weight: 700;
+  letter-spacing: var(--tracking-micro);
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+.municipio__nombre {
+  font-weight: 700;
+  min-width: 0;
+}
+
+.municipio__chevron {
+  color: var(--text-subtle);
+}
+
+/* En la barra superior compite con la marca y los dos botones de icono: se
+   queda solo con el nombre y se recorta antes que nada, porque de los cuatro
+   es el único cuyo texto puede tener veinte caracteres. */
+.municipio--compacto {
+  width: auto;
+  max-width: 11rem;
+  margin-bottom: 0;
+  flex: 0 1 auto;
+  padding: var(--sp-2) var(--sp-3);
+}
+
+@media (max-width: 400px) {
+  .municipio--compacto {
+    max-width: 7.5rem;
+  }
 }

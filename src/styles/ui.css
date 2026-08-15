@@ -1421,3 +1421,103 @@
   border-radius: 50%;
   border: 1px solid var(--border-strong);
 }
+
+/* ------------------------- Enlace a mapa externo -------------------------- */
+/* La marca "aprox." no es decorativa: la mitad de los registros solo tienen
+   dirección escrita a mano, y llevar a alguien a la calle equivocada en una
+   emergencia es peor que no llevarlo. */
+
+.enlace-mapa {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+  font-size: var(--text-sm);
+  font-weight: 650;
+  color: var(--accion);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.enlace-mapa:hover {
+  text-decoration: underline;
+}
+
+.enlace-mapa__aprox {
+  flex: none;
+  padding: 0 var(--sp-2);
+  font-size: var(--text-micro);
+  font-weight: 700;
+  letter-spacing: var(--tracking-micro);
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-full);
+}
+
+/* ---------------------- Listas dentro de una ficha ------------------------ */
+
+.lista-detalle {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.lista-detalle > li {
+  min-width: 0;
+  padding: var(--sp-3) 0;
+  border-top: 1px solid var(--border);
+}
+
+.lista-detalle > li:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.detalle-nota {
+  margin: var(--sp-2) 0 0;
+  padding-left: var(--sp-3);
+  border-left: 2px solid var(--border-strong);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  overflow-wrap: break-word;
+}
+
+/* --------------------------- Fila pulsable -------------------------------- */
+/* Una lista donde solo algunas filas se pueden pulsar es una trampa: la flecha
+   y el cambio de fondo al pasar por encima son lo que dice cuáles sí. */
+
+.fila-pulsable {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: var(--sp-4) var(--sp-5);
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease);
+}
+
+.fila-pulsable:hover {
+  background: var(--surface-2);
+}
+
+.fila-pulsable:focus-visible {
+  outline: 2px solid var(--brand-ring);
+  outline-offset: -2px;
+}
+
+.fila-pulsable__flecha {
+  flex-shrink: 0;
+  color: var(--text-subtle);
+  transition: transform var(--dur-fast) var(--ease);
+}
+
+.fila-pulsable:hover .fila-pulsable__flecha {
+  transform: translateX(2px);
+  color: var(--text);
+}

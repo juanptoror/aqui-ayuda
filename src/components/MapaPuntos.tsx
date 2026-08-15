@@ -1,5 +1,6 @@
 import { useMemo, useState, type KeyboardEvent } from 'react'
 import type { Origen } from './Fuente'
+import { ComoLlegar } from './ComoLlegar'
 
 /**
  * Mapa de posiciones sin librería, sin tiles y sin red.
@@ -185,19 +186,27 @@ export function MapaPuntos({ puntos, yoEstoyAqui = null, alto }: Props) {
         aria-live="polite"
       >
         {seleccionado ? (
-          <>
-            <div className="truncate" style={{ fontWeight: 700 }}>
-              {seleccionado.titulo}
-            </div>
-            {seleccionado.detalle && (
-              <div
-                className="truncate"
-                style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}
-              >
-                {seleccionado.detalle}
+          <div className="row row--wrap">
+            <div className="min0" style={{ flex: '1 1 14rem' }}>
+              <div className="truncate" style={{ fontWeight: 700 }}>
+                {seleccionado.titulo}
               </div>
-            )}
-          </>
+              {seleccionado.detalle && (
+                <div
+                  className="truncate"
+                  style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}
+                >
+                  {seleccionado.detalle}
+                </div>
+              )}
+            </div>
+            {/* Nuestro mapa dice quién está cerca de qué; para *llegar* hace
+                falta la app del teléfono, con su tráfico y su voz. */}
+            <ComoLlegar
+              destino={{ lat: seleccionado.lat, lng: seleccionado.lng, nombre: seleccionado.titulo }}
+              tamano="sm"
+            />
+          </div>
         ) : (
           <div style={{ color: 'var(--text-subtle)', fontSize: 'var(--text-sm)' }}>
             Toca un punto para ver qué hay ahí.

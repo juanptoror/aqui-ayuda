@@ -102,7 +102,9 @@ test.describe('quién puede ayudar', () => {
   test('resume por tarea antes de listar nombres', async ({ page }) => {
     await conCiudad(page, 'pereira-2')
     await page.goto('/manos')
-    await page.waitForSelector('.card', { timeout: 45_000 })
+    // Esperar a `.card` no basta: el resumen por tarea se calcula de la misma
+    // consulta pero se pinta en otro bloque, y bajo carga llegaba después.
+    await page.waitForSelector('.chips .chip', { timeout: 45_000 })
 
     const chips = await page.locator('.chips .chip').count()
     expect(chips).toBeGreaterThan(0)
@@ -142,5 +144,107 @@ test.describe('qué lleva cada transporte', () => {
     const badges = page.locator('.panel li .chips .badge')
     expect(await badges.count()).toBeGreaterThan(0)
     expect((await badges.first().innerText()).trim().length).toBeGreaterThan(0)
+  })
+})
+
+test.describe('el marco de la aplicación', () => {
+  test('el municipio elegido está siempre a la vista y se puede cambiar', async ({ page }) => {
+    await conCiudad(page, 'pereira-2')
+    await page.setViewportSize({ width: 375, height: 812 })
+    await page.goto('/que-falta')
+    await page.waitForTimeout(2500)
+
+    await page.locator('.topbar .municipio').click()
+    await page.waitForSelector('.sheet', { timeout: 10_000 })
+    // La hoja sube deslizándose: medirla al aparecer la pilla a mitad de camino.
+    await page.waitForTimeout(700)
+
+    /* La hoja DEBE colgar del body. `position: fixed` no se resuelve contra la
+       ventana si un ancestro tiene backdrop-filter —y la barra superior lo
+       tiene—: montada ahí dentro, el 92% del panel quedaba por encima del
+       borde de la pantalla y, con el scroll del cuerpo bloqueado y sin overlay
+       que tocar, en un móvil no había forma de salir. */
+    const caja = await page.evaluate(() => {
+      const o = document.querySelector('.overlay') as HTMLElement
+      const s = document.querySelector('.sheet') as HTMLElement
+      const r = s.getBoundingClientRect()
+      return {
+        padre: o.parentElement?.tagName,
+        top: r.top,
+        bottom: r.bottom,
+        alto: window.innerHeight,
+      }
+    })
+
+    expect(caja.padre).toBe('BODY')
+    expect(caja.top).toBeGreaterThanOrEqual(0)
+    expect(caja.bottom).toBeLessThanOrEqual(caja.alto + 1)
+  })
+
+  test('las sub-rutas marcan su destino padre en el nav', async ({ page }) => {
+    await page.goto('/centro/no-existe-pero-da-igual')
+    await page.waitForTimeout(1200)
+
+    // Lo que importa es el resaltado, no que el centro exista.
+    const activo = await page
+      .locator('.bottomnav__item--active, .sidebar .navlink--active')
+      .first()
+      .innerText()
+    expect(activo).toMatch(/Centros/i)
+  })
+
+  test('el pie de la barra lateral va alineado como el resto del nav', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto('/')
+    await page.waitForTimeout(1200)
+
+    const justificados = await page.$$eval('.sidebar__foot .btn', (n) =>
+      n.map((e) => getComputedStyle(e).justifyContent),
+    )
+    expect(justificados.length).toBeGreaterThan(0)
+    expect(justificados.every((j) => j === 'flex-start')).toBe(true)
+
+    const orden = await page.$$eval('.sidebar__foot > *', (n) =>
+      n.map((e) => (e as HTMLElement).innerText.trim()),
+    )
+    expect(orden[0]).toMatch(/Tema/i)
+    expect(orden[1]).toMatch(/Acerca/i)
+  })
+})
+
+test.describe('cómo llegar', () => {
+  test('cada necesidad abre su detalle con qué donar y dónde', async ({ page }) => {
+    await conCiudad(page, 'pereira-2')
+    await page.goto('/que-falta')
+    await page.waitForSelector('.fila-pulsable', { timeout: 45_000 })
+    await page.waitForTimeout(1500)
+
+    await page.locator('.fila-pulsable').first().click()
+    await page.waitForSelector('.sheet', { timeout: 10_000 })
+
+    // La categoría sola no dice qué comprar. La descripción del centro sí.
+    const hoja = page.locator('.sheet')
+    await expect(hoja.locator('.detalle-nota').first()).toBeVisible()
+
+    const enlaces = hoja.locator('.enlace-mapa')
+    expect(await enlaces.count()).toBeGreaterThan(0)
+    const href = await enlaces.first().getAttribute('href')
+    expect(href).toMatch(/^https:\/\/www\.google\.com\/maps\//)
+  })
+
+  test('nunca se ofrece llegar a un sitio sin destino', async ({ page }) => {
+    await conCiudad(page, 'pereira-2')
+    await page.goto('/ciudades')
+    await page.waitForTimeout(3000)
+
+    // Un botón que abre un mapa en blanco hace bajar a la calle a alguien que
+    // se cree que sabe dónde va.
+    const vacios = await page.$$eval('.enlace-mapa, a.btn[href*="google.com/maps"]', (n) =>
+      n.filter((e) => {
+        const h = e.getAttribute('href') ?? ''
+        return !h || /(query|destination)=(\s*$|,|undefined|null)/.test(h)
+      }).length,
+    )
+    expect(vacios).toBe(0)
   })
 })

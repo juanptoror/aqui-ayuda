@@ -23,6 +23,7 @@ import { PublicarAyuda } from '@/components/PublicarAyuda'
 import { SelloFuente } from '@/components/Fuente'
 import { usePreferencias } from '@/state/preferencias'
 import { useAyudas, useEmergencias, enlaceWhatsapp, type AyudaCorag, type TipoAyuda } from '@/backends/corag'
+import { ComoLlegar } from '@/components/ComoLlegar'
 import { useCrucesConCentros, type CruceAyuda } from '@/datos/useCruces'
 import { formatearDistancia } from '@/lib/geo'
 import { conteo, desde, numero } from '@/lib/format'
@@ -312,6 +313,18 @@ function TarjetaAyuda({ ayuda, cruce }: { ayuda: AyudaCorag; cruce?: CruceAyuda 
                   Cuba"): se comparan sin distinguir mayúsculas ni espacios
                   sobrantes antes de unirlos. */}
               <div className="deflist__value clamp-2">{lugarDe(ayuda)}</div>
+              {/* Corag publica coordenada exacta en casi todas: es la diferencia
+                  entre "está en Guadalupe" y poder salir hacia allá. */}
+              <ComoLlegar
+                destino={{
+                  lat: ayuda.location?.latitude,
+                  lng: ayuda.location?.longitude,
+                  direccion: ayuda.location?.address,
+                  zona: ayuda.location?.neighborhood,
+                  nombre: ayuda.title,
+                }}
+                variante="enlace"
+              />
             </div>
           </div>
         )}
