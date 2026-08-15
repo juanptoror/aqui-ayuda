@@ -38,21 +38,6 @@ export function conteo(n: number, singular: string, plural_: string): string {
   return `${numero(n)} ${plural(n, singular, plural_)}`
 }
 
-/** Enlace de navegación que funciona en Android, iOS y escritorio. */
-export function enlaceMapa(
-  lat: number | null,
-  lng: number | null,
-  direccion: string | null,
-): string | null {
-  if (lat != null && lng != null) {
-    return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
-  }
-  if (direccion) {
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(direccion)}`
-  }
-  return null
-}
-
 /** Deja el teléfono marcable aunque venga con espacios, guiones o paréntesis. */
 export function enlaceTelefono(telefono: string | null): string | null {
   if (!telefono) return null

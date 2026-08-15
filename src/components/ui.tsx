@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { AlertTriangle, Info, X, type LucideIcon } from 'lucide-react'
 import { mensajeDe } from '@/lib/errores'
 
@@ -313,7 +314,21 @@ export function Sheet({
 
   if (!abierta) return null
 
-  return (
+  /**
+   * Se monta en `document.body`, no donde está escrito.
+   *
+   * `position: fixed` NO se resuelve contra la ventana si algún ancestro tiene
+   * `backdrop-filter`, `transform` o `filter`: ese ancestro pasa a ser el
+   * bloque contenedor. La barra superior tiene `backdrop-filter`, así que
+   * cualquier hoja abierta desde ella se dibujaba dentro de sus 59 px de alto
+   * —el 92% del panel quedaba por encima del borde de la pantalla— y, como el
+   * cuerpo queda con el scroll bloqueado y no había overlay que tocar para
+   * cerrar, en un móvil sin tecla Escape no había salida.
+   *
+   * Un portal lo arregla de raíz y para todas las hojas, presentes y futuras,
+   * sin obligar a vigilar qué ancestro tiene un filtro.
+   */
+  return createPortal(
     <div
       className="overlay"
       onMouseDown={(e) => {
@@ -345,7 +360,8 @@ export function Sheet({
         <div className="sheet__body">{children}</div>
         {pie && <div className="sheet__footer">{pie}</div>}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 

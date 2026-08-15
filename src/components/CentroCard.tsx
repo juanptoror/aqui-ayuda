@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom'
-import { CircleSlash, MapPin, Navigation, Package, Phone, User } from 'lucide-react'
+import { CircleSlash, MapPin, Package, Phone, User } from 'lucide-react'
 import type { CentroVista } from '@/dominio/modelos'
 import { formatearDistancia } from '@/lib/geo'
-import { conteo, enlaceMapa, enlaceTelefono } from '@/lib/format'
+import { conteo, enlaceTelefono } from '@/lib/format'
+import { ComoLlegar } from './ComoLlegar'
+import { enlaceVerEnMapa } from '@/lib/mapas'
 import { Badge } from './ui'
 import { SelloFuente } from './Fuente'
 
@@ -22,7 +24,8 @@ export function CentroCard({ centro, modo }: { centro: CentroVista; modo: 'ayuda
         ? 'var(--warning)'
         : 'var(--success)'
 
-  const mapa = enlaceMapa(centro.lat, centro.lng, centro.direccion)
+  const destino = { lat: centro.lat, lng: centro.lng, direccion: centro.direccion, nombre: centro.nombre }
+  const mapa = enlaceVerEnMapa(destino)
   const tel = enlaceTelefono(centro.telefono ?? null)
 
   const categorias =
@@ -142,16 +145,9 @@ export function CentroCard({ centro, modo }: { centro: CentroVista; modo: 'ayuda
       <div className="card__footer">
         <SelloFuente origen="ayudas-pereira" />
         {mapa ? (
-          <a
-            className="btn btn--sm btn--soft"
-            href={mapa}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ position: 'relative', zIndex: 1 }}
-          >
-            <Navigation size={15} />
-            <span>Cómo llegar</span>
-          </a>
+          <span style={{ position: 'relative', zIndex: 1 }}>
+            <ComoLlegar destino={destino} tamano="sm" />
+          </span>
         ) : (
           <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-subtle)' }}>
             Sin dirección

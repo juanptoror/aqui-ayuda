@@ -9,7 +9,6 @@ import {
   DoorOpen,
   FileText,
   MapPin,
-  Navigation,
   Package,
   Phone,
   User,
@@ -34,7 +33,8 @@ import { useSesion } from '@/state/sesion'
 import { useDatosCiudad } from '@/datos/useDatosCiudad'
 import { useMunicipios } from '@/datos/consultas'
 import { formatearDistancia } from '@/lib/geo'
-import { conteo, desde, enlaceMapa, enlaceTelefono, numero } from '@/lib/format'
+import { conteo, desde, enlaceTelefono, numero } from '@/lib/format'
+import { ComoLlegar } from '@/components/ComoLlegar'
 
 export function Centro() {
   const { id } = useParams<{ id: string }>()
@@ -107,7 +107,7 @@ export function Centro() {
     )
   }
 
-  const mapa = enlaceMapa(centro.lat, centro.lng, centro.direccion)
+  const destino = { lat: centro.lat, lng: centro.lng, direccion: centro.direccion, nombre: centro.nombre }
   const tel = enlaceTelefono(centro.telefono ?? null)
   const pendientes = centro.necesidades.filter((n) => n.estado === 'pendiente')
   const cubiertas = centro.necesidades.filter((n) => n.estado === 'cubierta')
@@ -141,12 +141,7 @@ export function Centro() {
               <UserPlus size={18} />
               <span>{unirse.isPending ? 'Enviando…' : 'Unirme al equipo'}</span>
             </button>
-            {mapa && (
-              <a className="btn btn--primary" href={mapa} target="_blank" rel="noopener noreferrer">
-                <Navigation size={18} />
-                <span>Cómo llegar</span>
-              </a>
-            )}
+            <ComoLlegar destino={destino} />
           </>
         }
       />

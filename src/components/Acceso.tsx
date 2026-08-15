@@ -169,7 +169,7 @@ export function BotonAcceso({ compacto }: { compacto?: boolean }) {
         title={correo ? `Salir de ${correo}` : 'Salir'}
         aria-label="Salir de la sesión"
       >
-        <LogOut size={18} />
+        <LogOut size={compacto ? 18 : 19} strokeWidth={2.1} />
         {!compacto && <span>Salir</span>}
       </button>
     )
@@ -184,7 +184,7 @@ export function BotonAcceso({ compacto }: { compacto?: boolean }) {
         aria-label="Entrar para ver teléfonos"
         title="Entrar para ver teléfonos"
       >
-        <KeyRound size={18} />
+        <KeyRound size={compacto ? 18 : 19} strokeWidth={2.1} />
         {!compacto && <span>Entrar</span>}
       </button>
       <Acceso abierto={abierto} alCerrar={() => setAbierto(false)} />
