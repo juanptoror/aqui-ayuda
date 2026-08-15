@@ -41,7 +41,10 @@ export function CentroCard({ centro, modo }: { centro: CentroVista; modo: 'ayuda
   const resto = categorias.length - visibles.length
 
   return (
-    <article className={`card card--interactive${centro.abierto ? '' : ' card--apagada'}`}>
+    <article
+      className={`card card--interactive${centro.abierto ? '' : ' card--apagada'}`}
+      data-tipo="centro"
+    >
       <span className="card__accent" style={{ ['--accent-color' as string]: acento }} />
 
       <div className="card__body">
