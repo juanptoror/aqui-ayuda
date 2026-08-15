@@ -332,18 +332,27 @@ export function Landing() {
         <section className="section">
           <SectionHead titulo="De dónde salen los datos" />
           <p className="section__desc">
-            AquíAyuda no inventa información: la reúne de dos fuentes abiertas e independientes.
-            Cada dato que ves lleva el sello de la suya, para que sepas quién lo publicó y a quién
-            acudir si algo no cuadra.
+            AquíAyuda no inventa información ni guarda nada: la reúne de{' '}
+            <strong>cuatro fuentes abiertas e independientes</strong>. Cada dato lleva el sello de
+            la suya, para que sepas quién lo publicó y a quién acudir si algo no cuadra. Ninguna
+            cubre a las demás: por eso están las cuatro.
           </p>
-          <div className="grid grid--halves">
+          <div className="grid grid--cards">
             <TarjetaFuente
               origen="ayudas-pereira"
               extra="Municipios, centros de acopio, qué necesitan y su inventario."
             />
             <TarjetaFuente
               origen="corag"
-              extra="La pantalla de ayuda entre personas y el formulario para publicar."
+              extra="Ayuda entre personas, con desglose de cuánto está cubierto."
+            />
+            <TarjetaFuente
+              origen="pereira-unida"
+              extra="Peticiones y ofrecimientos de vecinos, con teléfono, y 82 arriendos."
+            />
+            <TarjetaFuente
+              origen="vivienda"
+              extra="Inmuebles en arriendo con fotos, sobre todo en el Quindío."
             />
           </div>
         </section>

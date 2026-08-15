@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { LocateFixed, MapPin } from 'lucide-react'
 import { PageHeader, EmptyState, Notice, SkeletonLinea } from '@/components/ui'
 import { MapaPuntos, type PuntoMapa } from '@/components/MapaPuntos'
+import { FuentesDeLaPantalla } from '@/components/Fuente'
 import { SelectorCiudad } from '@/components/SelectorCiudad'
 import { usePreferencias } from '@/state/preferencias'
 import { useSesion } from '@/state/sesion'
@@ -156,6 +157,11 @@ export function Mapa() {
       />
 
       <div className="container">
+        <FuentesDeLaPantalla
+          origenes={['ayudas-pereira', 'corag']}
+          nota="Cuadrados los centros de acopio, círculos las personas. Cada fuente publica su propia coordenada; ninguna de las dos cubre a la otra."
+        />
+
         {errorUbicacion && (
           <div className="stack">
             <Notice tono="warning">{errorUbicacion}</Notice>

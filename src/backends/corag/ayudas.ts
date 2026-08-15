@@ -76,9 +76,59 @@ export interface AyudaCorag {
   contact: { name: string | null; whatsapp: string | null; contactCount: number } | null
   quantities: Cantidades | null
   verification: { confirmationCount: number; lastConfirmedAt: string | null } | null
-  collectionCenter: { status?: string } | null
+  collectionCenter: { status?: string; updatedAt?: string } | null
+  /**
+   * Desglose por recurso. La lista YA lo trae: `?view=detail&id=` devuelve
+   * exactamente el mismo objeto, comprobado campo a campo sobre 20
+   * publicaciones. No hace falta una segunda petición para la ficha.
+   */
+  resources?: RecursoCorag[]
+  /** Capacidad ofrecida cuando la publicación es logística. */
+  logistics?: {
+    vehicle: string | null
+    capacityKg: number | null
+    capacityBoxes: number | null
+    passengerCapacity: number | null
+    zones: string[] | null
+    availableUntil: string | null
+    isCollectionCenter: boolean
+  } | null
+  completion?: { completedByName: string | null; completedByWhatsapp: string | null } | null
+  /** Actividad de la comunidad, en orden. */
+  timeline?: EventoCorag[]
   createdAt: string
   publicUrl: string | null
+}
+
+export interface RecursoCorag {
+  id: string
+  category: string
+  label: string | null
+  unit: string
+  required: number
+  committed: number
+  received: number
+  pendingToCommit: number
+  pendingToDeliver: number
+  coveragePercentage: number
+  status: string
+}
+
+/**
+ * Un evento de la línea de tiempo.
+ *
+ * `type` puede traer valores que aún no conocemos: la interfaz pinta el
+ * `title` tal cual cuando no reconoce el tipo, porque un evento sin icono
+ * informa y un evento descartado no.
+ */
+export interface EventoCorag {
+  id: string
+  type: string
+  createdAt: string
+  title: string
+  detail: string | null
+  authorName: string | null
+  count: number | null
 }
 
 interface RespuestaLista {

@@ -16,6 +16,7 @@ import { ApuntarVehiculo } from '@/components/formularios/ApuntarVehiculo'
 import { usePreferencias } from '@/state/preferencias'
 import { useMunicipios, useVehiculos, useVoluntarios } from '@/datos/consultas'
 import { VecinosQueOfrecen } from '@/components/VecinosQueOfrecen'
+import { FuentesDeLaPantalla } from '@/components/Fuente'
 import { conteo } from '@/lib/format'
 
 /**
@@ -90,6 +91,8 @@ export function Manos() {
           subtitulo="Elige un municipio y verás quién se ha apuntado a echar una mano y qué vehículos hay disponibles."
         />
         <div className="container">
+
+
           <EmptyState
             icono={Building2}
             titulo="Primero elige un municipio"
@@ -147,6 +150,10 @@ export function Manos() {
       />
 
       <div className="container">
+        <FuentesDeLaPantalla
+          origenes={['pereira-unida', 'ayudas-pereira']}
+          nota="Los vecinos del tablón publican su teléfono; los voluntarios de los centros no, porque su backend lo reserva a quien coordina."
+        />
         {error ? (
           <div className="stack">
             <AvisoError error={error} origen="AP" />

@@ -78,3 +78,34 @@ export interface FilaPuntoAcopio {
   department: string | null
   contact: string | null
 }
+
+/**
+ * Arriendos publicados por la comunidad.
+ *
+ * Es la tabla mejor cuidada de las cuatro de esta fuente: 82 filas con 77
+ * coordenadas distintas y reales, precio en 69 y un estado que de verdad
+ * cambia (18 ya están ocupadas). Nada que ver con el otro listado de vivienda,
+ * cuyas coordenadas son un valor por defecto.
+ */
+export const COLUMNAS_RENTAL =
+  'id,municipality,department,neighborhood,address,property_type,furnished,contact,monthly_rent,photo_urls,lat,lng,submitted_at,status,created_at' as const
+
+export interface FilaRental {
+  id: string
+  municipality: string | null
+  department: string | null
+  neighborhood: string | null
+  address: string | null
+  /** Apartamento, Casa, Apartaestudio, Habitación, Local, Otro. */
+  property_type: string | null
+  furnished: boolean | null
+  contact: string | null
+  monthly_rent: number | null
+  photo_urls: string[] | null
+  lat: number | null
+  lng: number | null
+  submitted_at: string | null
+  /** `disponible` (64) u `ocupada` (18). Las ocupadas no se listan. */
+  status: string | null
+  created_at: string
+}

@@ -1,4 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import type { Backend } from '@/backends/contrato'
+import type { Alojamiento } from '@/dominio/modelos'
 import { ErrorApp, traducirError } from '@/lib/errores'
 
 /**
@@ -206,4 +208,64 @@ export function enlaceArrendador(numero: string | null, titulo: string): string 
   return `https://wa.me/${con57}?text=${encodeURIComponent(
     `Hola, vi tu publicación "${titulo}" en AquíAyuda y me interesa.`,
   )}`
+}
+
+/**
+ * El mismo listado, ya traducido al modelo común de alojamiento.
+ *
+ * `lat` y `lng` salen deliberadamente a null: la fuente publica 4.7/-74.05
+ * —Bogotá— para inmuebles que están en Armenia. Propagar esa coordenada
+ * pondría pines a 150 km del sitio real, y en una emergencia eso manda a
+ * alguien a coger una carretera para nada.
+ */
+function aAlojamiento(i: Inmueble): Alojamiento {
+  return {
+    id: `vi-${i.id}`,
+    origen: 'vivienda',
+    titulo: i.titulo,
+    descripcion: i.descripcion,
+    tipo: i.tipo,
+    ciudad: i.ciudad,
+    departamento: null,
+    barrio: i.barrio,
+    direccion: null,
+    precioMes: i.precio,
+    precioEnTexto: i.precioEnTexto,
+    amoblado: null,
+    // 0 no es cero habitaciones: es que nadie lo rellenó (22 de 30).
+    habitaciones: i.habitaciones > 0 ? i.habitaciones : null,
+    banos: i.banos > 0 ? i.banos : null,
+    parqueaderos: i.parqueaderos > 0 ? i.parqueaderos : null,
+    areaM2: i.areaM2,
+    disponible: true,
+    lat: null,
+    lng: null,
+    fotos: i.imagenes,
+    telefono: i.whatsapp,
+    contactos: i.contactos,
+    publicadoEn: i.publicadoEn,
+  }
+}
+
+export const vivienda: Backend = {
+  descripcion: {
+    id: 'vivienda',
+    nombre: 'Encuéntralo a un Clic',
+    tipo: 'Vivienda en arriendo',
+    descripcion: 'Inmuebles en arriendo con fotos, sobre todo en el Quindio.',
+    quienPublica: 'Propietarios e inmobiliarias.',
+    url: 'https://encuentraloaunclic.com',
+    capacidades: ['leer:alojamientos', 'escribir:alojamiento'],
+  },
+
+  leer: {
+    async alojamientos(): Promise<Alojamiento[]> {
+      const inmuebles = await leerInmuebles()
+      return inmuebles.map(aAlojamiento)
+    },
+  },
+
+  escribir: {
+    alojamiento: publicarInmueble,
+  },
 }
