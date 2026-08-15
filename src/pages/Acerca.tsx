@@ -1,29 +1,20 @@
-import { CircleCheck, Database, Info, Lock, TriangleAlert } from 'lucide-react'
-import { PageHeader, SectionHead, Notice, SkeletonLinea } from '@/components/ui'
-import { useCentros, useCiudades, useInventario, useNecesidades } from '@/data/queries'
-import { useSesion } from '@/state/sesion'
-import { conteo } from '@/lib/format'
+import { Link } from 'react-router-dom'
+import { Ban, CircleCheck, Eye, HardDrive, Info, ScrollText } from 'lucide-react'
+import { PageHeader, SectionHead, Notice } from '@/components/ui'
+import { TarjetaFuente } from '@/components/Fuente'
 
 /**
- * Estado del sistema en vivo. No es decoración: si una tabla deja de responder,
- * esta página dice cuál y por qué, en vez de dejar la app "rara sin motivo".
+ * Acerca del proyecto: qué es esto y qué pasa con tus datos.
+ *
+ * Está escrito para que lo entienda cualquiera, no para cubrirnos las espaldas.
+ * La idea que ordena la página es sencilla y cierta: AquíAyuda no guarda nada.
+ * Es una ventana a dos servicios que sí guardan, y cada uno tiene sus propias
+ * condiciones, enlazadas y resumidas aquí para que no haya que ir a buscarlas.
+ *
+ * El detalle técnico (estado de las tablas, permisos, errores) vive en /estado,
+ * que es donde lo busca quien lo necesita.
  */
 export function Acerca() {
-  const { sesion } = useSesion()
-  const ciudades = useCiudades()
-  const centros = useCentros(!!sesion)
-  const necesidades = useNecesidades()
-  const inventario = useInventario()
-
-  const fuentes = [
-    { nombre: 'ciudades', q: ciudades, descripcion: 'Municipios del directorio' },
-    { nombre: 'centros', q: centros, descripcion: 'Centros de acopio activos' },
-    { nombre: 'necesidades', q: necesidades, descripcion: 'Pedidos abiertos y cubiertos' },
-    { nombre: 'inventario', q: inventario, descripcion: 'Existencias reportadas' },
-  ]
-
-  const bloqueadas = fuentes.filter((f) => f.q.error)
-
   return (
     <>
       <PageHeader
@@ -33,136 +24,265 @@ export function Acerca() {
             Acerca del proyecto
           </>
         }
-        titulo="AquíAyuda"
-        subtitulo="Una iniciativa para centralizar la información de las ayudas y dar mayor eficiencia a las regiones afectadas por el terremoto. Sin registro obligatorio y sin publicidad."
+        titulo="Qué es AquíAyuda y qué pasa con tus datos"
+        subtitulo="Una iniciativa para centralizar la información de las ayudas tras el terremoto y que llegue donde hace falta. Sin registrarte, sin publicidad y sin cobrar nada."
+        estrecho
       />
 
-      <div className="container">
-        {bloqueadas.length > 0 && (
-          <div className="stack">
-            <Notice tono="critical">
-              <strong>
-                {conteo(bloqueadas.length, 'fuente de datos con error', 'fuentes de datos con error')}
-                .
-              </strong>{' '}
-              La app sigue funcionando con lo que puede leer.
-            </Notice>
-          </div>
-        )}
+      <div className="container container--narrow">
+        {/* --------------------- LO MÁS IMPORTANTE, PRIMERO --------------------- */}
+        <div className="stack">
+          <Notice tono="info" icono={HardDrive}>
+            <strong>Nosotros no guardamos nada tuyo.</strong> AquíAyuda no tiene base de datos ni
+            servidor propio: es una ventana a dos servicios que sí guardan información, y abajo te
+            contamos qué hace cada uno.
+          </Notice>
+        </div>
 
-        <section className="section" style={{ marginTop: 'var(--sp-6)' }}>
-          <SectionHead titulo="Estado de las fuentes de datos" />
+        <section className="section">
+          <SectionHead titulo="Qué queda en tu teléfono" />
           <div className="panel">
-            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-              {fuentes.map((f, i) => {
-                const error = f.q.error as Error | null
-                const cargando = f.q.isLoading
-                const total = Array.isArray(f.q.data) ? f.q.data.length : 0
+            <div className="panel__body stack">
+              <p style={{ margin: 0, color: 'var(--text-muted)' }}>
+                Tres cosas, y las tres se quedan dentro de tu navegador. Si borras los datos del
+                navegador, desaparecen.
+              </p>
+              <ul className="lista-clara lista-clara--simple">
+                <li>
+                  <strong>El municipio que elegiste</strong>, para no volver a preguntártelo cada
+                  vez que entras.
+                </li>
+                <li>
+                  <strong>Si prefieres el tema claro u oscuro.</strong>
+                </li>
+                <li>
+                  <strong>Tu ubicación</strong>, solo si nos la das, y únicamente para calcular a
+                  qué distancia te queda cada centro. Ese cálculo ocurre en tu teléfono.
+                </li>
+              </ul>
+              <p style={{ margin: 0, color: 'var(--text-muted)' }}>
+                No usamos cookies de seguimiento ni analítica propia. No sabemos quién eres ni
+                cuántas veces entras.
+              </p>
+            </div>
+          </div>
+        </section>
 
-                return (
-                  <li
-                    key={f.nombre}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: 'var(--sp-3)',
-                      padding: 'var(--sp-4) var(--sp-5)',
-                      borderTop: i === 0 ? 'none' : '1px solid var(--border)',
-                      minWidth: 0,
-                    }}
-                  >
-                    <span style={{ flexShrink: 0, marginTop: 2 }}>
-                      {cargando ? (
-                        <Database size={18} style={{ color: 'var(--text-subtle)' }} />
-                      ) : error ? (
-                        <TriangleAlert size={18} style={{ color: 'var(--critical)' }} />
-                      ) : (
-                        <CircleCheck size={18} style={{ color: 'var(--success)' }} />
-                      )}
-                    </span>
-                    <div className="min0" style={{ flex: '1 1 auto' }}>
-                      <div style={{ fontWeight: 700, fontFamily: 'var(--font-display)' }}>
-                        {f.nombre}
-                      </div>
-                      <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
-                        {f.descripcion}
-                      </div>
-                      {error && (
-                        <div
-                          style={{
-                            color: 'var(--critical)',
-                            fontSize: 'var(--text-sm)',
-                            marginTop: 4,
-                            overflowWrap: 'break-word',
-                          }}
-                        >
-                          {error.message}
-                        </div>
-                      )}
-                    </div>
-                    <span
-                      className="num"
-                      style={{ flexShrink: 0, fontWeight: 700, color: 'var(--text-muted)' }}
-                    >
-                      {cargando ? (
-                        <SkeletonLinea ancho="52px" alto={16} />
-                      ) : error ? (
-                        'sin acceso'
-                      ) : (
-                        `${total} filas`
-                      )}
-                    </span>
+        <section className="section">
+          <SectionHead titulo="Cuándo sí salen datos de tu teléfono" />
+          <div className="panel">
+            <div className="panel__body">
+              <p style={{ margin: 0, color: 'var(--text-muted)' }}>
+                Solo cuando tú decides hacer algo, y siempre te lo decimos antes:
+              </p>
+              <ul
+                className="lista-clara lista-clara--simple"
+                style={{ marginTop: 'var(--sp-4)' }}
+              >
+                <li>
+                  <strong>Si entras con tu correo</strong> para ver los teléfonos de los centros,
+                  ese correo va a Ayudas Pereira, que es quien te manda el código.
+                </li>
+                <li>
+                  <strong>Si publicas una solicitud o un ofrecimiento</strong>, lo que escribas
+                  —incluidos tu nombre, tu WhatsApp y tu ubicación— se envía a Corag y queda
+                  público. Por eso hay que marcar una casilla a mano: nadie la marca por ti.
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* ------------------------------ LAS FUENTES ---------------------------- */}
+        <section className="section">
+          <SectionHead titulo="Quién guarda la información que ves" />
+          <p className="section__desc">
+            Dos organizaciones distintas, cada una con sus reglas. Cada dato de la app lleva el
+            sello de la suya para que sepas siempre a quién corresponde.
+          </p>
+          <div className="grid grid--halves">
+            <TarjetaFuente
+              origen="ayudas-pereira"
+              extra="Municipios, centros de acopio, qué necesitan y su inventario."
+            />
+            <TarjetaFuente
+              origen="corag"
+              extra="La pantalla de ayuda entre personas y el formulario para publicar."
+            />
+          </div>
+        </section>
+
+        {/* -------------------------- AYUDAS PEREIRA ----------------------------- */}
+        <section className="section">
+          <SectionHead titulo="Condiciones de Ayudas Pereira" />
+          <div className="panel">
+            <div className="panel__body stack">
+              <Bloque titulo="Qué guardan">
+                Lo que se registra en la app: centros, direcciones, inventarios, necesidades,
+                transportes, donaciones y vehículos. Y los datos de contacto que alguien escribe
+                —nombre, teléfono y correo— para poder coordinar.
+              </Bloque>
+
+              <Bloque titulo="Para qué">
+                Solo para coordinar la ayuda de la emergencia: saber qué falta, dónde sobra y quién
+                puede llevarlo. <strong>No venden ni ceden estos datos a nadie.</strong>
+              </Bloque>
+
+              <Bloque titulo="Quién los ve" icono={Eye}>
+                Los inventarios y las necesidades son públicos: esa es la razón de ser de la app.
+                Los teléfonos solo los ve quien entró con su correo, y cada cambio queda registrado
+                con el correo de quien lo hizo.
+              </Bloque>
+
+              <Bloque titulo="Cookies">
+                Usan Google Analytics para contar cuántas personas entran y qué secciones usan. No
+                graba tu pantalla ni lo que escribes en los formularios, y los códigos de invitación
+                nunca se le envían.
+              </Bloque>
+
+              <Bloque titulo="Tus derechos" icono={ScrollText}>
+                Puedes pedir que corrijan o eliminen tus datos escribiendo a{' '}
+                <a href="mailto:felipelebrun@gmail.com">felipelebrun@gmail.com</a>. Ley 1581 de 2012
+                de protección de datos personales.
+              </Bloque>
+            </div>
+          </div>
+        </section>
+
+        {/* ------------------------------- CORAG --------------------------------- */}
+        <section className="section">
+          <SectionHead titulo="Condiciones de Corag" />
+          <div className="panel">
+            <div className="panel__body stack">
+              <p style={{ margin: 0, color: 'var(--text-muted)' }}>
+                Corag coordina ayuda entre personas que casi siempre están pasando un mal momento,
+                y trata eso como parte del servicio y no como una nota al pie. Este es el resumen;
+                el texto completo está en su web.
+              </p>
+
+              <Bloque titulo="Qué recogen">
+                Lo que escribes en sus formularios de contacto o en un reporte de conducta —que
+                puede enviarse de forma anónima, y entonces no guardan ni nombre ni correo—.
+                Métricas de uso agregadas y sin cookies, que no identifican a nadie. Tu idioma y tu
+                tema se quedan en tu navegador.
+              </Bloque>
+
+              <Bloque titulo="Qué no hacen nunca" icono={Ban}>
+                <ul className="lista-clara lista-clara--simple">
+                  <li>Vender, alquilar o ceder datos personales a terceros.</li>
+                  <li>
+                    Publicar teléfonos, direcciones o ubicaciones exactas sin autorización explícita
+                    de la persona.
                   </li>
-                )
-              })}
-            </ul>
+                  <li>Usar los datos de un formulario para mandarte publicidad que no pediste.</li>
+                  <li>Publicar evidencia con rasgos identificables de menores de edad.</li>
+                </ul>
+              </Bloque>
+
+              <Bloque titulo="Cuánto tiempo se guarda">
+                Los mensajes, mientras la conversación siga abierta y un tiempo razonable después.
+                La evidencia de una entrega permanece, porque es lo que hace verificable la ayuda;
+                los datos personales de quien recibió no forman parte de esa publicación.
+              </Bloque>
+
+              <Bloque titulo="Tus derechos" icono={ScrollText}>
+                Puedes pedir acceso a tus datos, su corrección o su eliminación, y retirar una
+                autorización que hayas dado antes. Si algo publicado te afecta y crees que no
+                debería estar ahí, dilo: se revisa siempre, y mientras se revisa se puede
+                despublicar.
+              </Bloque>
+
+              <Bloque titulo="Servicios que usan">
+                Su sitio se aloja en Cloudflare Pages, los formularios pasan por Dailybot y las
+                respuestas automáticas se envían con Resend. Cada uno recibe únicamente lo que
+                necesita para cumplir su función.
+              </Bloque>
+            </div>
+            <div className="card__footer">
+              <a
+                className="btn btn--sm"
+                href="https://corag.app/privacy/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span>Leer la política completa de Corag</span>
+              </a>
+            </div>
           </div>
         </section>
 
+        {/* ------------------------------- RESUMEN ------------------------------- */}
         <section className="section">
-          <SectionHead titulo="Por qué hay que entrar para ver los teléfonos" />
+          <SectionHead titulo="En una frase" />
           <div className="panel">
-            <div className="panel__body stack">
-              <p style={{ color: 'var(--text-muted)', margin: 0 }}>
-                Los permisos de <code>public.centros</code> están concedidos <strong>por columna</strong>,
-                no sobre la tabla entera. El rol público puede leer nombre, dirección, responsable,
-                notas, coordenadas, foto y si está abierto. La columna <code>telefono</code> está
-                reservada a sesiones iniciadas, para que los números de contacto de los voluntarios
-                no queden expuestos a cualquier rastreador.
-              </p>
-              <div className="notice notice--info">
-                <Lock size={17} strokeWidth={2.25} />
-                <div className="notice__text">
-                  Consecuencia práctica para quien programe sobre esta base:{' '}
-                  <code>select('*')</code> devuelve <code>42501 permission denied</code> aunque la
-                  lista explícita de columnas permitidas devuelva 200. Hay que pedir columnas
-                  concretas, y añadir <code>telefono</code> solo cuando hay sesión.
-                </div>
-              </div>
-              <p style={{ color: 'var(--text-muted)', margin: 0 }}>
-                El acceso es por código de un solo uso enviado al correo: no hay contraseña que
-                recordar ni que perder.
-              </p>
+            <div className="panel__body">
+              <ul className="lista-clara">
+                <li>
+                  <CircleCheck size={16} style={{ color: 'var(--success)' }} />
+                  <span>
+                    Puedes usar toda la app <strong>sin dar ningún dato</strong>: buscar tu
+                    municipio, ver qué falta y cómo llegar.
+                  </span>
+                </li>
+                <li>
+                  <CircleCheck size={16} style={{ color: 'var(--success)' }} />
+                  <span>
+                    Solo se envía algo <strong>cuando tú lo decides</strong>: al entrar con tu
+                    correo o al publicar una ayuda.
+                  </span>
+                </li>
+                <li>
+                  <CircleCheck size={16} style={{ color: 'var(--success)' }} />
+                  <span>
+                    Si quieres que borren algo, escribe a{' '}
+                    <a href="mailto:felipelebrun@gmail.com">felipelebrun@gmail.com</a> (Ayudas
+                    Pereira) o usa el formulario de{' '}
+                    <a href="https://corag.app/privacy/" target="_blank" rel="noopener noreferrer">
+                      Corag
+                    </a>
+                    .
+                  </span>
+                </li>
+              </ul>
             </div>
           </div>
         </section>
 
         <section className="section">
-          <SectionHead titulo="Cómo se usan tus datos" />
-          <div className="panel">
-            <div className="panel__body stack">
-              <p style={{ color: 'var(--text-muted)', margin: 0 }}>
-                La ubicación se usa solo en tu dispositivo para calcular distancias y ordenar la
-                lista. No se envía a ningún servidor ni se comparte con terceros.
-              </p>
-              <p style={{ color: 'var(--text-muted)', margin: 0 }}>
-                El municipio que eliges se guarda en tu navegador para no volver a preguntártelo. No
-                hay cookies de seguimiento ni analítica.
-              </p>
-            </div>
-          </div>
+          <p style={{ color: 'var(--text-subtle)', fontSize: 'var(--text-sm)' }}>
+            ¿Buscabas el detalle técnico? El estado de las fuentes de datos, los permisos y los
+            errores en vivo están en <Link to="/estado">estado del sistema</Link>.
+          </p>
         </section>
       </div>
     </>
+  )
+}
+
+function Bloque({
+  titulo,
+  icono: Icono,
+  children,
+}: {
+  titulo: string
+  icono?: typeof Eye
+  children: React.ReactNode
+}) {
+  return (
+    <div>
+      <h3
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--sp-2)',
+          fontSize: 'var(--text-h3)',
+          marginBottom: 'var(--sp-2)',
+        }}
+      >
+        {Icono && <Icono size={17} style={{ color: 'var(--text-subtle)', flexShrink: 0 }} />}
+        {titulo}
+      </h3>
+      <div style={{ color: 'var(--text-muted)' }}>{children}</div>
+    </div>
   )
 }

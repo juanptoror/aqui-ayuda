@@ -25,6 +25,7 @@ const RUTAS = [
   { nombre: 'ayuda-directa', url: '/ayuda-directa' },
   { nombre: 'como-ayudar', url: '/como-ayudar' },
   { nombre: 'acerca', url: '/acerca' },
+  { nombre: 'estado', url: '/estado' },
   { nombre: 'ruta-inexistente', url: '/no-existe-esta-ruta' },
 ]
 
