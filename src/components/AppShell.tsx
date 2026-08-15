@@ -41,6 +41,7 @@ const DESTINOS: Destino[] = [
 
 /** Destinos que solo aparecen en la barra lateral, por falta de sitio abajo. */
 const SECUNDARIOS: Destino[] = [
+  { a: '/quiero-ayudar', etiqueta: 'Tengo algo que dar', etiquetaCorta: 'Tengo', icono: HandHeart },
   { a: '/mapa', etiqueta: 'Mapa de la ayuda', etiquetaCorta: 'Mapa', icono: MapPin },
   { a: '/manos', etiqueta: 'Quién puede ayudar', etiquetaCorta: 'Manos', icono: Users },
   { a: '/vivienda', etiqueta: 'Vivienda en arriendo', etiquetaCorta: 'Vivienda', icono: BedDouble },

@@ -203,3 +203,78 @@ export const pereiraUnida: Backend = {
 
   escribir: {},
 }
+
+/* ------------------------------ Publicar ---------------------------------- */
+
+/**
+ * Vocabulario de Corag → vocabulario de este tablón.
+ *
+ * Publicar con una categoría que la fuente no usa deja la petición fuera de sus
+ * propios filtros: la ve quien mire la lista entera y nadie más. Estas son las
+ * nueve etiquetas que aparecen en sus 282 reportes, no las que nos gustaría.
+ */
+const CATEGORIA_DESDE_CORAG: Record<string, string> = {
+  alimentos: 'alimentos',
+  agua: 'alimentos',
+  salud: 'medicinas',
+  medicamentos: 'medicinas',
+  herramientas: 'herramientas',
+  rescate: 'herramientas_rescate',
+  transporte: 'transporte_logistica',
+  acopio: 'voluntariado',
+  voluntariado: 'voluntariado',
+  mascotas: 'mascotas',
+  refugio: 'otros',
+  otro: 'otros',
+}
+
+export interface BorradorReporte {
+  titulo: string
+  descripcion: string
+  /** Categoría en el vocabulario de Corag; aquí se traduce. */
+  categoria: string
+  urgente: boolean
+  municipio: string
+  departamento: string
+  lugar: string
+  lat: number | null
+  lng: number | null
+  telefono: string
+}
+
+/**
+ * Publica la misma petición también en este tablón.
+ *
+ * Es una escritura de mejor esfuerzo: quien la llama ya publicó en Corag y esto
+ * solo amplía el alcance. Si falla —la clave pública podría no tener permiso de
+ * inserción, cosa que no hemos comprobado porque exigía escribir en una base de
+ * producción ajena— la petición original sigue publicada, y eso es lo que se le
+ * cuenta a la persona.
+ */
+export async function publicarReporte(b: BorradorReporte): Promise<void> {
+  if (configuracionIncompleta) {
+    throw new ErrorApp({
+      mensaje: 'La aplicación no está bien configurada.',
+      sugerencia: 'Avisa a soporte con este código.',
+      codigo: 'PU-CFG0',
+      reintentable: false,
+    })
+  }
+
+  const { error } = await cliente.from('reports').insert({
+    title: b.titulo.trim(),
+    description: b.descripcion.trim() || '',
+    category: CATEGORIA_DESDE_CORAG[b.categoria] ?? 'otros',
+    urgent_level: b.urgente ? 'critico' : 'moderado',
+    status: 'buscando',
+    municipality: b.municipio.trim() || null,
+    department: b.departamento.trim() || null,
+    location_name: b.lugar.trim() || null,
+    lat: b.lat,
+    lng: b.lng,
+    contact_phone: b.telefono.replace(/\D/g, ''),
+    photo_urls: [],
+  } as never)
+
+  if (error) throw new ErrorApp(traducirError(error, 'PU'), error)
+}
