@@ -7,7 +7,7 @@ import type {
   BorradorVoluntario,
 } from '@/backends/contrato'
 import { ErrorApp, mensajeDe } from '@/lib/errores'
-import type { Centro, Ciudad, ItemInventario, Necesidad } from '@/dominio/modelos'
+import type { Centro, Ciudad, ItemInventario, Necesidad, Transporte } from '@/dominio/modelos'
 
 /**
  * Consultas de la app. No importan ningún backend por su nombre: piden al
@@ -81,6 +81,18 @@ export function useInventario(): UseQueryResult<ItemInventario[]> {
       const b = backendPrincipalPara('leer:inventario')
       if (!b?.leer.inventario) faltaProveedor('inventario')
       return b.leer.inventario()
+    },
+  })
+}
+
+export function useTransportes(): UseQueryResult<Transporte[]> {
+  return useQuery({
+    queryKey: ['transportes'],
+    ...BASE,
+    queryFn: async () => {
+      const b = backendPrincipalPara('leer:transportes')
+      if (!b?.leer.transportes) faltaProveedor('transportes')
+      return b.leer.transportes()
     },
   })
 }

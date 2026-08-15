@@ -22,6 +22,7 @@ const RUTAS = [
   { nombre: 'municipios', url: '/ciudades' },
   { nombre: 'ciudad', url: '/ciudad/dosquebradas' },
   { nombre: 'que-falta', url: '/que-falta' },
+  { nombre: 'inventario', url: '/inventario' },
   { nombre: 'ayuda-directa', url: '/ayuda-directa' },
   { nombre: 'como-ayudar', url: '/como-ayudar' },
   { nombre: 'acerca', url: '/acerca' },

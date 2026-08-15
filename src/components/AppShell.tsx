@@ -1,5 +1,6 @@
 import { NavLink, Link, useLocation } from 'react-router-dom'
 import {
+  Boxes,
   Building2,
   HandHeart,
   HeartHandshake,
@@ -28,6 +29,11 @@ const DESTINOS: Destino[] = [
   { a: '/ciudades', etiqueta: 'Centros de acopio', etiquetaCorta: 'Centros', icono: Building2 },
   { a: '/ayuda-directa', etiqueta: 'Ayuda entre personas', etiquetaCorta: 'Personas', icono: HandHeart },
   { a: '/que-falta', etiqueta: 'Qué falta', etiquetaCorta: 'Falta', icono: TriangleAlert },
+  { a: '/inventario', etiqueta: 'Qué hay y dónde', etiquetaCorta: 'Qué hay', icono: Boxes },
+]
+
+/** Destinos que solo aparecen en la barra lateral, por falta de sitio abajo. */
+const SECUNDARIOS: Destino[] = [
   { a: '/como-ayudar', etiqueta: 'Cómo ayudar', etiquetaCorta: 'Guía', icono: HeartHandshake },
 ]
 
@@ -88,6 +94,17 @@ export function AppShell({ children }: { children: ReactNode }) {
             key={d.a}
             to={d.a}
             end={d.a === '/'}
+            className={({ isActive }) => `navlink${isActive ? ' navlink--active' : ''}`}
+          >
+            <d.icono size={19} strokeWidth={2.1} />
+            <span>{d.etiqueta}</span>
+          </NavLink>
+        ))}
+
+        {SECUNDARIOS.map((d) => (
+          <NavLink
+            key={d.a}
+            to={d.a}
             className={({ isActive }) => `navlink${isActive ? ' navlink--active' : ''}`}
           >
             <d.icono size={19} strokeWidth={2.1} />

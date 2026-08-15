@@ -1,5 +1,5 @@
 import type { Backend } from '@/backends/contrato'
-import type { Centro, Ciudad, ItemInventario, Necesidad } from '@/dominio/modelos'
+import type { Centro, Ciudad, ItemInventario, Necesidad, Transporte } from '@/dominio/modelos'
 import { ErrorApp, comoErrorApp, traducirError } from '@/lib/errores'
 import { clienteAP, configuracionIncompleta, usuarioActual } from './cliente'
 import {
@@ -7,17 +7,20 @@ import {
   COLUMNAS_CIUDAD,
   COLUMNAS_INVENTARIO,
   COLUMNAS_NECESIDAD,
+  COLUMNAS_TRANSPORTE,
   COLUMNA_TELEFONO,
   type FilaCentro,
   type FilaCiudad,
   type FilaInventario,
   type FilaNecesidad,
+  type FilaTransporte,
 } from './esquema'
 import {
   aCentro,
   aCiudad,
   aItemInventario,
   aNecesidad,
+  aTransporte,
   deOfrecimiento,
   deTransporte,
   deVehiculo,
@@ -91,6 +94,7 @@ export const ayudasPereira: Backend = {
       'leer:centros',
       'leer:necesidades',
       'leer:inventario',
+      'leer:transportes',
       'escribir:ofrecimiento',
       'escribir:voluntario',
       'escribir:vehiculo',
@@ -129,6 +133,11 @@ export const ayudasPereira: Backend = {
     async inventario(): Promise<ItemInventario[]> {
       const filas = await leer<FilaInventario>('inventario', COLUMNAS_INVENTARIO)
       return filas.map(aItemInventario)
+    },
+
+    async transportes(): Promise<Transporte[]> {
+      const filas = await leer<FilaTransporte>('transportes', COLUMNAS_TRANSPORTE)
+      return filas.map(aTransporte)
     },
   },
 

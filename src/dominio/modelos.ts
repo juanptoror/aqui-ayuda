@@ -70,6 +70,50 @@ export interface CentroVista extends Centro {
   distanciaKm: number | null
 }
 
+export type EstadoTransporte = 'programado' | 'en_ruta' | 'entregado' | 'cancelado'
+
+export interface Transporte {
+  id: string
+  ciudadId: string | null
+  origenId: string | null
+  destinoId: string | null
+  /** Destino escrito a mano cuando no es un centro del listado. */
+  destinoTexto: string | null
+  carga: string | null
+  vehiculo: string | null
+  conductor: string | null
+  estado: EstadoTransporte
+  /** Hora de salida prevista, o null si se registra al ponerlo en ruta. */
+  salida: string | null
+  notas: string | null
+  creadoEn: string
+}
+
+/** Una categoría con dónde está y cuánto hay. Alimenta la vista de inventario. */
+export interface ExistenciaPorCentro {
+  centroId: string
+  centroNombre: string
+  centroAbierto: boolean
+  cantidad: number
+  unidad: string
+  actualizadoEn: string
+}
+
+export interface ResumenCategoria {
+  categoria: string
+  /** Suma por unidad: no se pueden sumar cajas con kits. */
+  totalesPorUnidad: { unidad: string; cantidad: number }[]
+  disponibleEn: ExistenciaPorCentro[]
+  /** Centros que la están pidiendo, con su prioridad más alta. */
+  solicitadaEn: {
+    centroId: string
+    centroNombre: string
+    centroAbierto: boolean
+    prioridad: Prioridad
+    descripcion: string | null
+  }[]
+}
+
 /** Las 10 categorías que aparecen en los datos reales. */
 export const CATEGORIAS = [
   'Agua',

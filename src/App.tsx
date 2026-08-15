@@ -15,6 +15,7 @@ import { AyudaDirecta } from '@/pages/AyudaDirecta'
 import { ComoAyudar } from '@/pages/ComoAyudar'
 import { Acerca } from '@/pages/Acerca'
 import { Estado } from '@/pages/Estado'
+import { Inventario } from '@/pages/Inventario'
 
 const cliente = new QueryClient({
   defaultOptions: {
@@ -108,6 +109,7 @@ export function App() {
                   <Route path="/ciudad/:slug" element={<Ciudad />} />
                   <Route path="/centro/:id" element={<Centro />} />
                   <Route path="/que-falta" element={<QueFalta />} />
+                  <Route path="/inventario" element={<Inventario />} />
                   <Route path="/ayuda-directa" element={<AyudaDirecta />} />
                   <Route path="/como-ayudar" element={<ComoAyudar />} />
                   <Route path="/acerca" element={<Acerca />} />

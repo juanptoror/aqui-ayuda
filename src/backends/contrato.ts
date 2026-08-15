@@ -1,4 +1,11 @@
-import type { Centro, Ciudad, ItemInventario, Necesidad, Coordenada } from '@/dominio/modelos'
+import type {
+  Centro,
+  Ciudad,
+  Coordenada,
+  ItemInventario,
+  Necesidad,
+  Transporte,
+} from '@/dominio/modelos'
 
 /**
  * Contrato que cumple TODO backend conectado a la app.
@@ -56,6 +63,7 @@ export interface LecturasBackend {
   centros?: (conSesion: boolean) => Promise<Centro[]>
   necesidades?: () => Promise<Necesidad[]>
   inventario?: () => Promise<ItemInventario[]>
+  transportes?: () => Promise<Transporte[]>
 }
 
 /* ------------------------------ Escrituras -------------------------------- */
