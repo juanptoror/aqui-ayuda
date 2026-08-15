@@ -30,7 +30,8 @@ const RUTAS = [
 
 /** Espera a que la app pinte contenido real, no el esqueleto de carga. */
 async function esperarContenido(page: Page) {
-  await page.waitForSelector('.page-header__title', { timeout: 15_000 })
+  // La portada usa el hero; el resto de pantallas, la cabecera de página.
+  await page.waitForSelector('.page-header__title, .hero__titulo', { timeout: 15_000 })
   // Timeout propio: una pantalla que consulta una API externa puede no llegar
   // nunca a "networkidle", y sin límite la espera se comería el test entero.
   // El layout ya está pintado, que es lo que se va a medir.
@@ -224,7 +225,7 @@ test.describe('coherencia del tema', () => {
       }
     })
     await pAuto.goto('/')
-    await pAuto.waitForSelector('.page-header__title')
+    await pAuto.waitForSelector('.page-header__title, .hero__titulo')
     const automatico = await leerTokens(pAuto)
     await ctxAuto.close()
 
@@ -239,7 +240,7 @@ test.describe('coherencia del tema', () => {
       }
     })
     await pElegido.goto('/')
-    await pElegido.waitForSelector('.page-header__title')
+    await pElegido.waitForSelector('.page-header__title, .hero__titulo')
     await expect(pElegido.locator('html')).toHaveAttribute('data-theme', 'dark')
     const elegido = await leerTokens(pElegido)
     await ctxElegido.close()
@@ -277,7 +278,7 @@ test.describe('coherencia del tema', () => {
         }
       }, tema)
       await page.goto('/')
-      await page.waitForSelector('.page-header__title')
+      await page.waitForSelector('.page-header__title, .hero__titulo')
 
       const c = await page.evaluate(() => {
         const e = getComputedStyle(document.documentElement)

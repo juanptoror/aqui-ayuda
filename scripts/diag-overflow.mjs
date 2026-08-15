@@ -7,7 +7,7 @@ const ancho = Number(process.argv[3] ?? 375)
 const navegador = await chromium.launch()
 const pagina = await navegador.newPage({ viewport: { width: ancho, height: 812 } })
 await pagina.goto(url, { waitUntil: 'domcontentloaded' })
-await pagina.waitForSelector('.page-header__title')
+await pagina.waitForSelector('.page-header__title, .hero__titulo')
 await pagina.waitForLoadState('networkidle').catch(() => {})
 
 const info = await pagina.evaluate(() => {

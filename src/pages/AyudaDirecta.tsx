@@ -19,6 +19,7 @@ import {
   SkeletonTarjeta,
 } from '@/components/ui'
 import { PublicarAyuda } from '@/components/PublicarAyuda'
+import { SelloFuente } from '@/components/Fuente'
 import { usePreferencias } from '@/state/preferencias'
 import { useAyudas, useEmergencias, enlaceWhatsapp, type AyudaCorag, type TipoAyuda } from '@/data/corag'
 import { formatearDistancia } from '@/lib/geo'
@@ -225,6 +226,23 @@ export function AyudaDirecta() {
   )
 }
 
+/** Une barrio y dirección sin repetir el mismo nombre dos veces. */
+function lugarDe(ayuda: AyudaCorag): string {
+  const partes = [ayuda.location?.neighborhood, ayuda.location?.address]
+    .map((p) => p?.trim())
+    .filter((p): p is string => !!p)
+
+  const vistas = new Set<string>()
+  const unicas = partes.filter((p) => {
+    const clave = p.toLowerCase()
+    if (vistas.has(clave)) return false
+    vistas.add(clave)
+    return true
+  })
+
+  return unicas.join(' · ')
+}
+
 function TarjetaAyuda({ ayuda }: { ayuda: AyudaCorag }) {
   const wa = enlaceWhatsapp(ayuda.contact?.whatsapp ?? null, ayuda.title)
   const cobertura = ayuda.quantities?.coveragePercentage ?? null
@@ -274,11 +292,10 @@ function TarjetaAyuda({ ayuda }: { ayuda: AyudaCorag }) {
           <div className="deflist__row">
             <MapPin size={15} className="deflist__icon" />
             <div className="deflist__content">
-              <div className="deflist__value clamp-2">
-                {[ayuda.location.neighborhood, ayuda.location.address]
-                  .filter(Boolean)
-                  .join(' · ')}
-              </div>
+              {/* Barrio y dirección llegan repetidos con frecuencia ("Cuba ·
+                  Cuba"): se comparan sin distinguir mayúsculas ni espacios
+                  sobrantes antes de unirlos. */}
+              <div className="deflist__value clamp-2">{lugarDe(ayuda)}</div>
             </div>
           </div>
         )}
@@ -337,6 +354,7 @@ function TarjetaAyuda({ ayuda }: { ayuda: AyudaCorag }) {
       </div>
 
       <div className="card__footer">
+        <SelloFuente origen="corag" />
         {wa ? (
           <a
             className="btn btn--sm btn--primary"

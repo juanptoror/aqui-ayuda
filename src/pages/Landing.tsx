@@ -3,21 +3,45 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Building2,
   ChevronRight,
-  HeartHandshake,
+  HandHeart,
   LocateFixed,
   MapPin,
-  Navigation,
   Package,
   TriangleAlert,
 } from 'lucide-react'
-import { PageHeader, Notice, SectionHead, EmptyState, SkeletonLinea } from '@/components/ui'
+import { SectionHead, EmptyState, SkeletonLinea, Notice } from '@/components/ui'
 import { SelectorCiudad } from '@/components/SelectorCiudad'
+import { PinAA } from '@/components/Marca'
+import { TarjetaFuente } from '@/components/Fuente'
 import { usePreferencias } from '@/state/preferencias'
 import { useCiudadesCercanas } from '@/data/useDatos'
 import { obtenerUbicacion, formatearDistancia, coordenadaDeCiudad } from '@/lib/geo'
 import { conteo } from '@/lib/format'
 
-export function Home() {
+const PASOS = [
+  {
+    icono: MapPin,
+    titulo: 'Dinos dónde estás',
+    texto: 'Con tu ubicación o eligiendo tu municipio. No pedimos nada más.',
+  },
+  {
+    icono: Package,
+    titulo: 'Mira qué falta de verdad',
+    texto: 'Cada centro publica lo que necesita y lo que ya tiene cubierto.',
+  },
+  {
+    icono: HandHeart,
+    titulo: 'Actúa sobre seguro',
+    texto: 'Cómo llegar, a quién escribir y si está abierto ahora mismo.',
+  },
+]
+
+/**
+ * Portada. La acción va ARRIBA y el relato debajo, no al revés: quien entra
+ * aquí después de un terremoto necesita el buscador en la primera pantalla, no
+ * un manifiesto. Lo que explica el proyecto viene después, para quien lo busca.
+ */
+export function Landing() {
   const [params] = useSearchParams()
   const navegar = useNavigate()
   const { ubicacion, fijarUbicacion, ciudadGuardada, fijarCiudadGuardada } = usePreferencias()
@@ -28,8 +52,6 @@ export function Home() {
   const [selectorAbierto, setSelectorAbierto] = useState(false)
 
   // Compatibilidad con los enlaces ya compartidos del formato /?ciudad=slug.
-  // Se conserva porque hay gente que ya tiene esa URL guardada o pegada en un
-  // chat, y romperla en plena emergencia no es una opción.
   const ciudadEnQuery = params.get('ciudad')
   useEffect(() => {
     if (ciudadEnQuery) navegar(`/ciudad/${ciudadEnQuery}`, { replace: true })
@@ -39,8 +61,7 @@ export function Home() {
     setBuscando(true)
     setErrorUbicacion(null)
     try {
-      const coord = await obtenerUbicacion()
-      fijarUbicacion(coord)
+      fijarUbicacion(await obtenerUbicacion())
     } catch (e) {
       setErrorUbicacion((e as Error).message)
     } finally {
@@ -53,17 +74,24 @@ export function Home() {
 
   return (
     <>
-      <PageHeader
-        eyebrow={
-          <>
-            <MapPin size={13} strokeWidth={2.6} />
-            Colombia · Centros de acopio
-          </>
-        }
-        titulo="¿Dónde necesitas ayuda?"
-        subtitulo="Encuentra el centro de acopio más cercano, mira qué están pidiendo y cómo llegar. No necesitas registrarte."
-        acciones={
-          <>
+      {/* ------------------------------- HERO ------------------------------- */}
+      <header className="hero">
+        <div className="container hero__inner">
+          <PinAA size={72} colorPin="var(--amarillo)" title="AquíAyuda" />
+
+          <h1 className="hero__titulo">
+            Tú puedes
+            <br />
+            ayudar aquí
+          </h1>
+
+          <p className="hero__texto">
+            Centralizamos la información de las ayudas tras el terremoto para que llegue donde
+            hace falta. Encuentra el centro de acopio más cercano, mira qué está pidiendo y cómo
+            llegar. <strong>Sin registrarte.</strong>
+          </p>
+
+          <div className="hero__acciones">
             <button
               type="button"
               className="btn btn--primary btn--lg"
@@ -81,9 +109,15 @@ export function Home() {
               <Building2 size={19} />
               <span>Elegir municipio</span>
             </button>
-          </>
-        }
-      />
+          </div>
+
+          <p className="hero__pie">
+            {cargando
+              ? 'Cargando municipios…'
+              : `Disponible en ${conteo(ciudades.length, 'municipio', 'municipios')} de Colombia`}
+          </p>
+        </div>
+      </header>
 
       <div className="container">
         <div className="stack">
@@ -101,13 +135,6 @@ export function Home() {
               }
             >
               {errorUbicacion}
-            </Notice>
-          )}
-
-          {ubicacion && !errorUbicacion && (
-            <Notice tono="info" icono={Navigation}>
-              Tenemos tu ubicación. Los municipios y centros aparecen ordenados del más cercano al
-              más lejano.
             </Notice>
           )}
 
@@ -136,8 +163,7 @@ export function Home() {
           )}
         </div>
 
-        {/* Los dos caminos posibles, separados y explícitos desde el inicio.
-            La app entera se reduce a esta decisión. */}
+        {/* --------------------------- LOS DOS CAMINOS --------------------------- */}
         <section className="section">
           <SectionHead titulo="¿Qué necesitas hacer?" />
           <div className="grid grid--halves">
@@ -150,20 +176,19 @@ export function Home() {
                 <span
                   className="empty__icon"
                   style={{
-                    ['--empty-icon-bg' as string]: 'var(--critical-soft)',
-                    ['--empty-icon-fg' as string]: 'var(--critical)',
+                    ['--empty-icon-bg' as string]: 'var(--critical-solid)',
+                    ['--empty-icon-fg' as string]: '#000',
                   }}
                 >
                   <Package size={26} strokeWidth={2} />
                 </span>
                 <h3 className="card__title">Necesito ayuda</h3>
                 <p style={{ color: 'var(--text-muted)', margin: 0 }}>
-                  Mira qué centros están abiertos cerca de ti, qué tienen disponible y a qué
-                  teléfono llamar.
+                  Centros abiertos cerca de ti, qué tienen disponible y a qué teléfono llamar.
                 </p>
               </div>
               <div className="card__footer">
-                <span style={{ fontWeight: 650, color: 'var(--accion)' }}>Ver centros abiertos</span>
+                <span style={{ fontWeight: 700, color: 'var(--accion)' }}>Ver centros abiertos</span>
                 <div className="spacer" />
                 <ChevronRight size={18} style={{ color: 'var(--accion)' }} />
               </div>
@@ -172,15 +197,15 @@ export function Home() {
             <Link to="/como-ayudar" className="card card--interactive" style={{ textDecoration: 'none' }}>
               <div className="card__body">
                 <span className="empty__icon">
-                  <HeartHandshake size={26} strokeWidth={2} />
+                  <HandHeart size={26} strokeWidth={2} />
                 </span>
                 <h3 className="card__title">Quiero ayudar</h3>
                 <p style={{ color: 'var(--text-muted)', margin: 0 }}>
-                  Consulta qué hace falta de verdad en cada municipio antes de comprar o mover algo.
+                  Qué hace falta de verdad en cada municipio, antes de comprar o mover nada.
                 </p>
               </div>
               <div className="card__footer">
-                <span style={{ fontWeight: 650, color: 'var(--accion)' }}>Ver qué falta</span>
+                <span style={{ fontWeight: 700, color: 'var(--accion)' }}>Ver qué falta</span>
                 <div className="spacer" />
                 <ChevronRight size={18} style={{ color: 'var(--accion)' }} />
               </div>
@@ -188,6 +213,7 @@ export function Home() {
           </div>
         </section>
 
+        {/* ------------------------------ MUNICIPIOS ----------------------------- */}
         <section className="section">
           <SectionHead
             titulo={tieneDistancias ? 'Municipios más cercanos' : 'Municipios con centros activos'}
@@ -226,17 +252,6 @@ export function Home() {
                 </div>
               ))}
             </div>
-          ) : masCercanas.length === 0 ? (
-            <EmptyState
-              icono={Building2}
-              titulo="Todavía no hay municipios publicados"
-              texto="Cuando un municipio registre su primer centro de acopio, aparecerá aquí."
-              acciones={
-                <Link className="btn btn--primary" to="/como-ayudar">
-                  <span>Ver cómo ayudar</span>
-                </Link>
-              }
-            />
           ) : (
             <div className="grid grid--cards">
               {masCercanas.map((c) => (
@@ -274,7 +289,7 @@ export function Home() {
                     <h3 className="card__title">{c.nombre}</h3>
                   </div>
                   <div className="card__footer">
-                    <span style={{ fontWeight: 650, color: 'var(--accion)' }}>Ver centros</span>
+                    <span style={{ fontWeight: 700, color: 'var(--accion)' }}>Ver centros</span>
                     <div className="spacer" />
                     <ChevronRight size={17} style={{ color: 'var(--accion)' }} />
                   </div>
@@ -282,6 +297,65 @@ export function Home() {
               ))}
             </div>
           )}
+        </section>
+
+        {/* ------------------------------ CÓMO FUNCIONA -------------------------- */}
+        <section className="section">
+          <SectionHead titulo="Cómo funciona" />
+          <div className="grid grid--cards">
+            {PASOS.map((p, i) => (
+              <article key={p.titulo} className="card">
+                <div className="card__body">
+                  <div className="row">
+                    <span className="paso__numero">{i + 1}</span>
+                    <p.icono size={18} style={{ color: 'var(--text-subtle)' }} />
+                  </div>
+                  <h3 className="card__title">{p.titulo}</h3>
+                  <p style={{ color: 'var(--text-muted)', margin: 0 }}>{p.texto}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        {/* ---------------------------- DE DÓNDE SALEN --------------------------- */}
+        <section className="section">
+          <SectionHead titulo="De dónde salen los datos" />
+          <p className="section__desc">
+            AquíAyuda no inventa información: la reúne de dos fuentes abiertas e independientes.
+            Cada dato que ves lleva el sello de la suya, para que sepas quién lo publicó y a quién
+            acudir si algo no cuadra.
+          </p>
+          <div className="grid grid--halves">
+            <TarjetaFuente
+              origen="ayudas-pereira"
+              extra="Municipios, centros de acopio, qué necesitan y su inventario."
+            />
+            <TarjetaFuente
+              origen="corag"
+              extra="La pantalla de ayuda entre personas y el formulario para publicar."
+            />
+          </div>
+        </section>
+
+        {/* -------------------------------- CIERRE ------------------------------ */}
+        <section className="section">
+          <div className="cierre">
+            <PinAA size={44} colorPin="var(--amarillo)" />
+            <h2 className="cierre__titulo">Cualquiera puede ayudar</h2>
+            <p className="cierre__texto">
+              No hace falta traer nada: compartir esta página con quien esté cerca de un centro ya
+              sirve.
+            </p>
+            <div className="empty__actions">
+              <Link className="btn btn--primary btn--lg" to="/ciudades">
+                <span>Buscar mi municipio</span>
+              </Link>
+              <Link className="btn btn--lg" to="/acerca">
+                <span>Acerca del proyecto</span>
+              </Link>
+            </div>
+          </div>
         </section>
       </div>
 

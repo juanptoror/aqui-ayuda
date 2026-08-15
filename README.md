@@ -3,13 +3,20 @@
 Directorio de centros de acopio y ayuda humanitaria. Web app en Vite + React +
 TypeScript sobre **dos backends**:
 
-| Fuente | Qué aporta | Autenticación |
-|---|---|---|
-| **Supabase** | Centros de acopio (organizaciones) por municipio | Ninguna para leer; correo para ver teléfonos |
-| **API pública de Corag** | Ayuda directa entre personas, geolocalizada, con WhatsApp | Ninguna |
+| Fuente | Backend | Qué aporta | Dónde se ve |
+|---|---|---|---|
+| **Ayudas Pereira** | Supabase `yjkyzfuixdpuhgthoeua` | Centros de acopio, qué necesitan y su inventario | `/ciudades`, `/ciudad/:slug`, `/centro/:id`, `/que-falta` |
+| **Corag** | `ayuda.corag.app` | Ayuda directa entre personas, con WhatsApp | `/ayuda-directa` |
 
 Viven en pantallas separadas a propósito: a un centro se le lleva una donación,
-a una persona se le escribe. Cada pantalla declara de dónde salen sus datos.
+a una persona se le escribe.
+
+**Cada dato lleva su sello de procedencia** ([Fuente.tsx](src/components/Fuente.tsx)):
+amarillo para Ayudas Pereira, lima para Corag. No es decoración — si un teléfono
+no responde o una dirección está mal, hay que poder saber quién lo publicó y a
+quién reclamar. Y las reglas difieren: los centros los publica un equipo local,
+las peticiones de Corag las publica cualquiera sin registro. Un test falla si
+una tarjeta aparece sin sello o con el de la fuente equivocada.
 
 **En producción:** https://ayudas-colombia-web.vercel.app
 

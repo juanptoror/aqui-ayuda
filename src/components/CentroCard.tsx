@@ -4,6 +4,7 @@ import type { CentroVista } from '@/types'
 import { formatearDistancia } from '@/lib/geo'
 import { conteo, enlaceMapa, enlaceTelefono } from '@/lib/format'
 import { Badge } from './ui'
+import { SelloFuente } from './Fuente'
 
 /**
  * Tarjeta de centro. Ocupa el 100% de la altura de su celda de grilla y empuja
@@ -136,6 +137,7 @@ export function CentroCard({ centro, modo }: { centro: CentroVista; modo: 'ayuda
       </div>
 
       <div className="card__footer">
+        <SelloFuente origen="ayudas-pereira" />
         {mapa ? (
           <a
             className="btn btn--sm btn--soft"
