@@ -696,6 +696,39 @@
   --kpi-icon-fg: var(--on-brand);
 }
 
+/* KPI que además filtra: se comporta como un botón y lo parece. */
+.kpi--pulsable {
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  transition:
+    border-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+
+.kpi--pulsable:hover {
+  border-color: var(--accion);
+  box-shadow: var(--shadow-2);
+  transform: translateY(-2px);
+}
+
+.kpi--activo {
+  border-color: var(--accion);
+  box-shadow: 0 0 0 2px var(--accion);
+}
+
+/* Marca de filtro activo: una barra superior del color del propio KPI. */
+.kpi--activo::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 4px;
+  background: var(--kpi-icon-fg, var(--accion));
+}
+
 /* --------------------------- Control segmentado --------------------------- */
 /* La separación "quiero ayudar" / "necesito ayuda" es la decisión principal
    de la app: merece un control grande, con etiqueta y estado obvio. */

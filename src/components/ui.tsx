@@ -66,6 +66,8 @@ export function Kpi({
   icono: Icono,
   tono,
   cargando,
+  alPulsar,
+  activo,
 }: {
   etiqueta: string
   valor: ReactNode
@@ -73,9 +75,25 @@ export function Kpi({
   icono: LucideIcon
   tono?: 'critical' | 'warning' | 'success' | 'brand'
   cargando?: boolean
+  /** Si se pasa, el KPI se vuelve un filtro pulsable. */
+  alPulsar?: () => void
+  activo?: boolean
 }) {
+  const clases = `kpi${tono ? ` kpi--${tono}` : ''}${alPulsar ? ' kpi--pulsable' : ''}${
+    activo ? ' kpi--activo' : ''
+  }`
+
+  // Cuando filtra es un botón de verdad, no un div con onClick: así responde
+  // al teclado y los lectores de pantalla anuncian si está activo.
+  const Etiqueta = alPulsar ? 'button' : 'div'
+
   return (
-    <div className={`kpi${tono ? ` kpi--${tono}` : ''}`}>
+    <Etiqueta
+      className={clases}
+      {...(alPulsar
+        ? { type: 'button' as const, onClick: alPulsar, 'aria-pressed': !!activo }
+        : {})}
+    >
       <div className="kpi__top">
         <span className="kpi__icon">
           <Icono size={16} strokeWidth={2.25} />
@@ -92,7 +110,7 @@ export function Kpi({
       ) : (
         <div className="kpi__hint">{pista ?? ' '}</div>
       )}
-    </div>
+    </Etiqueta>
   )
 }
 

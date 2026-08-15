@@ -7,9 +7,11 @@ import {
   DoorOpen,
   HeartHandshake,
   Package,
+  PackagePlus,
   RefreshCw,
   Share2,
   TriangleAlert,
+  Truck,
 } from 'lucide-react'
 import {
   PageHeader,
@@ -21,12 +23,24 @@ import {
 } from '@/components/ui'
 import { CentroCard } from '@/components/CentroCard'
 import { SelectorCiudad } from '@/components/SelectorCiudad'
-import { AvisoTelefonos } from '@/components/Acceso'
+import { AvisoTelefonos, Acceso } from '@/components/Acceso'
+import { OfrecerDonacion } from '@/components/formularios/OfrecerDonacion'
+import { ApuntarseVoluntario } from '@/components/formularios/ApuntarseVoluntario'
+import { ApuntarVehiculo } from '@/components/formularios/ApuntarVehiculo'
 import { usePreferencias } from '@/state/preferencias'
 import { useDatosCiudad } from '@/datos/useDatosCiudad'
 import { conteo, desde, numero } from '@/lib/format'
 
 type Modo = 'ayudar' | 'recibir'
+
+/** Filtro que aplican los KPIs al pulsarlos. */
+type Filtro = 'todos' | 'abiertos' | 'urgentes' | 'pendientes'
+
+const ETIQUETA_FILTRO: Record<Exclude<Filtro, 'todos'>, string> = {
+  abiertos: 'abiertos ahora',
+  urgentes: 'con pedidos urgentes',
+  pendientes: 'con pedidos abiertos',
+}
 
 export function Ciudad() {
   const { slug } = useParams<{ slug: string }>()
@@ -35,26 +49,47 @@ export function Ciudad() {
 
   const [modo, setModo] = useState<Modo>('ayudar')
   const [categoria, setCategoria] = useState<string | null>(null)
+  const [filtro, setFiltro] = useState<Filtro>('todos')
   const [selectorAbierto, setSelectorAbierto] = useState(false)
   const [copiado, setCopiado] = useState(false)
+
+  // Formularios de participación.
+  const [donando, setDonando] = useState(false)
+  const [voluntario, setVoluntario] = useState(false)
+  const [vehiculo, setVehiculo] = useState(false)
+  const [accesoAbierto, setAccesoAbierto] = useState(false)
 
   useEffect(() => {
     if (slug && datos.ciudad) fijarCiudadGuardada(slug)
   }, [slug, datos.ciudad, fijarCiudadGuardada])
 
-  // Cambiar de municipio no debe arrastrar un filtro del municipio anterior.
+  // Cambiar de municipio no debe arrastrar filtros del municipio anterior.
   useEffect(() => {
     setCategoria(null)
+    setFiltro('todos')
   }, [slug])
 
   const centrosFiltrados = useMemo(() => {
-    if (!categoria) return datos.centros
-    return datos.centros.filter((c) =>
-      modo === 'ayudar'
-        ? c.necesidades.some((n) => n.estado === 'pendiente' && n.categoria === categoria)
-        : c.inventario.some((i) => i.categoria === categoria && i.cantidad > 0),
-    )
-  }, [datos.centros, categoria, modo])
+    let lista = datos.centros
+
+    if (filtro === 'abiertos') lista = lista.filter((c) => c.abierto)
+    if (filtro === 'urgentes') lista = lista.filter((c) => c.urgentes > 0)
+    if (filtro === 'pendientes') lista = lista.filter((c) => c.pendientes > 0)
+
+    if (categoria) {
+      lista = lista.filter((c) =>
+        modo === 'ayudar'
+          ? c.necesidades.some((n) => n.estado === 'pendiente' && n.categoria === categoria)
+          : c.inventario.some((i) => i.categoria === categoria && i.cantidad > 0),
+      )
+    }
+    return lista
+  }, [datos.centros, categoria, modo, filtro])
+
+  /** Pulsar el KPI ya activo lo desactiva: es un interruptor, no un callejón. */
+  function alternarFiltro(f: Exclude<Filtro, 'todos'>) {
+    setFiltro((actual) => (actual === f ? 'todos' : f))
+  }
 
   // Ciudad fusionada en otra: se redirige en vez de mostrar una pantalla vacía.
   if (datos.redirigirA) return <Navigate to={`/ciudad/${datos.redirigirA}`} replace />
@@ -131,6 +166,15 @@ export function Ciudad() {
         }
         acciones={
           <>
+            <button
+              type="button"
+              className="btn btn--primary"
+              onClick={() => setDonando(true)}
+              disabled={!ciudad}
+            >
+              <PackagePlus size={18} />
+              <span>Tengo algo para donar</span>
+            </button>
             <button type="button" className="btn" onClick={() => setSelectorAbierto(true)}>
               <Building2 size={18} />
               <span>
@@ -165,6 +209,8 @@ export function Ciudad() {
               }
               tono="success"
               cargando={cargando}
+              activo={filtro === 'abiertos'}
+              alPulsar={() => alternarFiltro('abiertos')}
             />
             <Kpi
               icono={TriangleAlert}
@@ -173,6 +219,8 @@ export function Ciudad() {
               pista={resumen.urgentes === 0 ? 'Nada urgente' : 'Para hoy'}
               tono="critical"
               cargando={cargando}
+              activo={filtro === 'urgentes'}
+              alPulsar={resumen.urgentes > 0 ? () => alternarFiltro('urgentes') : undefined}
             />
             <Kpi
               icono={Package}
@@ -181,6 +229,8 @@ export function Ciudad() {
               pista={`En ${conteo(resumen.categoriasFaltantes, 'categoría', 'categorías')}`}
               tono="warning"
               cargando={cargando}
+              activo={filtro === 'pendientes'}
+              alPulsar={resumen.pendientes > 0 ? () => alternarFiltro('pendientes') : undefined}
             />
             <Kpi
               icono={Clock}
@@ -252,6 +302,57 @@ export function Ciudad() {
           </section>
         )}
 
+        {/* Formas de participar que no son llevar una caja: se ofrecen aquí
+            porque el transporte y las manos escasean tanto como las cosas. */}
+        <section className="section">
+          <SectionHead titulo="Otras formas de ayudar" />
+          <div className="grid grid--halves">
+            <button
+              type="button"
+              className="card card--interactive"
+              onClick={() => setVoluntario(true)}
+              style={{ textAlign: 'left' }}
+              disabled={!ciudad}
+            >
+              <div className="card__body">
+                <div className="row">
+                  <span className="kpi__icon">
+                    <HeartHandshake size={17} strokeWidth={2.25} />
+                  </span>
+                  <span className="deflist__label">Voluntariado</span>
+                </div>
+                <h3 className="card__title">Quiero poner las manos</h3>
+                <p style={{ color: 'var(--text-muted)', margin: 0 }}>
+                  Clasificar, cargar, cocinar o atender. Te llaman cuando hagan falta manos cerca
+                  de ti.
+                </p>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              className="card card--interactive"
+              onClick={() => setVehiculo(true)}
+              style={{ textAlign: 'left' }}
+              disabled={!ciudad}
+            >
+              <div className="card__body">
+                <div className="row">
+                  <span className="kpi__icon">
+                    <Truck size={17} strokeWidth={2.25} />
+                  </span>
+                  <span className="deflist__label">Transporte</span>
+                </div>
+                <h3 className="card__title">Pongo mi carro</h3>
+                <p style={{ color: 'var(--text-muted)', margin: 0 }}>
+                  Hay donaciones paradas porque nadie puede moverlas. Si tienes vehículo, esto
+                  desatasca más que una caja.
+                </p>
+              </div>
+            </button>
+          </div>
+        </section>
+
         <section className="section">
           <SectionHead
             titulo={modo === 'ayudar' ? 'Centros que están recibiendo' : 'Centros abiertos cerca de ti'}
@@ -259,10 +360,21 @@ export function Ciudad() {
               cargando ? undefined : conteo(centrosFiltrados.length, 'centro', 'centros')
             }
             acciones={
-              categoria ? (
-                <button type="button" className="btn btn--sm btn--ghost" onClick={() => setCategoria(null)}>
+              categoria || filtro !== 'todos' ? (
+                <button
+                  type="button"
+                  className="btn btn--sm btn--ghost"
+                  onClick={() => {
+                    setCategoria(null)
+                    setFiltro('todos')
+                  }}
+                >
                   <RefreshCw size={15} />
-                  <span>Quitar filtro: {categoria}</span>
+                  <span>
+                    Quitar filtro
+                    {categoria ? `: ${categoria}` : ''}
+                    {filtro !== 'todos' ? ` (${ETIQUETA_FILTRO[filtro]})` : ''}
+                  </span>
                 </button>
               ) : undefined
             }
@@ -323,6 +435,38 @@ export function Ciudad() {
       </div>
 
       <SelectorCiudad abierto={selectorAbierto} alCerrar={() => setSelectorAbierto(false)} />
+
+      {ciudad && (
+        <>
+          <OfrecerDonacion
+            abierto={donando}
+            alCerrar={() => setDonando(false)}
+            ciudadId={ciudad.id}
+            ciudadNombre={ciudad.nombre}
+          />
+          <ApuntarseVoluntario
+            abierto={voluntario}
+            alCerrar={() => setVoluntario(false)}
+            ciudadId={ciudad.id}
+            ciudadNombre={ciudad.nombre}
+            alPedirAcceso={() => {
+              setVoluntario(false)
+              setAccesoAbierto(true)
+            }}
+          />
+          <ApuntarVehiculo
+            abierto={vehiculo}
+            alCerrar={() => setVehiculo(false)}
+            ciudadId={ciudad.id}
+            ciudadNombre={ciudad.nombre}
+            alPedirAcceso={() => {
+              setVehiculo(false)
+              setAccesoAbierto(true)
+            }}
+          />
+          <Acceso abierto={accesoAbierto} alCerrar={() => setAccesoAbierto(false)} />
+        </>
+      )}
     </>
   )
 }

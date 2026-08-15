@@ -24,7 +24,10 @@ test.describe('lectura pública de centros', () => {
     })
 
     await page.goto('/ciudad/dosquebradas')
-    await page.waitForSelector('.card__title', { timeout: 20_000 })
+    // Se espera a una tarjeta de CENTRO, no a cualquier `.card__title`: la
+    // pantalla pinta tarjetas de acción antes de que lleguen los datos, y
+    // esperar a ellas hacía que el test contara una lista todavía vacía.
+    await page.waitForSelector('[data-tipo="centro"]', { timeout: 20_000 })
 
     expect(consultas.length, 'no se consultó la tabla centros').toBeGreaterThan(0)
 
@@ -39,9 +42,14 @@ test.describe('lectura pública de centros', () => {
 
   test('se listan centros reales del municipio con su estado', async ({ page }) => {
     await page.goto('/ciudad/dosquebradas')
-    await page.waitForSelector('.card__title', { timeout: 20_000 })
+    // Se espera a una tarjeta de CENTRO, no a cualquier `.card__title`: la
+    // pantalla pinta tarjetas de acción antes de que lleguen los datos, y
+    // esperar a ellas hacía que el test contara una lista todavía vacía.
+    await page.waitForSelector('[data-tipo="centro"]', { timeout: 20_000 })
 
-    const tarjetas = page.locator('.card--interactive')
+    // Solo las tarjetas de centro: la pantalla tiene además tarjetas de acción
+    // ("quiero ser voluntario", "pongo mi carro") que no son datos de nadie.
+    const tarjetas = page.locator('[data-tipo="centro"]')
     expect(await tarjetas.count()).toBeGreaterThan(5)
 
     // Todo centro debe declarar si está abierto o cerrado: es el dato que
@@ -58,7 +66,10 @@ test.describe('lectura pública de centros', () => {
 
   test('sin sesión no aparece ningún botón de llamar', async ({ page }) => {
     await page.goto('/ciudad/dosquebradas')
-    await page.waitForSelector('.card__title', { timeout: 20_000 })
+    // Se espera a una tarjeta de CENTRO, no a cualquier `.card__title`: la
+    // pantalla pinta tarjetas de acción antes de que lleguen los datos, y
+    // esperar a ellas hacía que el test contara una lista todavía vacía.
+    await page.waitForSelector('[data-tipo="centro"]', { timeout: 20_000 })
 
     await expect(page.getByRole('link', { name: /^Llamar a /i })).toHaveCount(0)
     await expect(page.getByText('Estás viendo sin entrar')).toBeVisible()
@@ -72,9 +83,14 @@ test.describe('procedencia de los datos', () => {
    */
   test('cada centro declara que viene de Ayudas Pereira', async ({ page }) => {
     await page.goto('/ciudad/dosquebradas')
-    await page.waitForSelector('.card__title', { timeout: 20_000 })
+    // Se espera a una tarjeta de CENTRO, no a cualquier `.card__title`: la
+    // pantalla pinta tarjetas de acción antes de que lleguen los datos, y
+    // esperar a ellas hacía que el test contara una lista todavía vacía.
+    await page.waitForSelector('[data-tipo="centro"]', { timeout: 20_000 })
 
-    const tarjetas = page.locator('.card--interactive')
+    // Solo las tarjetas de centro: la pantalla tiene además tarjetas de acción
+    // ("quiero ser voluntario", "pongo mi carro") que no son datos de nadie.
+    const tarjetas = page.locator('[data-tipo="centro"]')
     const total = await tarjetas.count()
     expect(total).toBeGreaterThan(0)
 
