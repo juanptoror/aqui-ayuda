@@ -51,23 +51,14 @@
   color: inherit;
 }
 
+/* El pin del brand kit va suelto, sin caja: es una forma reconocible por sí
+   misma. Su color lo pone el propio SVG (amarillo con monograma negro). */
 .brand-mark {
   display: grid;
   place-items: center;
   flex-shrink: 0;
   width: 38px;
   height: 38px;
-  border-radius: var(--r-md);
-  background: linear-gradient(
-    155deg,
-    var(--brand) 0%,
-    color-mix(in srgb, var(--brand) 78%, var(--text-inverse)) 100%
-  );
-  /* El icono usa el color inverso al de la marca para seguir siendo visible
-     cuando el grafito se invierte a blanco hueso en el tema oscuro. */
-  color: var(--text-inverse);
-  box-shadow: var(--shadow-2);
-  border: 1px solid color-mix(in srgb, var(--brand) 70%, var(--text-inverse));
 }
 
 .brand-text {
@@ -82,8 +73,8 @@
 .brand-text__name {
   display: block;
   font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 1.0625rem;
+  font-weight: 700;
+  font-size: 1.125rem;
   letter-spacing: var(--tracking-display);
   line-height: 1.15;
   white-space: nowrap;
@@ -294,8 +285,9 @@
 }
 
 .bottomnav__item--active {
-  color: var(--brand);
+  color: var(--accion);
   background: var(--brand-soft);
+  font-weight: 800;
 }
 
 .bottomnav__dot {

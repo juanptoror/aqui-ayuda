@@ -1,38 +1,29 @@
 /* ============================================================================
-   DIRECCIÓN DE DISEÑO: "PUESTO DE MANDO" — paleta cálida
+   IDENTIDAD: AquíAyuda
    ----------------------------------------------------------------------------
-   Estructura de tablero de operaciones de emergencia (superficies en capas,
-   bordes hairline, sombras compuestas, cifras grandes y tabulares) sobre la
-   identidad cromática de corag.app: crema, rosa y burdeos.
+   Tomada del brand kit: negro y amarillo neón, alto contraste, sin medias
+   tintas. El logo es un pin de mapa con el monograma AA, y cada ciudad tiene su
+   pin de color (Pereira amarillo, Cali lima, Manizales naranja, Bogotá rojo).
 
-   Por qué cálida y no gris azulada: esto lo usa alguien que acaba de perder su
-   casa. Un panel de control frío es correcto para un operador; para un
-   damnificado, la temperatura del color es parte del mensaje. El crema y el
-   rosa bajan la tensión sin restar claridad, y el burdeos aporta la seriedad
-   institucional que el rosa por sí solo no tendría.
-
-   Jerarquía del rojo, que aquí es delicada porque la marca ya es roja:
-   - BURDEOS  #78020e  = acción y marca. Oscuro, casi marrón. Botones y enlaces.
-   - CORAL    #e5484d  = urgencia. Claro y saturado, salta sobre el burdeos.
-   Se distinguen por luminosidad (20% frente a 59%), no solo por matiz, así que
-   siguen siendo distinguibles en escala de grises y con daltonismo rojo-verde.
+   La consecuencia técnica del amarillo #ffff00: contrasta 19.6:1 con negro y
+   solo 1.07:1 con blanco. Es un color de FONDO, nunca de texto sobre claro. Por
+   eso existe `--on-brand`, que siempre es negro, y por eso los enlaces de texto
+   no son amarillos: usan el color de texto con subrayado.
 
    Reglas de la dirección:
    1. Nada plano: toda superficie tiene borde + sombra o es explícitamente hueco.
-   2. El color semántico jamás decora. Si algo es coral, es urgente.
+   2. El amarillo es la marca y la acción. El rojo es urgencia. No se mezclan.
    3. Los números son tabulares y grandes. Se leen de un vistazo, sin enfocar.
    4. Sin emojis. Iconografía SVG de trazo uniforme (lucide).
    ========================================================================== */
 
 :root {
-  /* ---------- Tipografía ---------- */
-  /* Outfit: geométrica redondeada, la voz de la referencia, para títulos.
-     Public Sans: diseñada para servicios públicos (USWDS), máxima legibilidad
-     en cuerpo de texto y condiciones de lectura difíciles. */
-  --font-display: 'Outfit Variable', 'Outfit', system-ui, sans-serif;
-  --font-body: 'Public Sans Variable', 'Public Sans', system-ui, sans-serif;
+  /* ---------- Tipografía ----------
+     Satoshi es la del kit. General Sans sustituye a Aeonik, que es comercial. */
+  --font-display: 'General Sans', 'Satoshi', system-ui, sans-serif;
+  --font-body: 'Satoshi', system-ui, sans-serif;
 
-  --text-display: clamp(2rem, 1.35rem + 2.4vw, 2.85rem);
+  --text-display: clamp(2rem, 1.35rem + 2.4vw, 2.9rem);
   --text-h1: clamp(1.5rem, 1.25rem + 1vw, 2rem);
   --text-h2: clamp(1.1875rem, 1.1rem + 0.4vw, 1.375rem);
   --text-h3: 1.0625rem;
@@ -41,12 +32,12 @@
   --text-xs: 0.75rem;
   --text-micro: 0.6875rem;
 
-  --tracking-display: -0.022em;
-  --tracking-tight: -0.012em;
-  --tracking-micro: 0.085em;
+  --tracking-display: -0.03em;
+  --tracking-tight: -0.015em;
+  --tracking-micro: 0.08em;
 
-  --leading-tight: 1.15;
-  --leading-snug: 1.35;
+  --leading-tight: 1.08;
+  --leading-snug: 1.3;
   --leading-normal: 1.55;
 
   /* ---------- Espaciado (escala de 4) ---------- */
@@ -62,12 +53,12 @@
   --sp-10: 4rem;
 
   /* ---------- Radios ----------
-     La referencia usa botones de píldora y tarjetas muy redondeadas; se adopta
-     esa forma porque es la mitad de su carácter. */
-  --r-sm: 8px;
-  --r-md: 12px;
-  --r-lg: 18px;
-  --r-xl: 26px;
+     El kit es de formas rotundas: el pin es una gota y los bloques son rectos.
+     Radios contenidos, y píldora solo en botones y chips. */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 22px;
   --r-full: 999px;
   --r-btn: 999px;
 
@@ -90,195 +81,224 @@
   --z-overlay: 60;
   --z-toast: 80;
 
+  /* ---------- Colores de marca, iguales en ambos temas ---------- */
+  --amarillo: #ffff00;
+  --lima: #84f81c;
+  --naranja: #fa7a42;
+  --rojo: #fa414a;
+
   /* ======================= TEMA CLARO (por defecto) ======================= */
-  --canvas: #fbf8f5;
+  --canvas: #f4f4f4;
   --canvas-grad: radial-gradient(
-    1200px 520px at 50% -10%,
-    #ffe9ef 0%,
-    rgba(255, 233, 239, 0) 72%
+    1100px 480px at 50% -12%,
+    rgba(255, 255, 0, 0.18) 0%,
+    rgba(255, 255, 0, 0) 70%
   );
   --surface: #ffffff;
-  --surface-2: #fdfaf8;
-  --surface-3: #f6ede9;
-  --surface-inset: #faf4f1;
+  --surface-2: #fafafa;
+  --surface-3: #ededed;
+  --surface-inset: #f7f7f7;
 
-  --border: #e8e0dc;
-  --border-strong: #d8c8c2;
-  --border-hairline: rgba(37, 31, 32, 0.08);
+  --border: #e2e2e2;
+  --border-strong: #c4c4c4;
+  --border-hairline: rgba(0, 0, 0, 0.08);
 
-  --text: #251f20;
-  --text-muted: #574f51;
-  --text-subtle: #8b8082;
+  --text: #000000;
+  --text-muted: #565656;
+  --text-subtle: #8a8a8a;
   --text-inverse: #ffffff;
 
-  /* Burdeos de acción, tomado del CTA principal de la referencia. */
-  --brand: #78020e;
-  --brand-hover: #5e010b;
-  --brand-active: #470108;
-  --brand-soft: #ffe2e9;
-  --brand-soft-hover: #ffd2dd;
-  --brand-on-soft: #78020e;
-  --brand-ring: rgba(120, 2, 14, 0.24);
+  /* El amarillo es fondo; lo que va encima es SIEMPRE negro. */
+  --brand: #ffff00;
+  --brand-hover: #ebeb00;
+  --brand-active: #d6d600;
+  --on-brand: #000000;
+  --brand-soft: #fffbcc;
+  --brand-soft-hover: #fff89e;
+  --brand-on-soft: #000000;
+  --brand-ring: rgba(0, 0, 0, 0.45);
 
-  /* Coral vivo: urgencia. Deliberadamente más claro que el burdeos. */
-  --critical: #e5484d;
-  --critical-soft: #ffeced;
-  --critical-on-soft: #b3242a;
-  --critical-border: #ffd0d2;
+  /* Color de la acción tipográfica: sobre blanco el amarillo no se lee, así
+     que los enlaces y los botones sólidos neutros usan el negro. */
+  --accion: #000000;
+  --accion-hover: #2b2b2b;
+  --on-accion: #ffffff;
 
-  --warning: #b4530a;
-  --warning-soft: #fdf0e2;
-  --warning-on-soft: #90420a;
-  --warning-border: #f4dcc1;
+  --critical: #d32029;
+  --critical-solid: #fa414a;
+  --critical-soft: #ffe9ea;
+  --critical-on-soft: #a3161e;
+  --critical-border: #ffc9cc;
 
-  --success: #1f6f4a;
-  --success-soft: #e4f4ec;
-  --success-on-soft: #175c3c;
-  --success-border: #c4e6d4;
+  --warning: #b8500f;
+  --warning-solid: #fa7a42;
+  --warning-soft: #fff0e7;
+  --warning-on-soft: #8f3d0b;
+  --warning-border: #ffd6c2;
 
-  --info: #78020e;
-  --info-soft: #ffe2e9;
-  --info-on-soft: #78020e;
-  --info-border: #ffc7d5;
+  --success: #2f7a08;
+  --success-solid: #84f81c;
+  --success-soft: #eefbe0;
+  --success-on-soft: #275f0a;
+  --success-border: #cdf0aa;
 
-  --shadow-1: 0 1px 1px rgba(37, 31, 32, 0.04), 0 1px 3px rgba(37, 31, 32, 0.06);
-  --shadow-2: 0 1px 2px rgba(37, 31, 32, 0.05), 0 3px 8px rgba(37, 31, 32, 0.06),
-    0 8px 20px rgba(37, 31, 32, 0.05);
-  --shadow-3: 0 2px 4px rgba(37, 31, 32, 0.06), 0 10px 24px rgba(37, 31, 32, 0.09),
-    0 24px 56px rgba(37, 31, 32, 0.1);
+  --info: #000000;
+  --info-soft: #fffbcc;
+  --info-on-soft: #000000;
+  --info-border: #f2e98a;
+
+  --shadow-1: 0 1px 1px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.07);
+  --shadow-2: 0 1px 2px rgba(0, 0, 0, 0.06), 0 3px 8px rgba(0, 0, 0, 0.07),
+    0 8px 20px rgba(0, 0, 0, 0.06);
+  --shadow-3: 0 2px 4px rgba(0, 0, 0, 0.07), 0 10px 24px rgba(0, 0, 0, 0.1),
+    0 24px 56px rgba(0, 0, 0, 0.12);
   --shadow-inner-top: inset 0 1px 0 rgba(255, 255, 255, 0.9);
 
-  --skeleton-base: #f0e6e1;
-  --skeleton-sheen: #fbf5f2;
-  --overlay-bg: rgba(35, 21, 24, 0.44);
+  --skeleton-base: #e6e6e6;
+  --skeleton-sheen: #f5f5f5;
+  --overlay-bg: rgba(0, 0, 0, 0.5);
 }
 
 /* ======================= TEMA OSCURO =======================
-   Duplicado deliberadamente en dos selectores: la media query cubre a quien
-   nunca eligió tema, y el selector de atributo gana cuando el usuario eligió
-   explícitamente. LOS DOS BLOQUES DEBEN TENER LOS MISMOS VALORES: hay un test
-   que falla si se desincronizan. */
+   Es el tema nativo del kit: el amarillo sobre negro es su imagen. Duplicado
+   en dos selectores (media query para quien no eligió, atributo para quien sí).
+   LOS DOS BLOQUES DEBEN TENER LOS MISMOS VALORES: hay un test que lo comprueba. */
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --canvas: #170f11;
+    --canvas: #0a0a0a;
     --canvas-grad: radial-gradient(
-      1200px 520px at 50% -10%,
-      #34181f 0%,
-      rgba(52, 24, 31, 0) 72%
+      1100px 480px at 50% -12%,
+      rgba(255, 255, 0, 0.12) 0%,
+      rgba(255, 255, 0, 0) 70%
     );
-    --surface: #231518;
-    --surface-2: #2b1b1f;
-    --surface-3: #382227;
-    --surface-inset: #1d1215;
+    --surface: #181818;
+    --surface-2: #202020;
+    --surface-3: #2b2b2b;
+    --surface-inset: #121212;
 
-    --border: #3d2a2f;
-    --border-strong: #573c43;
-    --border-hairline: rgba(255, 255, 255, 0.08);
+    --border: #2e2e2e;
+    --border-strong: #464646;
+    --border-hairline: rgba(255, 255, 255, 0.09);
 
-    --text: #f7efec;
-    --text-muted: #c6b0b4;
-    --text-subtle: #9a868b;
-    --text-inverse: #231518;
+    --text: #f8f8f8;
+    --text-muted: #b0b0b0;
+    --text-subtle: #808080;
+    --text-inverse: #000000;
 
-    /* Sobre fondo vinoso el burdeos desaparece: el papel de color de acción
-       pasa al rosa claro, que es el acento de la referencia en oscuro. */
-    --brand: #ffc7d5;
-    --brand-hover: #ffdde5;
-    --brand-active: #ffb3c6;
-    --brand-soft: rgba(255, 199, 213, 0.14);
-    --brand-soft-hover: rgba(255, 199, 213, 0.22);
-    --brand-on-soft: #ffc7d5;
-    --brand-ring: rgba(255, 199, 213, 0.38);
+    --brand: #ffff00;
+    --brand-hover: #ffff4d;
+    --brand-active: #e6e600;
+    --on-brand: #000000;
+    --brand-soft: rgba(255, 255, 0, 0.14);
+    --brand-soft-hover: rgba(255, 255, 0, 0.22);
+    --brand-on-soft: #ffff00;
+    --brand-ring: rgba(255, 255, 0, 0.5);
 
-    --critical: #ff8a85;
-    --critical-soft: rgba(255, 138, 133, 0.15);
-    --critical-on-soft: #ffb0ac;
-    --critical-border: rgba(255, 138, 133, 0.34);
+    /* En oscuro el amarillo sí se lee como texto, así que es también la acción. */
+    --accion: #ffff00;
+    --accion-hover: #ffff4d;
+    --on-accion: #000000;
 
-    --warning: #f0b429;
-    --warning-soft: rgba(240, 180, 41, 0.14);
-    --warning-on-soft: #f6cc6e;
-    --warning-border: rgba(240, 180, 41, 0.32);
+    --critical: #ff6a72;
+    --critical-solid: #fa414a;
+    --critical-soft: rgba(250, 65, 74, 0.16);
+    --critical-on-soft: #ff9298;
+    --critical-border: rgba(250, 65, 74, 0.36);
 
-    --success: #5fd39a;
-    --success-soft: rgba(95, 211, 154, 0.14);
-    --success-on-soft: #92e5bb;
-    --success-border: rgba(95, 211, 154, 0.3);
+    --warning: #ff9a68;
+    --warning-solid: #fa7a42;
+    --warning-soft: rgba(250, 122, 66, 0.15);
+    --warning-on-soft: #ffb996;
+    --warning-border: rgba(250, 122, 66, 0.34);
 
-    --info: #ffc7d5;
-    --info-soft: rgba(255, 199, 213, 0.14);
-    --info-on-soft: #ffc7d5;
-    --info-border: rgba(255, 199, 213, 0.3);
+    --success: #9cfa4a;
+    --success-solid: #84f81c;
+    --success-soft: rgba(132, 248, 28, 0.14);
+    --success-on-soft: #b6fb7d;
+    --success-border: rgba(132, 248, 28, 0.32);
 
-    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5);
-    --shadow-2: 0 2px 4px rgba(0, 0, 0, 0.45), 0 8px 20px rgba(0, 0, 0, 0.45);
-    --shadow-3: 0 4px 8px rgba(0, 0, 0, 0.5), 0 16px 40px rgba(0, 0, 0, 0.55),
-      0 32px 64px rgba(0, 0, 0, 0.45);
+    --info: #ffff00;
+    --info-soft: rgba(255, 255, 0, 0.13);
+    --info-on-soft: #ffff8f;
+    --info-border: rgba(255, 255, 0, 0.3);
+
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.6);
+    --shadow-2: 0 2px 4px rgba(0, 0, 0, 0.5), 0 8px 20px rgba(0, 0, 0, 0.5);
+    --shadow-3: 0 4px 8px rgba(0, 0, 0, 0.55), 0 16px 40px rgba(0, 0, 0, 0.6),
+      0 32px 64px rgba(0, 0, 0, 0.5);
     --shadow-inner-top: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 
-    --skeleton-base: #332025;
-    --skeleton-sheen: #422a30;
-    --overlay-bg: rgba(12, 6, 8, 0.68);
+    --skeleton-base: #262626;
+    --skeleton-sheen: #333333;
+    --overlay-bg: rgba(0, 0, 0, 0.72);
   }
 }
 
 :root[data-theme='dark'] {
-  --canvas: #170f11;
+  --canvas: #0a0a0a;
   --canvas-grad: radial-gradient(
-    1200px 520px at 50% -10%,
-    #34181f 0%,
-    rgba(52, 24, 31, 0) 72%
+    1100px 480px at 50% -12%,
+    rgba(255, 255, 0, 0.12) 0%,
+    rgba(255, 255, 0, 0) 70%
   );
-  --surface: #231518;
-  --surface-2: #2b1b1f;
-  --surface-3: #382227;
-  --surface-inset: #1d1215;
+  --surface: #181818;
+  --surface-2: #202020;
+  --surface-3: #2b2b2b;
+  --surface-inset: #121212;
 
-  --border: #3d2a2f;
-  --border-strong: #573c43;
-  --border-hairline: rgba(255, 255, 255, 0.08);
+  --border: #2e2e2e;
+  --border-strong: #464646;
+  --border-hairline: rgba(255, 255, 255, 0.09);
 
-  --text: #f7efec;
-  --text-muted: #c6b0b4;
-  --text-subtle: #9a868b;
-  --text-inverse: #231518;
+  --text: #f8f8f8;
+  --text-muted: #b0b0b0;
+  --text-subtle: #808080;
+  --text-inverse: #000000;
 
-  --brand: #ffc7d5;
-  --brand-hover: #ffdde5;
-  --brand-active: #ffb3c6;
-  --brand-soft: rgba(255, 199, 213, 0.14);
-  --brand-soft-hover: rgba(255, 199, 213, 0.22);
-  --brand-on-soft: #ffc7d5;
-  --brand-ring: rgba(255, 199, 213, 0.38);
+  --brand: #ffff00;
+  --brand-hover: #ffff4d;
+  --brand-active: #e6e600;
+  --on-brand: #000000;
+  --brand-soft: rgba(255, 255, 0, 0.14);
+  --brand-soft-hover: rgba(255, 255, 0, 0.22);
+  --brand-on-soft: #ffff00;
+  --brand-ring: rgba(255, 255, 0, 0.5);
 
-  --critical: #ff8a85;
-  --critical-soft: rgba(255, 138, 133, 0.15);
-  --critical-on-soft: #ffb0ac;
-  --critical-border: rgba(255, 138, 133, 0.34);
+  --accion: #ffff00;
+  --accion-hover: #ffff4d;
+  --on-accion: #000000;
 
-  --warning: #f0b429;
-  --warning-soft: rgba(240, 180, 41, 0.14);
-  --warning-on-soft: #f6cc6e;
-  --warning-border: rgba(240, 180, 41, 0.32);
+  --critical: #ff6a72;
+  --critical-solid: #fa414a;
+  --critical-soft: rgba(250, 65, 74, 0.16);
+  --critical-on-soft: #ff9298;
+  --critical-border: rgba(250, 65, 74, 0.36);
 
-  --success: #5fd39a;
-  --success-soft: rgba(95, 211, 154, 0.14);
-  --success-on-soft: #92e5bb;
-  --success-border: rgba(95, 211, 154, 0.3);
+  --warning: #ff9a68;
+  --warning-solid: #fa7a42;
+  --warning-soft: rgba(250, 122, 66, 0.15);
+  --warning-on-soft: #ffb996;
+  --warning-border: rgba(250, 122, 66, 0.34);
 
-  --info: #ffc7d5;
-  --info-soft: rgba(255, 199, 213, 0.14);
-  --info-on-soft: #ffc7d5;
-  --info-border: rgba(255, 199, 213, 0.3);
+  --success: #9cfa4a;
+  --success-solid: #84f81c;
+  --success-soft: rgba(132, 248, 28, 0.14);
+  --success-on-soft: #b6fb7d;
+  --success-border: rgba(132, 248, 28, 0.32);
 
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5);
-  --shadow-2: 0 2px 4px rgba(0, 0, 0, 0.45), 0 8px 20px rgba(0, 0, 0, 0.45);
-  --shadow-3: 0 4px 8px rgba(0, 0, 0, 0.5), 0 16px 40px rgba(0, 0, 0, 0.55),
-    0 32px 64px rgba(0, 0, 0, 0.45);
+  --info: #ffff00;
+  --info-soft: rgba(255, 255, 0, 0.13);
+  --info-on-soft: #ffff8f;
+  --info-border: rgba(255, 255, 0, 0.3);
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.6);
+  --shadow-2: 0 2px 4px rgba(0, 0, 0, 0.5), 0 8px 20px rgba(0, 0, 0, 0.5);
+  --shadow-3: 0 4px 8px rgba(0, 0, 0, 0.55), 0 16px 40px rgba(0, 0, 0, 0.6),
+    0 32px 64px rgba(0, 0, 0, 0.5);
   --shadow-inner-top: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 
-  --skeleton-base: #332025;
-  --skeleton-sheen: #422a30;
-  --overlay-bg: rgba(12, 6, 8, 0.68);
+  --skeleton-base: #262626;
+  --skeleton-sheen: #333333;
+  --overlay-bg: rgba(0, 0, 0, 0.72);
 }

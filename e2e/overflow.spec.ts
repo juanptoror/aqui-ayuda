@@ -247,7 +247,26 @@ test.describe('coherencia del tema', () => {
     expect(elegido).toEqual(automatico)
   })
 
-  test('el color de acción contrasta con el fondo en ambos temas', async ({ page }) => {
+  /**
+   * El amarillo de marca (#ffff00) contrasta 1.07:1 con el blanco: es un color
+   * de FONDO, no de tinta. Por eso aquí no se comprueba brand-vs-canvas —
+   * fallaría por diseño— sino los dos pares que sí tienen que ser legibles:
+   * la tinta de acción sobre el fondo, y la tinta sobre el amarillo.
+   */
+  test('los pares de color legibles contrastan en ambos temas', async ({ page }) => {
+    const luminancia = (hex: string) => {
+      const m = hex.replace('#', '').trim()
+      const n = m.length === 3 ? m.split('').map((c) => c + c).join('') : m
+      const canal = (v: number) =>
+        v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)
+      const [r, g, b] = [0, 2, 4].map((i) => canal(parseInt(n.slice(i, i + 2), 16) / 255))
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b
+    }
+    const ratio = (a: string, b: string) => {
+      const [x, y] = [luminancia(a), luminancia(b)].sort((p, q) => q - p)
+      return (x + 0.05) / (y + 0.05)
+    }
+
     for (const tema of ['light', 'dark'] as const) {
       await page.emulateMedia({ colorScheme: tema })
       await page.addInitScript((t) => {
@@ -260,27 +279,36 @@ test.describe('coherencia del tema', () => {
       await page.goto('/')
       await page.waitForSelector('.page-header__title')
 
-      const { brand, canvas } = await page.evaluate(() => {
+      const c = await page.evaluate(() => {
         const e = getComputedStyle(document.documentElement)
+        const v = (n: string) => e.getPropertyValue(n).trim()
         return {
-          brand: e.getPropertyValue('--brand').trim(),
-          canvas: e.getPropertyValue('--canvas').trim(),
+          accion: v('--accion'),
+          canvas: v('--canvas'),
+          brand: v('--brand'),
+          onBrand: v('--on-brand'),
+          texto: v('--text'),
+          superficie: v('--surface'),
         }
       })
 
-      const luz = (hex: string) => {
-        const m = hex.replace('#', '')
-        const n = m.length === 3 ? m.split('').map((c) => c + c).join('') : m
-        const [r, g, b] = [0, 2, 4].map((i) => parseInt(n.slice(i, i + 2), 16) / 255)
-        return 0.2126 * r + 0.7152 * g + 0.0722 * b
-      }
-
-      // No es un cálculo WCAG completo: solo comprueba que el color de acción
-      // y el fondo estén en extremos opuestos, que es donde falla al invertir.
+      // Texto de cuerpo sobre su superficie: exigencia AA para texto normal.
       expect(
-        Math.abs(luz(brand) - luz(canvas)),
-        `en tema ${tema}, --brand ${brand} no contrasta con --canvas ${canvas}`,
-      ).toBeGreaterThan(0.4)
+        ratio(c.texto, c.superficie),
+        `tema ${tema}: --text ${c.texto} sobre --surface ${c.superficie}`,
+      ).toBeGreaterThan(4.5)
+
+      // Tinta de acción sobre el fondo de la página.
+      expect(
+        ratio(c.accion, c.canvas),
+        `tema ${tema}: --accion ${c.accion} sobre --canvas ${c.canvas}`,
+      ).toBeGreaterThan(4.5)
+
+      // Lo que se escribe ENCIMA del amarillo de marca (botones primarios).
+      expect(
+        ratio(c.onBrand, c.brand),
+        `tema ${tema}: --on-brand ${c.onBrand} sobre --brand ${c.brand}`,
+      ).toBeGreaterThan(4.5)
     }
   })
 })

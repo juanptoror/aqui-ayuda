@@ -157,14 +157,19 @@
 }
 
 /* En móvil las acciones ocupan su propia línea a ancho completo: botones
-   grandes, fáciles de acertar con el pulgar y sin texto recortado. */
+   grandes y fáciles de acertar con el pulgar.
+   `min-width: max-content` es lo que impide que se recorten: sin él, un
+   flex-basis fijo comprimía "Usar mi ubicación" hasta "Usar mi …". Con él, el
+   botón nunca baja de su ancho natural y, si dos no caben, `flex-wrap` los
+   reparte en dos filas en lugar de mutilar el texto. */
 @media (max-width: 639px) {
   .page-header__actions {
     width: 100%;
   }
 
   .page-header__actions > * {
-    flex: 1 1 8rem;
+    flex: 1 1 auto;
+    min-width: max-content;
   }
 }
 
@@ -226,21 +231,40 @@
   transform: none;
 }
 
+/* Amarillo de marca con texto negro. El borde negro no es decorativo: sobre
+   fondo claro el amarillo no se despega del blanco y el botón perdería su
+   silueta. Es exactamente como lo usa el brand kit. */
 .btn--primary {
   --btn-bg: var(--brand);
-  --btn-fg: var(--text-inverse);
-  --btn-border: color-mix(in srgb, var(--brand) 78%, #000);
+  --btn-fg: var(--on-brand);
+  --btn-border: var(--on-brand);
   --btn-shadow: var(--shadow-2);
-  color: var(--text-inverse);
+  color: var(--on-brand);
+  font-weight: 700;
 }
 
 .btn--primary:hover {
   --btn-bg: var(--brand-hover);
-  color: var(--text-inverse);
+  color: var(--on-brand);
 }
 
 .btn--primary:active {
   --btn-bg: var(--brand-active);
+}
+
+/* Acción neutra de máximo peso: negro en claro, amarillo en oscuro. */
+.btn--accion {
+  --btn-bg: var(--accion);
+  --btn-fg: var(--on-accion);
+  --btn-border: var(--accion);
+  --btn-shadow: var(--shadow-2);
+  color: var(--on-accion);
+  font-weight: 700;
+}
+
+.btn--accion:hover {
+  --btn-bg: var(--accion-hover);
+  color: var(--on-accion);
 }
 
 .btn--soft {
@@ -270,9 +294,11 @@
 }
 
 .btn--critical {
-  --btn-bg: var(--critical);
-  --btn-fg: var(--text-inverse);
-  --btn-border: color-mix(in srgb, var(--critical) 78%, #000);
+  --btn-bg: var(--critical-solid);
+  --btn-fg: #000000;
+  --btn-border: #000000;
+  color: #000000;
+  font-weight: 700;
 }
 
 .btn--lg {
@@ -371,13 +397,15 @@
 }
 
 .card--interactive:hover {
-  border-color: var(--brand);
+  border-color: var(--accion);
   box-shadow: var(--shadow-3);
   transform: translateY(-3px);
 }
 
+/* El título del hover NO va en amarillo: sobre superficie clara sería
+   ilegible. El amarillo de marca es un color de fondo, nunca de tinta. */
 .card--interactive:hover .card__title {
-  color: var(--brand);
+  color: var(--accion);
 }
 
 /* Centro cerrado: se atenúa para que no compita con los que sí reciben, pero
@@ -621,8 +649,8 @@
 }
 
 .kpi--brand {
-  --kpi-icon-bg: var(--brand-soft);
-  --kpi-icon-fg: var(--brand);
+  --kpi-icon-bg: var(--brand);
+  --kpi-icon-fg: var(--on-brand);
 }
 
 /* --------------------------- Control segmentado --------------------------- */
@@ -695,7 +723,7 @@
 }
 
 .segmented__option[aria-selected='true'] svg {
-  color: var(--brand);
+  color: var(--accion);
 }
 
 /* ------------------------------- Campos ----------------------------------- */
@@ -757,14 +785,14 @@
 .input:hover,
 .select:hover,
 .textarea:hover {
-  border-color: var(--brand);
+  border-color: var(--accion);
 }
 
 .input:focus,
 .select:focus,
 .textarea:focus {
   outline: none;
-  border-color: var(--brand);
+  border-color: var(--accion);
   box-shadow: 0 0 0 3px var(--brand-ring);
 }
 
@@ -840,20 +868,23 @@
 }
 
 .chip:hover {
-  border-color: var(--brand);
+  border-color: var(--accion);
   color: var(--text);
   box-shadow: var(--shadow-1);
 }
 
+/* Chip activo: fondo amarillo de marca con tinta negra y borde negro, como
+   los pines del brand kit. */
 .chip[aria-pressed='true'] {
   background: var(--brand);
-  border-color: var(--brand);
-  color: var(--text-inverse);
+  border-color: var(--on-brand);
+  color: var(--on-brand);
+  font-weight: 700;
 }
 
 .chip[aria-pressed='true']:hover {
   background: var(--brand-hover);
-  color: var(--text-inverse);
+  color: var(--on-brand);
 }
 
 /* ----------------------------- Estado vacío ------------------------------- */
@@ -884,8 +915,8 @@
   width: 56px;
   height: 56px;
   border-radius: var(--r-lg);
-  background: var(--empty-icon-bg, var(--brand-soft));
-  color: var(--empty-icon-fg, var(--brand));
+  background: var(--empty-icon-bg, var(--brand));
+  color: var(--empty-icon-fg, var(--on-brand));
   border: 1px solid var(--border);
   box-shadow: var(--shadow-1);
 }

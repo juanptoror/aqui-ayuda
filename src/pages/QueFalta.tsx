@@ -181,7 +181,7 @@ export function QueFalta() {
                           height: '100%',
                           width: `${Math.max(6, (c.total / maximo) * 100)}%`,
                           borderRadius: 'var(--r-full)',
-                          background: i === 0 ? 'var(--critical)' : 'var(--brand)',
+                          background: i === 0 ? 'var(--critical-solid)' : 'var(--accion)',
                         }}
                       />
                     </div>

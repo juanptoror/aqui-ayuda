@@ -256,7 +256,7 @@ export function enlaceWhatsapp(numero: string | null, titulo: string): string | 
   const limpio = numero.replace(/[^\d]/g, '')
   if (limpio.length < 8) return null
   const texto = encodeURIComponent(
-    `Hola, vi tu publicación "${titulo}" en Ayudas Colombia y quiero ayudar.`,
+    `Hola, vi tu publicación "${titulo}" en AquíAyuda y quiero ayudar.`,
   )
   return `https://wa.me/${limpio}?text=${texto}`
 }
