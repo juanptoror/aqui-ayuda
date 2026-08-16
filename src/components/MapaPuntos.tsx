@@ -1,19 +1,27 @@
-import { useMemo, useState, type KeyboardEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type ComponentType } from 'react'
+import type { Coordenada } from '@/dominio/modelos'
+import { usePreferencias } from '@/state/preferencias'
 import type { Origen } from './Fuente'
 import { ComoLlegar } from './ComoLlegar'
+import { MapaEsquema } from './MapaEsquema'
 
 /**
- * Mapa de posiciones sin librería, sin tiles y sin red.
+ * El mapa de la aplicación, en dos capas.
  *
- * No dibuja calles: dibuja quién está dónde, unos respecto a otros. Es
- * deliberado. Un mapa con tiles pide decenas de imágenes a un CDN, y en una
- * emergencia la red móvil es lo primero que se cae; el mapa que no carga es
- * peor que ninguno porque deja un rectángulo gris en medio de la pantalla.
+ * Abajo, el esquema: posiciones calculadas y dibujadas en el dispositivo, sin
+ * red. Se pinta en el primer fotograma, siempre.
  *
- * La proyección es equirectangular con corrección por coseno de la latitud. A
- * escala de un municipio el error es despreciable, y sin la corrección el Eje
- * Cafetero (4,8° N) saldría estirado un 0,4% en horizontal — invisible, pero
- * hacerlo bien cuesta una línea.
+ * Encima, el mapa de verdad: calles y barrios de OpenStreetMap con Leaflet,
+ * que llega en un `import()` aparte y funde sobre el esquema cuando el primer
+ * tile está en pantalla. Si no llega —red caída, CDN bloqueado, avión— se
+ * retira y abajo sigue estando el esquema.
+ *
+ * El orden importa: primero lo que no puede fallar, después lo que es mejor.
+ * Al revés habría un rectángulo gris durante la espera, y en una emergencia
+ * eso es exactamente lo que no se puede permitir.
+ *
+ * La ficha del punto seleccionado y la leyenda viven aquí, fuera de las dos
+ * capas, para que cambiar de capa no cambie nada de lo que se lee.
  */
 
 export interface PuntoMapa {
@@ -28,157 +36,101 @@ export interface PuntoMapa {
   alPulsar?: () => void
 }
 
-const MARGEN = 0.08
+/** Lo que necesita cualquiera de las dos capas para dibujar lo mismo. */
+export interface PropsCapaMapa {
+  puntos: PuntoMapa[]
+  yoEstoyAqui: Coordenada | null
+  activo: string | null
+  alActivar: (id: string) => void
+}
 
 interface Props {
   puntos: PuntoMapa[]
   /** Se pinta distinto y nunca se recorta del encuadre. */
-  yoEstoyAqui?: { lat: number; lng: number } | null
+  yoEstoyAqui?: Coordenada | null
   alto?: number
 }
 
+/** Lo que dura el fundido de la capa de tiles, en la hoja de estilos. */
+const FUNDIDO_MS = 320
+
 export function MapaPuntos({ puntos, yoEstoyAqui = null, alto }: Props) {
+  const { tema } = usePreferencias()
   const [activo, setActivo] = useState<string | null>(null)
 
-  const proyectados = useMemo(() => {
-    const todos = [...puntos.map((p) => ({ lat: p.lat, lng: p.lng }))]
-    if (yoEstoyAqui) todos.push(yoEstoyAqui)
-    if (todos.length === 0) return null
+  const [Tiles, setTiles] = useState<ComponentType<
+    PropsCapaMapa & { tema: 'light' | 'dark'; alEstarListo: () => void; alFallar: () => void }
+  > | null>(null)
+  const [sinTiles, setSinTiles] = useState(false)
+  const [esquemaVisible, setEsquemaVisible] = useState(true)
+  const relojRef = useRef<number | undefined>(undefined)
 
-    const lats = todos.map((p) => p.lat)
-    const lngs = todos.map((p) => p.lng)
-    let minLat = Math.min(...lats)
-    let maxLat = Math.max(...lats)
-    let minLng = Math.min(...lngs)
-    let maxLng = Math.max(...lngs)
-
-    // Un solo punto (o todos en el mismo sitio) da un rango cero y la división
-    // explota. Se abre una ventana mínima de ~1 km alrededor.
-    const RANGO_MIN = 0.01
-    if (maxLat - minLat < RANGO_MIN) {
-      const c = (maxLat + minLat) / 2
-      minLat = c - RANGO_MIN / 2
-      maxLat = c + RANGO_MIN / 2
+  useEffect(() => {
+    // Sin red no se intenta siquiera: se ahorra la petición y el parpadeo.
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      setSinTiles(true)
+      return
     }
-    if (maxLng - minLng < RANGO_MIN) {
-      const c = (maxLng + minLng) / 2
-      minLng = c - RANGO_MIN / 2
-      maxLng = c + RANGO_MIN / 2
+    let vivo = true
+    import('./MapaTiles')
+      .then((m) => {
+        if (vivo) setTiles(() => m.MapaTiles)
+      })
+      .catch(() => {
+        // El trozo de Leaflet no bajó. El esquema ya está en pantalla.
+        if (vivo) setSinTiles(true)
+      })
+    return () => {
+      vivo = false
+      window.clearTimeout(relojRef.current)
     }
+  }, [])
 
-    const cosLat = Math.cos(((minLat + maxLat) / 2) * (Math.PI / 180))
-    const anchoGeo = (maxLng - minLng) * cosLat
-    const altoGeo = maxLat - minLat
+  const alEstarListo = useCallback(() => {
+    // El esquema se retira cuando el fundido ya lo tapa, no antes: si se
+    // desmontase de golpe se vería el fondo del contenedor por debajo.
+    window.clearTimeout(relojRef.current)
+    relojRef.current = window.setTimeout(() => setEsquemaVisible(false), FUNDIDO_MS)
+  }, [])
 
-    // Se conserva la relación de aspecto real: el eje mayor manda y el menor se
-    // centra. Si no, las distancias del dibujo mentirían.
-    const escala = Math.max(anchoGeo, altoGeo)
-    const desplazX = (escala - anchoGeo) / 2
-    const desplazY = (escala - altoGeo) / 2
+  const alFallar = useCallback(() => {
+    setSinTiles(true)
+    setEsquemaVisible(true)
+  }, [])
 
-    const aXY = (lat: number, lng: number) => ({
-      x: MARGEN + ((lng - minLng) * cosLat + desplazX) / escala * (1 - MARGEN * 2),
-      y: MARGEN + (1 - (lat - minLat + desplazY) / escala) * (1 - MARGEN * 2),
-    })
-
-    return {
-      puntos: puntos.map((p) => ({ ...p, ...aXY(p.lat, p.lng) })),
-      yo: yoEstoyAqui ? aXY(yoEstoyAqui.lat, yoEstoyAqui.lng) : null,
-    }
-  }, [puntos, yoEstoyAqui])
-
-  if (!proyectados) return null
-
-  const seleccionado = proyectados.puntos.find((p) => p.id === activo) ?? null
+  const seleccionado = puntos.find((p) => p.id === activo) ?? null
 
   return (
     <div>
-      <div className="mapa" style={alto ? { aspectRatio: 'auto', height: alto } : undefined}>
-        <svg
-          className="mapa__svg"
-          viewBox="0 0 1000 1000"
-          preserveAspectRatio="xMidYMid meet"
-          role="group"
-          aria-label={`Mapa con ${proyectados.puntos.length} ubicaciones`}
-        >
-          {/* Retícula: da sensación de escala sin fingir que son calles. */}
-          <g opacity="0.5">
-            {[0, 250, 500, 750, 1000].map((v) => (
-              <g key={v}>
-                <line x1={v} y1="0" x2={v} y2="1000" stroke="var(--border)" strokeWidth="1" />
-                <line x1="0" y1={v} x2="1000" y2={v} stroke="var(--border)" strokeWidth="1" />
-              </g>
-            ))}
-          </g>
+      <div
+        className="mapa"
+        style={alto ? { aspectRatio: 'auto', height: alto } : undefined}
+        role="group"
+        aria-label={`Mapa con ${puntos.length} ubicaciones`}
+      >
+        {esquemaVisible && (
+          <MapaEsquema
+            puntos={puntos}
+            yoEstoyAqui={yoEstoyAqui}
+            activo={activo}
+            alActivar={setActivo}
+          />
+        )}
 
-          {proyectados.yo && (
-            <g>
-              <circle
-                cx={proyectados.yo.x * 1000}
-                cy={proyectados.yo.y * 1000}
-                r="22"
-                fill="var(--info)"
-                opacity="0.18"
-              />
-              <circle
-                cx={proyectados.yo.x * 1000}
-                cy={proyectados.yo.y * 1000}
-                r="8"
-                fill="var(--info)"
-                stroke="var(--surface)"
-                strokeWidth="3"
-              />
-            </g>
-          )}
-
-          {proyectados.puntos.map((p) => {
-            /* Los dos colores de marca —amarillo y lima— son vecinos en el tono
-               y mucha gente no los separa. La forma sí se distingue siempre:
-               cuadrado para un sitio fijo, círculo para una persona. El color
-               acompaña, no es lo que carga la información. */
-            const r = p.destacado ? 11 : 8
-            const comun = {
-              className: 'mapa__punto',
-              fill: p.origen === 'corag' ? 'var(--lima)' : 'var(--brand)',
-              /* Semitransparentes a propósito: en una ciudad hay decenas de
-                 puntos casi encima, y opacos se tapan unos a otros hasta
-                 parecer uno solo. Así el amontonamiento se ve más oscuro y
-                 se lee como lo que es: mucha gente en la misma manzana. */
-              fillOpacity: 0.72,
-              stroke: p.id === activo ? 'var(--text)' : 'var(--border-strong)',
-              strokeWidth: p.id === activo ? 3 : 1.2,
-              tabIndex: 0,
-              role: 'button',
-              'aria-label': p.titulo,
-              onMouseEnter: () => setActivo(p.id),
-              onFocus: () => setActivo(p.id),
-              onClick: () => (p.alPulsar ? p.alPulsar() : setActivo(p.id)),
-              onKeyDown: (e: KeyboardEvent) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault()
-                  p.alPulsar?.()
-                }
-              },
-            }
-
-            return p.origen === 'corag' ? (
-              <circle key={p.id} cx={p.x * 1000} cy={p.y * 1000} r={r} {...comun} />
-            ) : (
-              <rect
-                key={p.id}
-                x={p.x * 1000 - r}
-                y={p.y * 1000 - r}
-                width={r * 2}
-                height={r * 2}
-                rx={r / 2.5}
-                {...comun}
-              />
-            )
-          })}
-        </svg>
+        {Tiles && !sinTiles && (
+          <Tiles
+            puntos={puntos}
+            yoEstoyAqui={yoEstoyAqui}
+            activo={activo}
+            alActivar={setActivo}
+            tema={tema}
+            alEstarListo={alEstarListo}
+            alFallar={alFallar}
+          />
+        )}
       </div>
 
-      {/* El detalle va FUERA del svg: dentro tendría que reimplementar el
+      {/* La ficha va FUERA del mapa: dentro tendría que reimplementar el
           recorte de texto a mano y en 375px no cabe de ninguna manera. */}
       <div
         className="panel"
@@ -200,6 +152,14 @@ export function MapaPuntos({ puntos, yoEstoyAqui = null, alto }: Props) {
                 </div>
               )}
             </div>
+            {/* Antes, tocar un centro saltaba a su ficha y en el móvil nunca
+                se llegaba a ver esta línea. Ahora el toque selecciona y desde
+                aquí se decide: leer la ficha o ir al sitio. */}
+            {seleccionado.alPulsar && (
+              <button type="button" className="btn btn--sm" onClick={seleccionado.alPulsar}>
+                <span>Ver ficha</span>
+              </button>
+            )}
             {/* Nuestro mapa dice quién está cerca de qué; para *llegar* hace
                 falta la app del teléfono, con su tráfico y su voz. */}
             <ComoLlegar
@@ -228,7 +188,7 @@ export function MapaPuntos({ puntos, yoEstoyAqui = null, alto }: Props) {
         </span>
         {yoEstoyAqui && (
           <span>
-            <i className="mapa__punto-leyenda" style={{ background: 'var(--info)' }} />
+            <i className="mapa__punto-leyenda" style={{ background: 'var(--mapa-yo)' }} />
             Estás aquí
           </span>
         )}

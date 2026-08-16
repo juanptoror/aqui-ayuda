@@ -25,6 +25,9 @@ export default defineConfig({
         manualChunks: {
           react: ['react', 'react-dom', 'react-router-dom'],
           supabase: ['@supabase/supabase-js'],
+          // Leaflet solo lo pide quien abre un mapa, y llega después de que la
+          // pantalla ya esté pintada con el esquema. Chunk aparte.
+          leaflet: ['leaflet'],
         },
       },
     },

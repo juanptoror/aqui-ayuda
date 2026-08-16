@@ -242,8 +242,9 @@ export function Mapa() {
               fontSize: 'var(--text-sm)',
             }}
           >
-            El dibujo respeta las distancias reales entre puntos, pero no lleva calles: se hace en
-            tu dispositivo para que funcione aunque la red vaya justa.
+            Las calles son de OpenStreetMap. Si la red va justa y no llegan, debajo queda un
+            esquema con las mismas posiciones dibujado en tu dispositivo: el mapa no se te va a
+            quedar en gris.
           </p>
         </section>
       </div>
