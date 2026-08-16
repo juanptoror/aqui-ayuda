@@ -87,6 +87,25 @@ test.describe('el mapa junta las dos fuentes', () => {
     expect(fuera).toMatch(/\d+ ubicaciones/)
   })
 
+  test('sin municipio ni ubicación no se promete ningún radio', async ({ page }) => {
+    /* Sin `ac.ciudad` no hay origen, no se filtra nada y el mapa encuadra el
+       país entero a zoom 7. El encabezado seguía diciendo "en un radio de 15
+       km": una cercanía inventada, y la de arriba no lo pillaba porque fija la
+       ciudad. Aquí NO se fija a propósito. */
+    await page.goto('/mapa')
+    await page.waitForSelector('.mapa__punto', { timeout: 45_000 })
+    await page.waitForTimeout(6000)
+
+    const subtitulo = await page.locator('h1').locator('..').innerText()
+    expect(subtitulo).not.toMatch(/radio de \d+ km/i)
+    expect(subtitulo).toMatch(/todo el país/i)
+
+    // Y el selector de radio tampoco se ofrece: un control que no recorta nada
+    // es la misma mentira en otro sitio.
+    const radios = await page.locator('.chip').filter({ hasText: /^\d+ km$/ }).count()
+    expect(radios).toBe(0)
+  })
+
   test('la forma distingue las fuentes sin depender del color', async ({ page }) => {
     await conCiudad(page, 'pereira-2')
     await page.goto('/mapa')

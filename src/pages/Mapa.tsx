@@ -43,7 +43,12 @@ export function Mapa() {
   const qOfertas = useAyudas({ tipo: 'offer', ubicacion, radioKm, limite: LIMITE_MAX })
 
   /* Sin ubicación del navegador se usa el centro del municipio guardado: casi
-     siempre basta para encuadrar, y evita la pantalla vacía. */
+     siempre basta para encuadrar, y evita la pantalla vacía.
+
+     Sin ninguna de las dos NO se inventa un origen. Poner Pereira por defecto
+     le diría a alguien de Manizales "esto es lo que tienes a 15 km" señalando
+     otro departamento, y le escondería lo que sí tiene al lado. Se enseña el
+     país entero y el texto lo dice; el radio, mientras tanto, no se promete. */
   const origen = useMemo(() => {
     if (ubicacion) return ubicacion
     if (!ciudadGuardada) return null
@@ -136,7 +141,12 @@ export function Mapa() {
         subtitulo={
           cargando
             ? 'Buscando ubicaciones en las dos fuentes…'
-            : `${conteo(centros, 'centro de acopio', 'centros de acopio')} y ${conteo(personas, 'persona', 'personas')} en un radio de ${radioKm} km.`
+            : /* El radio solo se nombra cuando de verdad se aplica. Sin origen no
+                 hay nada que filtrar, y decir "en un radio de 15 km" sobre un
+                 mapa del país entero es prometer una cercanía que no existe. */
+              `${conteo(centros, 'centro de acopio', 'centros de acopio')} y ${conteo(personas, 'persona', 'personas')} ${
+                origen ? `en un radio de ${radioKm} km` : 'en todo el país, sin acotar por distancia'
+              }.`
         }
         acciones={
           <>
@@ -162,26 +172,48 @@ export function Mapa() {
           nota="Cuadrados los centros de acopio, círculos las personas. Cada fuente publica su propia coordenada; ninguna de las dos cubre a la otra."
         />
 
-        {errorUbicacion && (
+        {(errorUbicacion || !origen) && (
           <div className="stack">
-            <Notice tono="warning">{errorUbicacion}</Notice>
+            {errorUbicacion && <Notice tono="warning">{errorUbicacion}</Notice>}
+            {!origen && (
+              <Notice
+                tono="info"
+                accion={
+                  <button
+                    type="button"
+                    className="btn btn--sm"
+                    onClick={() => setSelectorAbierto(true)}
+                  >
+                    <span>Elegir municipio</span>
+                  </button>
+                }
+              >
+                Estás viendo <strong>todo el país</strong>: sin saber dónde estás no hay radio
+                que aplicar. Dinos tu ubicación o elige municipio y encuadramos el mapa a tu
+                alrededor.
+              </Notice>
+            )}
           </div>
         )}
 
-        <section className="section" style={{ marginTop: errorUbicacion ? undefined : 0 }}>
-          <div className="chips" style={{ marginBottom: 'var(--sp-4)' }}>
-            {RADIOS.map((r) => (
-              <button
-                key={r}
-                type="button"
-                className="chip"
-                onClick={() => setRadioKm(r)}
-                aria-pressed={r === radioKm}
-              >
-                <span>{r} km</span>
-              </button>
-            ))}
-          </div>
+        <section className="section" style={{ marginTop: errorUbicacion || !origen ? undefined : 0 }}>
+          {/* Las chips solo aparecen cuando hay origen. Un selector de radio que
+              no recorta nada es la misma mentira que el texto, en otro sitio. */}
+          {origen && (
+            <div className="chips" style={{ marginBottom: 'var(--sp-4)' }}>
+              {RADIOS.map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  className="chip"
+                  onClick={() => setRadioKm(r)}
+                  aria-pressed={r === radioKm}
+                >
+                  <span>{r} km</span>
+                </button>
+              ))}
+            </div>
+          )}
 
           {cargando ? (
             <div
