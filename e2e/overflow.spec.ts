@@ -66,6 +66,11 @@ async function elementosDesbordados(page: Page) {
       // de código) están autorizados a tener contenido más ancho que ellos.
       if (estilo.overflowX === 'auto' || estilo.overflowX === 'scroll') continue
       if (dentroDeScroller(el)) continue
+      // La rejilla de un mapa de tiles se dibuja a propósito más ancha que su
+      // caja: las teselas de los bordes sobresalen y el contenedor las recorta.
+      // Medir eso es medir cómo funciona un mapa, no un fallo de maquetación;
+      // el scroll real de la página lo sigue comprobando la segunda parte.
+      if (el.classList.contains('leaflet-tile')) continue
 
       const r = el.getBoundingClientRect()
       if (r.width === 0 && r.height === 0) continue

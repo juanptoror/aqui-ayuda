@@ -55,8 +55,10 @@ test.describe('el mapa junta las dos fuentes', () => {
     // Corag responde más lento que Supabase; el mapa pinta lo que ya tiene.
     await page.waitForTimeout(6000)
 
-    const cuadrados = await page.locator('rect.mapa__punto').count()
-    const circulos = await page.locator('circle.mapa__punto').count()
+    // Las clases valen para las dos capas —el mapa de calles y el esquema de
+    // respaldo—, así que la prueba no depende de que el CDN de tiles responda.
+    const cuadrados = await page.locator('.mapa__punto--sitio').count()
+    const circulos = await page.locator('.mapa__punto--persona').count()
 
     // Que haya de los dos es la prueba de que el límite de la API no volvió a
     // devolver 400 en silencio: cuando lo hacía, los círculos eran cero y la
@@ -79,7 +81,7 @@ test.describe('el mapa junta las dos fuentes', () => {
     // radio anunciado: durante un rato el mapa decía "15 km" y pintaba puntos a
     // más de 100, que estiraban el encuadre hasta amontonar el resto.
     const fuera = await page.evaluate(() => {
-      const el = document.querySelector('.mapa svg')
+      const el = document.querySelector('.mapa')
       return el ? el.getAttribute('aria-label') : null
     })
     expect(fuera).toMatch(/\d+ ubicaciones/)

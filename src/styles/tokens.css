@@ -87,6 +87,14 @@
   --naranja: #fa7a42;
   --rojo: #fa414a;
 
+  /* El punto azul de "estás aquí". Es el único color de la aplicación que no
+     sale del kit: sobre un mapa con calles, el negro del tema claro se pierde
+     entre las vías y el amarillo del oscuro se confunde con los centros de
+     acopio. El azul de ubicación es además la convención que todo el mundo ya
+     lee sin explicación. Igual en los dos temas, y también en el esquema, para
+     que la leyenda diga lo mismo con y sin tiles. */
+  --mapa-yo: #2f7cf6;
+
   /* ======================= TEMA CLARO (por defecto) ======================= */
   --canvas: #f4f4f4;
   --canvas-grad: radial-gradient(
