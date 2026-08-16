@@ -461,12 +461,25 @@
 }
 
 /* --------------------------- Sello de procedencia -------------------------- */
-/* Cada backend tiene su color propio para que la diferencia se capte sin leer:
-   Ayudas Pereira en amarillo de marca, Corag en lima, Pereira Unida en naranja.
-   Pereira Responde se sale de la paleta a propósito y va en grafito: es la
-   única fuente que no ofrece ayuda sino que señala peligro, y el rojo —el otro
-   candidato— está reservado a la urgencia dentro de las tarjetas. Un sello rojo
-   sobre un refugio abierto diría justo lo contrario de lo que es. */
+/* Cada backend se distingue sin leer, y eso obliga a cinco tratamientos con una
+   paleta de cuatro colores de los que uno está vetado.
+   Ayudas Pereira en amarillo de marca, Corag en lima, Pereira Unida en naranja,
+   Pereira Responde en rojo.
+
+   El rojo aquí no es la urgencia de la app: es el color de marca de Pereira
+   Responde, el mismo con el que se presenta en su propio mapa. Y un sello dice
+   DE QUIÉN es el dato, no cómo de grave es, así que el préstamo no colisiona
+   con el rojo de las tarjetas —que sigue reservado a la urgencia— del mismo
+   modo que el amarillo de Ayudas Pereira no significa "aviso".
+
+   Vivienda, la quinta, no lleva color: va hueca, con el borde por todo relleno.
+   Un quinto color habría que inventarlo, y hay una diferencia real que contar
+   sin inventar nada: es la única fuente que no es ayuda de nadie, sino un
+   catálogo comercial de propietarios e inmobiliarias. Hueco lo dice —está en
+   lista, no ofrecido— y además la distingue del amarillo de Ayudas Pereira, con
+   el que compartía sello hasta ahora. El hueco se repite en los tres sitios
+   donde se pinta el origen: en el sello y en el icono es el relleno que falta;
+   en la franja de 3px, donde no hay dentro que vaciar, es el trazo partido. */
 
 .sello-fuente {
   display: inline-flex;
@@ -493,9 +506,17 @@
   --fuente-bg: var(--naranja);
 }
 
+/* Tinta negra, como el resto de sellos: sobre este rojo el negro da 6,1:1 de
+   contraste y el blanco solo 3,4:1, por debajo del mínimo legible. */
 .sello-fuente[data-origen='pereira-responde'] {
-  --fuente-bg: var(--text);
-  --fuente-fg: var(--text-inverse);
+  --fuente-bg: var(--rojo);
+}
+
+/* Transparente y no `--surface`: el sello cae sobre pies de tarjeta, hojas y
+   paneles, que no son todos la misma superficie. Lo hueco es hueco de verdad. */
+.sello-fuente[data-origen='vivienda'] {
+  --fuente-bg: transparent;
+  --fuente-fg: var(--text);
   border-color: var(--text);
 }
 
@@ -512,7 +533,15 @@
 }
 
 .card__accent[data-origen='pereira-responde'] {
-  background: var(--text);
+  background: var(--rojo);
+}
+
+.card__accent[data-origen='vivienda'] {
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--text) 0 10px,
+    transparent 10px 18px
+  );
 }
 
 .kpi__icon[data-origen='ayudas-pereira'] {
@@ -525,9 +554,22 @@
   color: var(--on-brand);
 }
 
+.kpi__icon[data-origen='pereira-unida'] {
+  background: var(--naranja);
+  color: var(--on-brand);
+}
+
 .kpi__icon[data-origen='pereira-responde'] {
-  background: var(--text);
-  color: var(--text-inverse);
+  background: var(--rojo);
+  color: var(--on-brand);
+}
+
+/* El borde va por `box-shadow` y no por `border`: los cinco iconos caen en la
+   misma rejilla en /acerca y un borde real movería el trazo de este 1px. */
+.kpi__icon[data-origen='vivienda'] {
+  background: transparent;
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--text);
 }
 
 /* Franja de estado a la izquierda: comunica urgencia sin gritar. */
@@ -559,7 +601,104 @@
   line-height: 1.5;
   white-space: nowrap;
   overflow: hidden;
+}
+
+/* La elipsis vive aquí y no en `.badge`: ver el comentario del componente. */
+.badge__texto {
+  min-width: 0;
+  overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ------------------ Fila de categoría (Qué falta / Inventario) ------------- */
+/* Nombre + dos recuentos + chevron no caben en una línea de 375px: el nombre
+   se quedaba en "Alimentos no..." y los recuentos se partían a mitad de
+   palabra —"6 CENTROS TIE"—, que es justo el par de números por los que existe
+   esta pantalla. Debajo de 640px la fila pasa a dos renglones: nombre y
+   chevron arriba, los dos recuentos enteros abajo. */
+
+.fila-categoria {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  min-width: 0;
+  padding: var(--sp-4) var(--sp-5);
+  text-align: left;
+}
+
+.fila-categoria__nombre {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 650;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fila-categoria__cuentas {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.fila-categoria__chevron {
+  flex-shrink: 0;
+  color: var(--text-subtle);
+  transition: transform var(--dur) var(--ease);
+}
+
+@media (max-width: 640px) {
+  .fila-categoria {
+    flex-wrap: wrap;
+    row-gap: var(--sp-2);
+  }
+
+  /* El chevron sube a la primera línea, junto al nombre; los recuentos se
+     quedan con la segunda entera y ya caben sin recortarse. */
+  .fila-categoria__chevron {
+    order: 1;
+  }
+
+  .fila-categoria__cuentas {
+    order: 2;
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+  }
+
+  /* Con el renglón para él solo, el nombre ya no necesita recortarse. */
+  .fila-categoria__nombre {
+    white-space: normal;
+    overflow: visible;
+  }
+}
+
+/* La fila del ranking de "Qué falta" tiene el mismo problema un piso más
+   arriba: solo en el primer puesto aparece el distintivo "Lo más pedido", y
+   ahí dentro compiten puesto, nombre, distintivo, total y flecha. A 375px se
+   recortaban a la vez el nombre y el distintivo. Debajo de 640px el distintivo
+   baja solo, que es el único de los cinco que no es un dato. */
+.fila-ranking__distintivo {
+  display: inline-flex;
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .fila-ranking {
+    flex-wrap: wrap;
+    row-gap: var(--sp-2);
+  }
+
+  .fila-ranking__distintivo {
+    order: 1;
+    flex: 1 1 100%;
+    /* Sangrado al ancho del número de puesto, para que cuelgue del nombre y no
+       del margen: así se lee como una nota de esa fila y no como otra fila. */
+    padding-inline-start: 34px;
+  }
 }
 
 .badge svg {
@@ -1091,6 +1230,20 @@
   margin-top: var(--sp-8);
 }
 
+/* Sección a la que se baja al pulsar un filtro. El margen es para la barra
+   superior fija, que si no tapa justo el encabezado con el recuento — que es
+   la prueba de que el filtro se aplicó. Por eso se descuenta solo donde esa
+   barra existe: a partir de 1024px no hay ninguna. */
+.section--destino-filtro {
+  scroll-margin-top: calc(var(--topbar-h) + var(--sp-3));
+}
+
+@media (min-width: 1024px) {
+  .section--destino-filtro {
+    scroll-margin-top: var(--sp-4);
+  }
+}
+
 .section__head {
   display: flex;
   align-items: baseline;
@@ -1557,6 +1710,47 @@ svg.mapa__svg .mapa__punto:focus-visible {
   box-shadow:
     inset 0 0 0 2.5px rgba(255, 255, 255, 0.92),
     0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+/* --------- El mapa de elegir dónde está el daño --------- */
+/* Más bajo que el mapa de consulta: vive dentro de una hoja, entre campos de
+   formulario, y compite con el teclado del móvil por la pantalla. */
+.mapa--elegir {
+  aspect-ratio: auto;
+  height: 260px;
+  cursor: crosshair;
+}
+
+@media (min-width: 640px) {
+  .mapa--elegir {
+    height: 320px;
+  }
+}
+
+/* La gota clásica, dibujada con un cuadrado redondeado girado 45°. Aquí sí se
+   puede tocar `transform`: el giro va en el hijo, no en el marcador, que es
+   donde Leaflet guarda la posición. */
+.leaflet-marker-icon.mapa__pin-elegir {
+  background: none;
+  border: none;
+  box-shadow: none;
+  cursor: grab;
+}
+
+.leaflet-marker-icon.mapa__pin-elegir:active {
+  cursor: grabbing;
+}
+
+.mapa__pin-elegir i {
+  display: block;
+  width: 22px;
+  height: 22px;
+  margin: 0 3px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: var(--rojo);
+  border: 2.5px solid var(--surface);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
 }
 
 /* --------- El punto azul de "estás aquí" --------- */

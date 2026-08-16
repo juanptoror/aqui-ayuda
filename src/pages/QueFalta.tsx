@@ -171,7 +171,7 @@ export function QueFalta() {
                       onClick={() => setCategoriaAbierta(c.categoria)}
                       aria-label={`Ver qué centros piden ${c.categoria}`}
                     >
-                    <div className="row" style={{ marginBottom: 'var(--sp-2)' }}>
+                    <div className="row fila-ranking" style={{ marginBottom: 'var(--sp-2)' }}>
                       <span
                         className="num"
                         style={{
@@ -187,7 +187,13 @@ export function QueFalta() {
                       <span className="min0 truncate" style={{ flex: '1 1 auto', fontWeight: 650 }}>
                         {c.categoria}
                       </span>
-                      {i === 0 && <Badge tono="critical">Lo más pedido</Badge>}
+                      {/* Envuelto para poder mandarlo al renglón de abajo en
+                          pantalla estrecha sin estirar la píldora. */}
+                      {i === 0 && (
+                        <span className="fila-ranking__distintivo">
+                          <Badge tono="critical">Lo más pedido</Badge>
+                        </span>
+                      )}
                       <span
                         className="num"
                         style={{ flexShrink: 0, fontWeight: 700, color: 'var(--text-muted)' }}

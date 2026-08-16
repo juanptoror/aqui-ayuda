@@ -360,39 +360,28 @@ function FilaCategoria({
         type="button"
         onClick={alAlternar}
         aria-expanded={abierta}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 'var(--sp-3)',
-          width: '100%',
-          padding: 'var(--sp-4) var(--sp-5)',
-          textAlign: 'left',
-          minWidth: 0,
-        }}
+        className="fila-categoria"
       >
-        <span className="min0 truncate" style={{ flex: '1 1 auto', fontWeight: 650 }}>
-          {datos.categoria}
-        </span>
+        <span className="fila-categoria__nombre">{datos.categoria}</span>
 
-        {faltan > 0 && (
-          <Badge tono="critical">{conteo(faltan, 'lo pide', 'lo piden')}</Badge>
-        )}
-        {hay > 0 ? (
-          <Badge tono="success">{conteo(hay, 'centro tiene', 'centros tienen')}</Badge>
-        ) : (
-          <Badge tono="neutral" icono={CircleSlash}>
-            Sin existencias
-          </Badge>
-        )}
+        {/* Los dos recuentos van juntos en su propio contenedor porque en
+            pantalla estrecha bajan como bloque a la segunda línea: son un par
+            que solo significa algo comparado, no dos datos sueltos. */}
+        <span className="fila-categoria__cuentas">
+          {faltan > 0 && <Badge tono="critical">{conteo(faltan, 'lo pide', 'lo piden')}</Badge>}
+          {hay > 0 ? (
+            <Badge tono="success">{conteo(hay, 'centro tiene', 'centros tienen')}</Badge>
+          ) : (
+            <Badge tono="neutral" icono={CircleSlash}>
+              Sin existencias
+            </Badge>
+          )}
+        </span>
 
         <ChevronRight
           size={17}
-          style={{
-            flexShrink: 0,
-            color: 'var(--text-subtle)',
-            transform: abierta ? 'rotate(90deg)' : 'none',
-            transition: 'transform var(--dur) var(--ease)',
-          }}
+          className="fila-categoria__chevron"
+          style={{ transform: abierta ? 'rotate(90deg)' : 'none' }}
         />
       </button>
 

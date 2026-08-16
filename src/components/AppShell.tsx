@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import {
+  Activity,
   BedDouble,
   Building2,
   ChevronsUpDown,
@@ -10,15 +11,17 @@ import {
   Info,
   MapPin,
   MapPinned,
+  Menu,
   Moon,
   Sun,
   TriangleAlert,
 } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { usePreferencias } from '@/state/preferencias'
 import { useMunicipios } from '@/datos/consultas'
 import { BotonAcceso } from './Acceso'
 import { SelectorCiudad } from './SelectorCiudad'
+import { Sheet } from './ui'
 import { Isotipo, LockupHorizontal } from './Marca'
 
 interface Destino {
@@ -28,13 +31,13 @@ interface Destino {
   icono: typeof Home
 }
 
-/* Cinco destinos: en 375px caben a 75px cada uno, y por eso las etiquetas
-   cortas de la barra inferior son de una sola palabra. */
+/* Cinco destinos más el botón "Más": en 375px caben a 56px cada uno, y por eso
+   las etiquetas cortas de la barra inferior son de una sola palabra. */
 const DESTINOS: Destino[] = [
   { a: '/', etiqueta: 'Inicio', etiquetaCorta: 'Inicio', icono: Home },
   { a: '/ayuda-directa', etiqueta: 'Quién necesita ayuda', etiquetaCorta: 'Piden', icono: HandHeart },
   { a: '/quiero-ayudar', etiqueta: 'Quiero ayudar', etiquetaCorta: 'Ayudar', icono: HeartHandshake },
-  { a: '/que-falta', etiqueta: 'Qué falta y qué hay', etiquetaCorta: 'Qué falta', icono: TriangleAlert },
+  { a: '/que-falta', etiqueta: 'Qué falta y qué hay', etiquetaCorta: 'Falta', icono: TriangleAlert },
   { a: '/vivienda', etiqueta: 'Dónde vivir', etiquetaCorta: 'Vivienda', icono: BedDouble },
 ]
 
@@ -50,8 +53,27 @@ const SECUNDARIOS: Destino[] = [
   { a: '/mapa', etiqueta: 'Mapa de la ayuda', etiquetaCorta: 'Mapa', icono: MapPin },
   /* Va aquí y no abajo por una razón incómoda: se consulta una vez, cuando se
      va a salir a la calle. Las cinco de abajo se consultan todo el rato. */
-  { a: '/danos', etiqueta: 'Daños y vías cerradas', etiquetaCorta: 'Daños', icono: Construction },
+  { a: '/afectaciones', etiqueta: 'Daños y vías cerradas', etiquetaCorta: 'Daños', icono: Construction },
   { a: '/como-ayudar', etiqueta: 'Cómo ayudar', etiquetaCorta: 'Guía', icono: HeartHandshake },
+]
+
+/**
+ * Lo que hay detrás de "Más" en la barra inferior.
+ *
+ * Existe porque la barra lateral solo aparece a partir de 1024px y llevaba
+ * sola estos destinos: por debajo de esa anchura no había forma de llegar a
+ * ellos. `/mapa`, `/afectaciones` y `/estado` no estaban enlazados desde ninguna de
+ * las cinco pantallas de la barra, así que en un celular solo se alcanzaban
+ * escribiendo la URL. `/afectaciones` es la pantalla de edificios afectados y vías
+ * cerradas, en una app que da por hecho que quien la abre acaba de pasar por
+ * un terremoto y la abre desde el celular.
+ *
+ * `/estado` no estaba ni siquiera en la lateral.
+ */
+const EN_MAS: Destino[] = [
+  ...SECUNDARIOS,
+  { a: '/acerca', etiqueta: 'Acerca del proyecto', etiquetaCorta: 'Acerca', icono: Info },
+  { a: '/estado', etiqueta: 'Estado de las fuentes', etiquetaCorta: 'Estado', icono: Activity },
 ]
 
 /**
@@ -97,11 +119,24 @@ function BotonTema({ compacto }: { compacto?: boolean }) {
 
 function MarcaCompacta() {
   return (
-    <Link to="/" className="sidebar__brand" style={{ marginBottom: 0 }}>
+    <Link to="/" className="sidebar__brand marca-compacta" style={{ marginBottom: 0 }}>
       {/* La cabecera es una franja ancha y baja sin coletilla debajo: es el
           caso exacto del lockup horizontal, así que aquí va la pieza entera
-          en vez de un pin y un texto que pueden descuadrarse entre sí. */}
-      <LockupHorizontal alto={26} color="var(--brand-on-soft)" title="AquíAyuda" />
+          en vez de un pin y un texto que pueden descuadrarse entre sí.
+
+          Por debajo de 400px se cambia por el pin suelto. En esa franja el
+          lockup se comía el ancho que necesita el municipio y el nombre
+          quedaba en "Do...", que es peor que no ponerlo: casi todo lo que
+          muestra la app depende de qué municipio esté elegido. Se cambia la
+          pieza entera en vez de encogerla porque el pin está pensado para
+          funcionar solo. */}
+      <LockupHorizontal
+        alto={26}
+        color="var(--brand-on-soft)"
+        title="AquíAyuda"
+        className="marca-compacta__lockup"
+      />
+      <Isotipo alto={26} title="AquíAyuda" className="marca-compacta__pin" />
     </Link>
   )
 }
@@ -156,6 +191,21 @@ function MunicipioActivo({ compacto }: { compacto?: boolean }) {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation()
+  const [masAbierto, setMasAbierto] = useState(false)
+
+  /* La hoja pertenece a la barra inferior, que no existe a partir de 1024px.
+     Si se abre en un celular y luego se gira o se agranda la ventana, se queda
+     un diálogo huérfano encima de una pantalla que ya tiene barra lateral. */
+  useEffect(() => {
+    if (!masAbierto) return
+    const ancha = window.matchMedia('(min-width: 1024px)')
+    const alCambiar = () => {
+      if (ancha.matches) setMasAbierto(false)
+    }
+    alCambiar()
+    ancha.addEventListener('change', alCambiar)
+    return () => ancha.removeEventListener('change', alCambiar)
+  }, [masAbierto])
 
   return (
     <div className="shell">
@@ -234,7 +284,48 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
           )
         })}
+
+        {/* Se marca activo cuando la pantalla actual está detrás de él: si no,
+            al entrar en Daños la barra se quedaba sin ningún destino resaltado
+            y parecía que estabas fuera de la aplicación. */}
+        <button
+          type="button"
+          className={`bottomnav__item${
+            EN_MAS.some((d) => esActivo(pathname, d.a)) ? ' bottomnav__item--active' : ''
+          }`}
+          onClick={() => setMasAbierto(true)}
+          aria-haspopup="dialog"
+          aria-expanded={masAbierto}
+        >
+          <Menu size={21} strokeWidth={2.1} />
+          <span>Más</span>
+        </button>
       </nav>
+
+      <Sheet
+        abierta={masAbierto}
+        alCerrar={() => setMasAbierto(false)}
+        titulo="Todo lo demás"
+        subtitulo="Las cinco de la barra se consultan a diario. Estas, de vez en cuando."
+      >
+        <div className="sheet__nav">
+          {EN_MAS.map((d) => {
+            const activo = esActivo(pathname, d.a)
+            return (
+              <Link
+                key={d.a}
+                to={d.a}
+                className={`navlink${activo ? ' navlink--active' : ''}`}
+                aria-current={activo ? 'page' : undefined}
+                onClick={() => setMasAbierto(false)}
+              >
+                <d.icono size={19} strokeWidth={2.1} />
+                <span>{d.etiqueta}</span>
+              </Link>
+            )
+          })}
+        </div>
+      </Sheet>
     </div>
   )
 }

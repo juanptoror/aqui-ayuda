@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import {
   Building2,
@@ -87,9 +87,42 @@ export function Ciudad() {
     return lista
   }, [datos.centros, categoria, modo, filtro])
 
+  /**
+   * Los filtros están arriba y lo que filtran está debajo del pliegue.
+   *
+   * Los KPIs y los chips de categoría viven en la cabecera de la pantalla; la
+   * lista de centros empieza pasadas dos secciones. Al pulsar "Urgentes" la
+   * lista se recortaba sin que se moviera nada de lo que se estaba viendo, así
+   * que el botón parecía roto y se volvía a pulsar. En un celular no se ve ni
+   * el encabezado con el recuento, que es la confirmación de que sí pasó algo.
+   *
+   * Solo baja al activar. Al quitar el filtro se queda donde está: quien lo
+   * quita ya está mirando la lista y arrastrarlo sería moverle el suelo.
+   */
+  const listaRef = useRef<HTMLElement | null>(null)
+
+  function irALaLista() {
+    const nodo = listaRef.current
+    if (!nodo) return
+    const quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    /* Un fotograma de margen: la lista se re-renderiza con el filtro puesto y
+       el encabezado cambia de recuento antes de que empiece el desplazamiento. */
+    requestAnimationFrame(() => {
+      nodo.scrollIntoView({ behavior: quieto ? 'auto' : 'smooth', block: 'start' })
+    })
+  }
+
   /** Pulsar el KPI ya activo lo desactiva: es un interruptor, no un callejón. */
   function alternarFiltro(f: Exclude<Filtro, 'todos'>) {
-    setFiltro((actual) => (actual === f ? 'todos' : f))
+    const siguiente = filtro === f ? 'todos' : f
+    setFiltro(siguiente)
+    if (siguiente !== 'todos') irALaLista()
+  }
+
+  function alternarCategoria(c: string) {
+    const siguiente = categoria === c ? null : c
+    setCategoria(siguiente)
+    if (siguiente) irALaLista()
   }
 
   // Ciudad fusionada en otra: se redirige en vez de mostrar una pantalla vacía.
@@ -293,7 +326,7 @@ export function Ciudad() {
                   type="button"
                   className="chip"
                   aria-pressed={categoria === c.categoria}
-                  onClick={() => setCategoria(categoria === c.categoria ? null : c.categoria)}
+                  onClick={() => alternarCategoria(c.categoria)}
                 >
                   <span>{c.categoria}</span>
                   <span className="num" style={{ opacity: 0.75, flexShrink: 0 }}>
@@ -356,7 +389,7 @@ export function Ciudad() {
           </div>
         </section>
 
-        <section className="section">
+        <section className="section section--destino-filtro" ref={listaRef}>
           <SectionHead
             titulo={modo === 'ayudar' ? 'Centros que están recibiendo' : 'Centros abiertos cerca de ti'}
             conteo={

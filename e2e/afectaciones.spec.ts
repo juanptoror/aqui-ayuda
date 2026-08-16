@@ -44,7 +44,7 @@ test.describe('daños y vías cerradas', () => {
     })
 
     await conCiudad(page, 'pereira-2')
-    await page.goto('/danos')
+    await page.goto('/afectaciones')
     await esperarTarjetas(page)
 
     expect(urls.length).toBeGreaterThan(0)
@@ -65,7 +65,7 @@ test.describe('daños y vías cerradas', () => {
     })
 
     await conCiudad(page, 'pereira-2')
-    await page.goto('/danos')
+    await page.goto('/afectaciones')
     await esperarTarjetas(page)
     await page.waitForTimeout(2500)
 
@@ -83,7 +83,7 @@ test.describe('daños y vías cerradas', () => {
        pero es la nota opcional del formulario: 163 de 180 traen ese relleno.
        Pintarlo sería inventarle una dirección al reporte. */
     await conCiudad(page, 'pereira-2')
-    await page.goto('/danos')
+    await page.goto('/afectaciones')
     await esperarTarjetas(page)
 
     const texto = await page.locator('main').innerText()
@@ -92,7 +92,7 @@ test.describe('daños y vías cerradas', () => {
 
   test('cada tarjeta lleva el sello de su fuente y ninguna otra', async ({ page }) => {
     await conCiudad(page, 'pereira-2')
-    await page.goto('/danos')
+    await page.goto('/afectaciones')
     await esperarTarjetas(page)
 
     const tarjetas = await page.locator('.card').count()
@@ -109,7 +109,7 @@ test.describe('daños y vías cerradas', () => {
 
   test('el punto del daño es redondo y rojo, y se distingue sin ver el color', async ({ page }) => {
     await conCiudad(page, 'pereira-2')
-    await page.goto('/danos')
+    await page.goto('/afectaciones')
     await page.waitForSelector('.mapa__punto--dano', { timeout: 45_000 })
 
     /* El color no basta: rojo y lima se confunden con daltonismo rojo-verde y
@@ -139,7 +139,7 @@ test.describe('daños y vías cerradas', () => {
        con la mitad del dato —gravedad, nota, confirmaciones, foto— dentro y sin
        manera de mirarlo. */
     await conCiudad(page, 'pereira-2')
-    await page.goto('/danos')
+    await page.goto('/afectaciones')
     await page.waitForSelector('.mapa__punto--dano', { timeout: 45_000 })
 
     await page.locator('.mapa__punto--dano').first().click({ force: true })
@@ -162,7 +162,7 @@ test.describe('daños y vías cerradas', () => {
        para algo que se iba a pulsar siempre. El aviso se queda, que informar no
        cuesta un clic. */
     await conCiudad(page, 'pereira-2')
-    await page.goto('/danos')
+    await page.goto('/afectaciones')
     await page.waitForSelector('.mapa__punto--dano', { timeout: 45_000 })
 
     await page.locator('.mapa__punto--dano').first().click({ force: true })
@@ -178,7 +178,7 @@ test.describe('daños y vías cerradas', () => {
        puesta hacen lo mismo, y dos botones para una acción es una decisión que
        no existe. */
     await conCiudad(page, 'pereira-2')
-    await page.goto('/danos')
+    await page.goto('/afectaciones')
     await esperarTarjetas(page)
 
     const primera = page.locator('.card').first()
@@ -195,7 +195,7 @@ test.describe('daños y vías cerradas', () => {
     )
 
     await conCiudad(page, 'pereira-2')
-    await page.goto('/danos')
+    await page.goto('/afectaciones')
     await page.waitForSelector('.page-header__title', { timeout: 45_000 })
 
     const enlace = page.getByRole('link', { name: /reportar un daño/i })
@@ -209,7 +209,7 @@ test.describe('daños y vías cerradas', () => {
        hornea en el bundle, así que esta prueba vigila que nadie la mueva ahí
        "para simplificar": bastaría una vez para regalar la clave y su cuota. */
     await conCiudad(page, 'pereira-2')
-    await page.goto('/danos')
+    await page.goto('/afectaciones')
     await page.waitForSelector('.page-header__title', { timeout: 45_000 })
 
     const rastro = await page.evaluate(async () => {
@@ -235,7 +235,7 @@ test.describe('daños y vías cerradas', () => {
   test('sin municipio ni ubicación no se promete ningún radio', async ({ page }) => {
     // Mismo criterio que el mapa de la ayuda: sin origen no hay distancias, y
     // un selector de radio que no recorta nada es una cercanía inventada.
-    await page.goto('/danos')
+    await page.goto('/afectaciones')
     await esperarTarjetas(page)
 
     const cabecera = await page.locator('.page-header').innerText()
@@ -253,7 +253,7 @@ test.describe('daños y vías cerradas', () => {
     )
 
     await conCiudad(page, 'pereira-2')
-    await page.goto('/danos')
+    await page.goto('/afectaciones')
     /* Se espera al código de soporte, que solo lo pinta `AvisoError`. Esperar a
        un `.notice` cualquiera pasaría de largo: el aviso del 123 está desde el
        primer fotograma. Y hay margen de sobra porque un 5xx se reintenta dos
@@ -293,7 +293,7 @@ test.describe('daños y vías cerradas', () => {
     )
 
     await conCiudad(page, 'pereira-2')
-    await page.goto('/danos')
+    await page.goto('/afectaciones')
     await esperarTarjetas(page)
 
     const texto = await page.locator('main').innerText()
@@ -340,7 +340,7 @@ test.describe('reportar un daño', () => {
     })
 
     await conCiudad(page, 'pereira-2')
-    await page.goto('/danos')
+    await page.goto('/afectaciones')
     await page.getByRole('button', { name: /reportar un daño/i }).click()
     await page.waitForSelector('[role="dialog"]', { timeout: 30_000 })
     return page.locator('[role="dialog"]')
@@ -378,7 +378,7 @@ test.describe('reportar un daño', () => {
     await expect(hoja.getByRole('tab', { name: /riesgo alto/i })).toHaveCount(0)
 
     await hoja.locator('#clase').selectOption('Paso restringido')
-    await hoja.getByRole('button', { name: /usar mi ubicación/i }).click()
+    await hoja.getByRole('button', { name: /centrar donde estoy/i }).click()
     await expect(hoja.locator('.num')).toContainText('4.81430', { timeout: 20_000 })
 
     await hoja
@@ -399,6 +399,56 @@ test.describe('reportar un daño', () => {
     expect(c.coords).toEqual([4.8143, -75.6946])
   })
 
+  test('el punto que se publica es el que se señala, no donde está el teléfono', async ({
+    page,
+  }) => {
+    /* Reportar bien exige apartarse del edificio, y apartarse mueve el GPS a la
+       acera de enfrente o al portal del vecino. En un mapa de peligros eso manda
+       a alguien a rodear la manzana equivocada, así que el GPS solo centra el
+       mapa y el pin lo pone quien reporta. */
+    let enviado: Record<string, unknown> | null = null
+    const hoja = await conFormulario(page, (c) => {
+      enviado = c as Record<string, unknown>
+    })
+
+    await hoja.locator('#clase').selectOption('Colapso total')
+    await hoja.getByRole('button', { name: /centrar donde estoy/i }).click()
+    await expect(hoja.locator('.num')).toContainText('4.81430', { timeout: 20_000 })
+
+    const mapa = hoja.locator('.mapa--elegir')
+    await expect(mapa, 'sin mapa no se puede afinar el punto').toBeVisible({ timeout: 30_000 })
+    await expect(hoja.locator('.mapa__pin-elegir')).toBeVisible()
+
+    /* Se pincha por coordenadas porque Leaflet escucha en el contenedor, no en
+       un elemento con rol. Hay que asegurarse antes de que el mapa esté entero
+       dentro de la hoja: medio fuera, el clic cae en el fondo y la cierra. */
+    await mapa.scrollIntoViewIfNeeded()
+    await page.waitForTimeout(400)
+    const caja = await mapa.boundingBox()
+    if (!caja) throw new Error('el mapa no tiene caja')
+    await page.mouse.click(caja.x + caja.width * 0.3, caja.y + caja.height * 0.3)
+    await expect(hoja.locator('.num')).not.toContainText('4.81430', { timeout: 10_000 })
+
+    await hoja
+      .locator('input[type="file"]')
+      .setInputFiles({ name: 'grieta.png', mimeType: 'image/png', buffer: PNG })
+    await expect(hoja.getByRole('button', { name: /publicar el reporte/i })).toBeEnabled({
+      timeout: 15_000,
+    })
+    await hoja.getByRole('button', { name: /publicar el reporte/i }).click()
+    await expect(hoja).toContainText(/reporte publicado/i, { timeout: 20_000 })
+
+    // Lo publicado es el punto señalado, no el del GPS.
+    const coords = (enviado as unknown as { coords: [number, number] }).coords
+    expect(coords[0]).not.toBe(4.8143)
+    expect(coords[1]).not.toBe(-75.6946)
+    // Pero sigue siendo Pereira: mover el pin no puede sacarlo de la ciudad.
+    expect(coords[0]).toBeGreaterThan(4.7)
+    expect(coords[0]).toBeLessThan(4.95)
+    expect(coords[1]).toBeGreaterThan(-75.85)
+    expect(coords[1]).toBeLessThan(-75.55)
+  })
+
   test('la foto se envía reducida y sin el prefijo que el contrato prohíbe', async ({ page }) => {
     /* Dos cosas a la vez: el contrato pide los bytes pelados en Base64, y una
        foto de teléfono sin reducir no cabe en el límite de la función. */
@@ -408,7 +458,7 @@ test.describe('reportar un daño', () => {
     })
 
     await hoja.locator('#clase').selectOption('Colapso total')
-    await hoja.getByRole('button', { name: /usar mi ubicación/i }).click()
+    await hoja.getByRole('button', { name: /centrar donde estoy/i }).click()
     await expect(hoja.locator('.num')).toContainText('4.81430', { timeout: 20_000 })
     await hoja
       .locator('input[type="file"]')
@@ -435,7 +485,7 @@ test.describe('reportar un daño', () => {
     const hoja = await conFormulario(page)
 
     await hoja.locator('#clase').selectOption('Colapso total')
-    await hoja.getByRole('button', { name: /usar mi ubicación/i }).click()
+    await hoja.getByRole('button', { name: /centrar donde estoy/i }).click()
     await expect(hoja.locator('.num')).toContainText('4.81430', { timeout: 20_000 })
     await hoja
       .locator('input[type="file"]')

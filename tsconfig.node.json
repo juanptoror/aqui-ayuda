@@ -5,6 +5,11 @@
     // navegador dentro de page.evaluate(): sin estos tipos, `document` y
     // `HTMLElement` no existen para el compilador.
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    // Y esto porque algún test importa un módulo de la aplicación para no
+    // repetir a mano lo que ya está declarado allí —los orígenes de FUENTES,
+    // por ejemplo—, y esos módulos son `.tsx`. Sin `jsx`, el compilador se
+    // niega a abrirlos aunque el test no escriba una sola etiqueta.
+    "jsx": "react-jsx",
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "bundler",

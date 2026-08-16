@@ -333,9 +333,9 @@ export function Landing() {
           <SectionHead titulo="De dónde salen los datos" />
           <p className="section__desc">
             AquíAyuda no inventa información ni guarda nada: la reúne de{' '}
-            <strong>cuatro fuentes abiertas e independientes</strong>. Cada dato lleva el sello de
+            <strong>cinco fuentes abiertas e independientes</strong>. Cada dato lleva el sello de
             la suya, para que sepas quién lo publicó y a quién acudir si algo no cuadra. Ninguna
-            cubre a las demás: por eso están las cuatro.
+            cubre a las demás: por eso están las cinco.
           </p>
           <div className="grid grid--cards">
             <TarjetaFuente
@@ -353,6 +353,10 @@ export function Landing() {
             <TarjetaFuente
               origen="vivienda"
               extra="Inmuebles en arriendo con fotos, sobre todo en el Quindío."
+            />
+            <TarjetaFuente
+              origen="pereira-responde"
+              extra="Edificios afectados y vías cerradas en Pereira. Solo se lee: reportar se hace en su mapa."
             />
           </div>
         </section>
