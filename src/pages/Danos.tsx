@@ -21,11 +21,13 @@ import {
 } from '@/components/ui'
 import { ComoLlegar } from '@/components/ComoLlegar'
 import { FichaAfectacion } from '@/components/FichaAfectacion'
+import { ReportarDano } from '@/components/formularios/ReportarDano'
 import { FuentesDeLaPantalla, SelloFuente } from '@/components/Fuente'
 import { MapaPuntos, type PuntoMapa } from '@/components/MapaPuntos'
 import { SelectorCiudad } from '@/components/SelectorCiudad'
 import { useAfectaciones } from '@/datos/consultas'
 import { LIMITE_MAX, URL_FUENTE } from '@/backends/pereira-responde'
+import { useSePuedePublicar } from '@/backends/pereira-responde/publicar'
 import {
   GRAVEDADES_AFECTACION,
   TIPOS_AFECTACION,
@@ -100,8 +102,15 @@ export function Danos() {
      de dónde vino: si se llegó pulsando "ver la foto", el permiso para gastar
      varios megas ya está dado; tocando un punto del mapa, no. */
   const [ficha, setFicha] = useState<{ a: AfectacionVista; conFotos: boolean } | null>(null)
+  const [reportando, setReportando] = useState(false)
 
   const consulta = useAfectaciones()
+  /* Se pregunta al servidor si tiene la clave ANTES de ofrecer el formulario.
+     Sin clave configurada no se puede publicar, y enseñar un formulario que
+     falla al enviar sería la peor forma de averiguarlo: después de que alguien
+     haya tomado la foto en la calle. Cuando no se puede, el botón sigue
+     existiendo pero sale a la fuente, que es donde sí se puede. */
+  const puedePublicar = useSePuedePublicar()
 
   /* Mismo criterio que el mapa de la ayuda: la ubicación real manda, el centro
      del municipio guardado sirve de respaldo, y sin ninguna de las dos NO se
@@ -241,18 +250,20 @@ export function Danos() {
               <LocateFixed size={18} />
               <span>{buscando ? 'Buscando…' : 'Usar mi ubicación'}</span>
             </button>
-            {/* No hay endpoint público para publicar: reportar se hace en la
-                fuente. Se dice con el icono de enlace externo, no se disfraza
-                de botón de la aplicación. */}
-            <a
-              className="btn"
-              href={URL_FUENTE}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <ExternalLink size={17} />
-              <span>Reportar un daño</span>
-            </a>
+            {/* Con clave configurada se reporta desde aquí; sin ella, el mismo
+                botón sale a la fuente y lo dice con el icono de enlace externo
+                en vez de disfrazarse de formulario propio. */}
+            {puedePublicar.data ? (
+              <button type="button" className="btn" onClick={() => setReportando(true)}>
+                <Construction size={17} />
+                <span>Reportar un daño</span>
+              </button>
+            ) : (
+              <a className="btn" href={URL_FUENTE} target="_blank" rel="noopener noreferrer">
+                <ExternalLink size={17} />
+                <span>Reportar un daño</span>
+              </a>
+            )}
           </>
         }
       />
@@ -260,7 +271,11 @@ export function Danos() {
       <div className="container">
         <FuentesDeLaPantalla
           origenes={['pereira-responde']}
-          nota="Cada reporte lo publica una persona desde el mapa de Pereira Responde, con foto y coordenada. Esta pantalla solo lee: para reportar algo nuevo se abre la fuente."
+          nota={
+            puedePublicar.data
+              ? 'Cada reporte lo publica una persona con foto y coordenada. Lo que reportes desde aquí se publica allí con tu foto y tu punto, y pasa por su moderación igual que si lo hicieras en su web.'
+              : 'Cada reporte lo publica una persona desde el mapa de Pereira Responde, con foto y coordenada. Esta pantalla solo lee: para reportar algo nuevo se abre la fuente.'
+          }
         />
 
         <div className="stack">
@@ -468,6 +483,7 @@ export function Danos() {
       </div>
 
       <SelectorCiudad abierto={selectorAbierto} alCerrar={() => setSelectorAbierto(false)} />
+      <ReportarDano abierto={reportando} alCerrar={() => setReportando(false)} />
       {/* `key` por reporte: sin ella, la foto abierta de uno se quedaría abierta
           al abrir el siguiente, y sería una descarga de varios megas que nadie
           pidió. */}

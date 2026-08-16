@@ -11,6 +11,11 @@ TypeScript sobre **cinco backends**:
 | **Encuéntralo a un Clic** | Supabase `jdxptkifjcewckbslpno` | Inmuebles en arriendo con foto, sobre todo del Quindío | `/vivienda` |
 | **Pereira Responde** | `pereiraresponde.co` | Edificios afectados, vías cerradas y servicios abiertos | `/danos`, `/mapa` |
 
+Cuatro se leen desde el navegador. La quinta también, pero **publicar en ella
+pasa por un servidor propio**: es la única que exige una clave, y una clave en
+el navegador es una clave publicada. Es el único trozo de este proyecto que no
+corre en el cliente ([§4c](#4c-quinta-fuente-pereira-responde-daños-estructurales)).
+
 Viven en pantallas separadas a propósito: a un centro se le lleva una donación,
 a una persona se le escribe, y de un edificio a punto de caerse hay que
 apartarse.
@@ -243,6 +248,56 @@ Dos más que se ven en el modelo:
 Su mapa oficial dibuja además unas "zonas rojas" que la API pública no expone.
 Esta pantalla no es un sustituto del suyo y no lo aparenta.
 
+### Publicar un daño: el único trozo de servidor de todo el proyecto
+
+Leer es público. **Publicar exige `Authorization: Bearer <API_KEY>`**, y su
+documentación lo dice sin rodeos: *"Nunca publiques la clave en JavaScript del
+navegador"*. En una app de Vite todo lo que empieza por `VITE_` acaba dentro del
+bundle, así que meterla ahí sería regalarla —junto con su cuota de cinco
+reportes por minuto y la cola de moderación de la fuente— a cualquiera que abra
+el inspector.
+
+De ahí [api/reportes.ts](api/reportes.ts), una función de Vercel que es lo único
+de este proyecto que no corre en el navegador:
+
+```
+navegador  ──POST /api/reportes──▶  función  ──+ Bearer──▶  pereiraresponde.co
+```
+
+La clave vive en `PEREIRA_RESPONDE_API_KEY`, **sin prefijo `VITE_`** para que el
+empaquetador no pueda tocarla ni por accidente. Hay un test que descarga el
+bundle y falla si aparece la variable o una cabecera `Authorization: Bearer`.
+
+Lo que la función hace, y por qué:
+
+- **Valida el mismo contrato que la fuente antes de gastar cuota.** Un 400 al
+  otro lado consume uno de los cinco envíos del minuto y solo dice "Datos de
+  reporte inválidos.", sin decir cuál. Aquí se comprueban las combinaciones
+  raras: `road` exige `risk: "road"`, `support` exige `category`, y los demás
+  tipos la exigen vacía.
+- **Recorta el cuerpo en 3,5 MB**, muy por debajo de los 30 MB que admite la
+  fuente, porque una función de Vercel devuelve 413 a partir de 4,5 MB y ese
+  error llegaría *después* de que alguien haya subido la foto entera con datos
+  móviles. El cliente la reduce antes: de ~5 MB a ~300 KB
+  ([imagenes.ts](src/lib/imagenes.ts), con la orientación EXIF respetada para
+  que las fotos verticales no salgan tumbadas).
+- **Frena las ráfagas**, en memoria y por instancia. Es lo que es: no para a
+  nadie decidido, evita que un botón atascado se coma la cuota en diez segundos.
+
+Y lo que **no** puede hacer, que conviene tenerlo escrito: al ser un proxy
+público y sin registro —como toda la app—, cualquiera puede publicar a través de
+él. La moderación de la fuente sigue siendo la última palabra, igual que con su
+propio formulario.
+
+Si la clave no está configurada, nada se rompe: la pantalla pregunta primero
+(`GET /api/reportes` → `{"disponible": false}`) y el botón "Reportar un daño"
+sale al mapa de la fuente en vez de abrir un formulario que fallaría al enviar,
+después de que alguien hubiera tomado la foto en la calle.
+
+En desarrollo la misma función se monta sobre el servidor de Vite
+([vite.config.ts](vite.config.ts)), así que lo que se prueba en localhost es el
+código que va a correr desplegado y no una imitación.
+
 ## 5. Acceso
 
 Código de un solo uso al correo ([sesion.tsx](src/state/sesion.tsx)). Se usa el
@@ -261,7 +316,7 @@ dice explícitamente en vez de mostrar huecos sin explicación.
 ```bash
 npm run build                  # tsc -b && vite build, sin errores
 npm run test:e2e:install       # una sola vez
-npm run test                   # 124 tests
+npm run test                   # 129 tests
 npm run capturas               # 36 PNG: 6 pantallas x 3 anchos x 2 temas
 npm run capturas:viewport      # primera pantalla, sin fullPage
 npm run capturas:interaccion   # diálogo, hoja, estados vacíos y de carga
@@ -286,7 +341,11 @@ Los tests fallan si:
 - un punto del mapa deja de tener a dónde ir: las tres formas —cuadrado, círculo
   y círculo rojo— tienen que abrir su detalle, no solo la primera;
 - el cruce de un pedido presenta un ofrecimiento como si fuera inventario, o el
-  propio centro aparece entre quienes lo tienen.
+  propio centro aparece entre quienes lo tienen;
+- **la clave de escritura aparece en el bundle** —hay un test que lo descarga y
+  busca la variable y la cabecera `Bearer`—, o el formulario de reporte deja
+  publicar una vía con gravedad de edificio, o manda la foto sin reducir o con
+  el prefijo `data:` que el contrato prohíbe.
 
 Contra el build de producción en vez del dev server:
 

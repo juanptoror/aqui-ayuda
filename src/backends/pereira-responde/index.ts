@@ -25,13 +25,13 @@ import {
  *
  * Cuatro rasgos de esta API condicionan todo lo que hay debajo:
  *
- * 1. **Es de SOLO LECTURA.** No existe endpoint público para publicar un
- *    reporte: la documentación no lo tiene y el formulario de la fuente escribe
- *    contra `/api/reports`, que no forma parte del contrato público. Así que
- *    aquí no hay `escribir:` nada, y el botón de "reportar un daño" de la
- *    aplicación es un enlace a la fuente, no un formulario nuestro. Fingir que
- *    se puede reportar desde aquí y perder el reporte sería lo peor que podría
- *    hacer esta pantalla.
+ * 1. **La lectura es pública; la escritura, no.** Cualquiera puede consultar los
+ *    reportes sin clave, y por eso las consultas de este fichero salen directas
+ *    del navegador. Publicar es otra cosa: pide `Authorization: Bearer` y su
+ *    documentación dice literalmente "nunca publiques la clave en JavaScript del
+ *    navegador". Así que el envío no vive aquí, vive en
+ *    [publicar.ts](./publicar.ts), que habla con nuestra propia función de
+ *    servidor —la única que ve la clave— y esa función habla con la fuente.
  *
  * 2. **`limit` por defecto es 100 y hoy hay 180 reportes.** No pedirlo recorta
  *    la ciudad casi a la mitad sin avisar. Se pide siempre el máximo (500).
@@ -184,14 +184,18 @@ export const pereiraResponde: Backend = {
     descripcion: 'Edificios afectados, calles cortadas y servicios abiertos, con foto y coordenada.',
     quienPublica: 'Cualquier persona desde el mapa de Pereira Responde.',
     url: URL_FUENTE,
-    capacidades: ['leer:afectaciones'],
+    capacidades: ['leer:afectaciones', 'escribir:afectacion'],
   },
 
   leer: {
     afectaciones: () => leerAfectaciones(),
   },
 
-  /* Vacío a propósito: la API pública es de solo lectura. Ver la nota 1 arriba. */
+  /* La escritura no encaja en `EscriturasBackend`, que asume una llamada suelta
+     desde el navegador: ésta pasa por nuestro servidor, necesita comprimir las
+     fotos antes y la pantalla tiene que preguntar primero si hay clave
+     configurada. Vive en `publicar.ts` con sus propios hooks; la capacidad se
+     declara igual para que la interfaz pueda preguntar por ella. */
   escribir: {},
 }
 

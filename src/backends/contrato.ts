@@ -61,6 +61,8 @@ export type Capacidad =
   | 'escribir:unirse-a-centro'
   | 'escribir:ayuda-directa'
   | 'escribir:alojamiento'
+  /** Publicar un daño. Pasa por servidor: la fuente exige clave y la esconde. */
+  | 'escribir:afectacion'
   | 'sesion:correo'
 
 export interface DescripcionBackend {

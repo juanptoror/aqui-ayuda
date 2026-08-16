@@ -112,6 +112,48 @@ export function CampoArea({
   )
 }
 
+/**
+ * Un bloque del formulario que NO es un control con etiqueta, sino un grupo:
+ * un botón y su resultado, unas miniaturas y su botón de añadir.
+ *
+ * Existe porque usar `Campo` para esto es un error silencioso: su `<label
+ * for="…">` apuntando a un `<button>` convierte el texto de la etiqueta en el
+ * nombre accesible del botón, y un lector de pantalla acaba anunciando "Dónde
+ * está" en lugar de "Usar mi ubicación". `fieldset` + `legend` describe el
+ * grupo sin robarle el nombre a nada de dentro.
+ */
+export function CampoGrupo({
+  etiqueta,
+  obligatorio,
+  ayuda,
+  children,
+}: {
+  etiqueta: string
+  obligatorio?: boolean
+  ayuda?: ReactNode
+  children: ReactNode
+}) {
+  return (
+    <fieldset className="field" style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
+      <legend className="field__label" style={{ padding: 0 }}>
+        {etiqueta}
+        {obligatorio && (
+          <span aria-hidden="true" style={{ color: 'var(--critical)' }}>
+            {' '}
+            *
+          </span>
+        )}
+      </legend>
+      {children}
+      {ayuda && (
+        <span className="field__hint" style={{ display: 'block', marginTop: 'var(--sp-2)' }}>
+          {ayuda}
+        </span>
+      )}
+    </fieldset>
+  )
+}
+
 /** Grupo de opciones donde se puede marcar más de una. */
 export function GrupoMultiple({
   etiqueta,
