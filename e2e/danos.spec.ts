@@ -177,9 +177,14 @@ test.describe('daños y vías cerradas', () => {
     ).toBeVisible()
   })
 
-  test('aquí no se reporta: la acción sale a la fuente', async ({ page }) => {
-    /* La API pública es de solo lectura. Un formulario propio perdería el
-       reporte de alguien que se ha jugado acercarse a un edificio inestable. */
+  test('sin clave configurada, reportar sale a la fuente en vez de fallar', async ({ page }) => {
+    /* La escritura necesita una API key que vive en el servidor. Si no está,
+       un formulario propio recogería la foto de alguien que se ha jugado
+       acercarse a un edificio inestable y la perdería al enviar. */
+    await page.route('**/api/reportes', (r) =>
+      r.fulfill({ status: 200, contentType: 'application/json', body: '{"disponible":false}' }),
+    )
+
     await conCiudad(page, 'pereira-2')
     await page.goto('/danos')
     await page.waitForSelector('.page-header__title', { timeout: 45_000 })
@@ -187,9 +192,35 @@ test.describe('daños y vías cerradas', () => {
     const enlace = page.getByRole('link', { name: /reportar un daño/i })
     await expect(enlace).toHaveAttribute('href', /pereiraresponde\.co/)
     await expect(enlace).toHaveAttribute('target', '_blank')
+  })
 
-    // Nada que se parezca a un formulario de publicación en esta pantalla.
-    expect(await page.locator('main form').count()).toBe(0)
+  test('la clave de escritura nunca viaja al navegador', async ({ page }) => {
+    /* La documentación de la fuente lo dice con todas las letras: "nunca
+       publiques la clave en JavaScript del navegador". Una variable `VITE_*` se
+       hornea en el bundle, así que esta prueba vigila que nadie la mueva ahí
+       "para simplificar": bastaría una vez para regalar la clave y su cuota. */
+    await conCiudad(page, 'pereira-2')
+    await page.goto('/danos')
+    await page.waitForSelector('.page-header__title', { timeout: 45_000 })
+
+    const rastro = await page.evaluate(async () => {
+      const scripts = [...document.querySelectorAll('script[src]')].map(
+        (s) => (s as HTMLScriptElement).src,
+      )
+      let todo = document.documentElement.outerHTML
+      for (const src of scripts) {
+        todo += await fetch(src)
+          .then((r) => r.text())
+          .catch(() => '')
+      }
+      return {
+        mencionaLaVariable: /PEREIRA_RESPONDE_API_KEY/.test(todo),
+        llevaCabeceraBearer: /Authorization[^\n]{0,40}Bearer/i.test(todo),
+      }
+    })
+
+    expect(rastro.mencionaLaVariable).toBe(false)
+    expect(rastro.llevaCabeceraBearer).toBe(false)
   })
 
   test('sin municipio ni ubicación no se promete ningún radio', async ({ page }) => {
@@ -258,5 +289,155 @@ test.describe('daños y vías cerradas', () => {
 
     const texto = await page.locator('main').innerText()
     expect(texto).toMatch(/puede haber más sin mostrar/i)
+  })
+})
+
+/**
+ * Publicar un daño desde aquí.
+ *
+ * La escritura pasa por nuestra función de servidor, así que estas pruebas
+ * fuerzan la respuesta de `/api/reportes` en vez de depender de si esta máquina
+ * tiene clave configurada: lo que hay que fijar es el comportamiento, no el
+ * entorno.
+ */
+test.describe('reportar un daño', () => {
+  test.use({
+    permissions: ['geolocation'],
+    geolocation: { latitude: 4.8143, longitude: -75.6946 },
+  })
+
+  /** Un PNG de 1x1: lo mínimo para que el navegador tenga algo que redimensionar. */
+  const PNG = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+    'base64',
+  )
+
+  async function conFormulario(page: Page, alPublicar?: (cuerpo: unknown) => void) {
+    await page.route('**/api/reportes', async (ruta) => {
+      if (ruta.request().method() === 'POST') {
+        alPublicar?.(JSON.parse(ruta.request().postData() ?? '{}'))
+        await ruta.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ id: '999' }),
+        })
+        return
+      }
+      await ruta.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: '{"disponible":true}',
+      })
+    })
+
+    await conCiudad(page, 'pereira-2')
+    await page.goto('/danos')
+    await page.getByRole('button', { name: /reportar un daño/i }).click()
+    await page.waitForSelector('[role="dialog"]', { timeout: 30_000 })
+    return page.locator('[role="dialog"]')
+  }
+
+  test('no deja publicar sin clase, ubicación y foto, y dice cuál falta', async ({ page }) => {
+    /* Un botón apagado sin explicación es una pantalla que no contesta, y aquí
+       quien la mira está en la calle con prisa. */
+    const hoja = await conFormulario(page)
+
+    const publicar = hoja.getByRole('button', { name: /publicar el reporte/i })
+    await expect(publicar).toBeDisabled()
+    await expect(hoja).toContainText(/para enviarlo falta/i)
+    await expect(hoja).toContainText(/la clase de afectación/i)
+    await expect(hoja).toContainText(/la ubicación/i)
+    await expect(hoja).toContainText(/una foto/i)
+
+    // Y el aviso de seguridad va arriba, no en la letra pequeña.
+    await expect(hoja).toContainText(/no te acerques/i)
+    await expect(hoja).toContainText(/123/)
+  })
+
+  test('el riesgo sale del tipo: nadie puede publicar una vía con gravedad alta', async ({
+    page,
+  }) => {
+    /* La fuente responde 400 si la combinación no encaja, y ese 400 gasta uno de
+       los cinco envíos por minuto de la clave. Aquí no se puede ni construir. */
+    let enviado: Record<string, unknown> | null = null
+    const hoja = await conFormulario(page, (c) => {
+      enviado = c as Record<string, unknown>
+    })
+
+    await hoja.getByRole('tab', { name: 'Vía' }).click()
+    // La gravedad solo existe en edificios: en vía no hay ni selector.
+    await expect(hoja.getByRole('tab', { name: /riesgo alto/i })).toHaveCount(0)
+
+    await hoja.locator('#clase').selectOption('Paso restringido')
+    await hoja.getByRole('button', { name: /usar mi ubicación/i }).click()
+    await expect(hoja.locator('.num')).toContainText('4.81430', { timeout: 20_000 })
+
+    await hoja
+      .locator('input[type="file"]')
+      .setInputFiles({ name: 'via.png', mimeType: 'image/png', buffer: PNG })
+
+    const publicar = hoja.getByRole('button', { name: /publicar el reporte/i })
+    await expect(publicar).toBeEnabled({ timeout: 15_000 })
+    await publicar.click()
+    await expect(hoja).toContainText(/reporte publicado/i, { timeout: 20_000 })
+
+    expect(enviado).not.toBeNull()
+    const c = enviado as unknown as Record<string, unknown>
+    expect(c.type).toBe('road')
+    expect(c.risk).toBe('road')
+    // `category` solo la llevan los servicios abiertos; en el resto va vacía.
+    expect(c.category).toBeNull()
+    expect(c.coords).toEqual([4.8143, -75.6946])
+  })
+
+  test('la foto se envía reducida y sin el prefijo que el contrato prohíbe', async ({ page }) => {
+    /* Dos cosas a la vez: el contrato pide los bytes pelados en Base64, y una
+       foto de teléfono sin reducir no cabe en el límite de la función. */
+    let enviado: Record<string, unknown> | null = null
+    const hoja = await conFormulario(page, (c) => {
+      enviado = c as Record<string, unknown>
+    })
+
+    await hoja.locator('#clase').selectOption('Colapso total')
+    await hoja.getByRole('button', { name: /usar mi ubicación/i }).click()
+    await expect(hoja.locator('.num')).toContainText('4.81430', { timeout: 20_000 })
+    await hoja
+      .locator('input[type="file"]')
+      .setInputFiles({ name: 'grieta.png', mimeType: 'image/png', buffer: PNG })
+
+    await expect(hoja.getByRole('button', { name: /publicar el reporte/i })).toBeEnabled({
+      timeout: 15_000,
+    })
+    await hoja.getByRole('button', { name: /publicar el reporte/i }).click()
+    await expect(hoja).toContainText(/reporte publicado/i, { timeout: 20_000 })
+
+    const fotos = (enviado as unknown as { photos: { contentType: string; data: string }[] }).photos
+    expect(fotos).toHaveLength(1)
+    // Sale en JPEG aunque entrara un PNG: es lo que comprime bien una fachada.
+    expect(fotos[0].contentType).toBe('image/jpeg')
+    expect(fotos[0].data.startsWith('data:')).toBe(false)
+    expect(fotos[0].data).toMatch(/^[A-Za-z0-9+/]+={0,2}$/)
+  })
+
+  test('al publicar se dice que pasa por moderación, no que ya esté resuelto', async ({ page }) => {
+    /* Publicar un reporte no avisa a nadie ni arregla nada. Dejar creer lo
+       contrario a quien está delante de un edificio inclinado es lo peor que
+       podría hacer esta pantalla. */
+    const hoja = await conFormulario(page)
+
+    await hoja.locator('#clase').selectOption('Colapso total')
+    await hoja.getByRole('button', { name: /usar mi ubicación/i }).click()
+    await expect(hoja.locator('.num')).toContainText('4.81430', { timeout: 20_000 })
+    await hoja
+      .locator('input[type="file"]')
+      .setInputFiles({ name: 'grieta.png', mimeType: 'image/png', buffer: PNG })
+
+    await expect(hoja.getByRole('button', { name: /publicar el reporte/i })).toBeEnabled({
+      timeout: 15_000,
+    })
+    await hoja.getByRole('button', { name: /publicar el reporte/i }).click()
+
+    await expect(hoja).toContainText(/moderación/i, { timeout: 20_000 })
+    await expect(hoja).toContainText(/no avisa a nadie/i)
   })
 })

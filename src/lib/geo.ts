@@ -137,7 +137,7 @@ export type EstadoUbicacion =
  * esperando indefinidamente si el usuario ignora el diálogo de permiso, y una
  * pantalla bloqueada en "buscando…" es inaceptable en una emergencia.
  */
-export function obtenerUbicacion(timeoutMs = 8000): Promise<Coordenada> {
+export function obtenerUbicacion(timeoutMs = 8000, altaPrecision = false): Promise<Coordenada> {
   return new Promise((resolve, reject) => {
     if (!('geolocation' in navigator)) {
       reject(new Error('Este dispositivo no permite compartir la ubicación.'))
@@ -171,7 +171,16 @@ export function obtenerUbicacion(timeoutMs = 8000): Promise<Coordenada> {
           ),
         )
       },
-      { enableHighAccuracy: false, timeout: timeoutMs, maximumAge: 5 * 60 * 1000 },
+      /* Ordenar centros por cercanía se conforma con la posición aproximada de
+         la red, que llega al instante y no enciende el GPS. Señalar QUÉ EDIFICIO
+         está agrietado, no: ahí una posición a doscientos metros pone el aviso
+         en la manzana equivocada, así que quien reporta pide alta precisión y
+         una posición recién tomada. */
+      {
+        enableHighAccuracy: altaPrecision,
+        timeout: timeoutMs,
+        maximumAge: altaPrecision ? 0 : 5 * 60 * 1000,
+      },
     )
   })
 }

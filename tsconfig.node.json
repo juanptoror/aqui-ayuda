@@ -15,5 +15,8 @@
     "strict": true,
     "types": ["node"]
   },
-  "include": ["vite.config.ts", "playwright.config.ts", "e2e"]
+  // `api` entra aquí y no en la aplicación: es código de servidor, con tipos de
+  // Node y sin nada del navegador. Que lo revise el compilador importa más de lo
+  // normal, porque es lo único que no se puede probar abriendo la pantalla.
+  "include": ["vite.config.ts", "playwright.config.ts", "e2e", "api"]
 }
