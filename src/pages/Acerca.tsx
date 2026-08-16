@@ -97,7 +97,7 @@ export function Acerca() {
         <section className="section">
           <SectionHead titulo="Quién guarda la información que ves" />
           <p className="section__desc">
-            Cuatro organizaciones distintas, cada una con sus reglas. Cada dato de la app lleva el
+            Cinco organizaciones distintas, cada una con sus reglas. Cada dato de la app lleva el
             sello de la suya para que sepas siempre a quién corresponde y a quién reclamar.
           </p>
           <div className="grid grid--cards">
@@ -116,6 +116,10 @@ export function Acerca() {
             <TarjetaFuente
               origen="vivienda"
               extra="Inmuebles en arriendo con fotos, sobre todo en el Quindío."
+            />
+            <TarjetaFuente
+              origen="pereira-responde"
+              extra="Edificios afectados y vías cerradas en Pereira. Solo se lee: reportar se hace en su mapa."
             />
           </div>
         </section>

@@ -109,13 +109,21 @@ test.describe('el mapa junta las dos fuentes', () => {
   test('la forma distingue las fuentes sin depender del color', async ({ page }) => {
     await conCiudad(page, 'pereira-2')
     await page.goto('/mapa')
-    await page.waitForSelector('.mapa__punto', { timeout: 45_000 })
+    /* La leyenda nombra solo las formas que están dibujadas, así que hay que
+       esperar a la fuente lenta: con solo los centros de Supabase en pantalla
+       la leyenda es correcta pero incompleta, y medirla ahí no prueba nada. */
+    await page.waitForSelector('.mapa__punto--sitio', { timeout: 45_000 })
+    await page.waitForSelector('.mapa__punto--persona', { timeout: 45_000 })
+    await page.waitForSelector('.mapa__punto--dano', { timeout: 45_000 })
 
     // Amarillo y lima son vecinos en el tono. Si algún día alguien unifica las
     // formas, esta prueba lo para.
     const leyenda = await page.locator('.mapa__leyenda').innerText()
     expect(leyenda).toMatch(/cuadrado/i)
     expect(leyenda).toMatch(/círculo/i)
+    // El punto de daño es redondo y rojo: se separa del de personas por el
+    // anillo interior, no solo por el tono.
+    expect(leyenda).toMatch(/círculo rojo/i)
   })
 })
 
@@ -566,12 +574,18 @@ test.describe('quién busca techo', () => {
 })
 
 test.describe('acerca del proyecto', () => {
-  test('los términos cubren las cuatro fuentes', async ({ page }) => {
+  test('los términos cubren las cinco fuentes', async ({ page }) => {
     await page.goto('/acerca')
     await page.waitForSelector('.section__title', { timeout: 30_000 })
 
     const texto = await page.locator('main').innerText()
-    for (const fuente of ['Ayudas Pereira', 'Corag', 'Pereira Unida', 'Encuéntralo a un Clic']) {
+    for (const fuente of [
+      'Ayudas Pereira',
+      'Corag',
+      'Pereira Unida',
+      'Encuéntralo a un Clic',
+      'Pereira Responde',
+    ]) {
       expect(texto, `faltan las condiciones de ${fuente}`).toContain(fuente)
     }
 

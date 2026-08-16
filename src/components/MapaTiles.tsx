@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { LocateFixed, Maximize, Minus, Plus } from 'lucide-react'
-import type { PropsCapaMapa, PuntoMapa } from './MapaPuntos'
+import { formaDe, type PropsCapaMapa, type PuntoMapa } from './MapaPuntos'
 
 /**
  * El mapa real: calles, manzanas y nombres de barrio sobre datos de
@@ -48,14 +48,17 @@ interface Props extends PropsCapaMapa {
 }
 
 /**
- * Cuadrado para un sitio fijo, círculo para una persona.
+ * Cuadrado para un sitio fijo, círculo lima para una persona, círculo rojo con
+ * anillo para un daño.
  *
- * La forma es la que carga la información, no el color: amarillo y lima son
- * vecinos en el tono y mucha gente no los separa. Es la misma regla que sigue
- * el esquema, para que cambiar de capa no cambie lo que significan las cosas.
+ * El criterio sale de `formaDe`, el mismo que usa el esquema, para que cambiar
+ * de capa a mitad de carga no cambie lo que significan las cosas. El anillo del
+ * punto rojo lo dibuja el CSS con una sombra interior: no hace falta un
+ * elemento hijo y así el punto entero sigue siendo la zona de toque.
  */
 function iconoDe(p: PuntoMapa, activo: boolean): L.DivIcon {
-  const clases = ['mapa__punto', p.origen === 'corag' ? 'mapa__punto--persona' : 'mapa__punto--sitio']
+  const forma = formaDe(p.origen)
+  const clases = ['mapa__punto', `mapa__punto--${forma}`]
   if (p.destacado) clases.push('is-destacado')
   if (activo) clases.push('is-activo')
 

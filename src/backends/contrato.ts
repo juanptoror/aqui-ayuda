@@ -1,4 +1,5 @@
 import type {
+  Afectacion,
   Alojamiento,
   Centro,
   Ciudad,
@@ -27,7 +28,12 @@ import type {
  * cambia, porque las pantallas preguntan por capacidades, no por nombres.
  */
 
-export type IdBackend = 'ayudas-pereira' | 'corag' | 'pereira-unida' | 'vivienda'
+export type IdBackend =
+  | 'ayudas-pereira'
+  | 'corag'
+  | 'pereira-unida'
+  | 'vivienda'
+  | 'pereira-responde'
 
 /**
  * Lo que un backend sabe hacer. La UI pregunta por esto antes de ofrecer un
@@ -47,6 +53,7 @@ export type Capacidad =
   | 'leer:ofrecimientos-persona'
   | 'leer:comentarios'
   | 'leer:alojamientos'
+  | 'leer:afectaciones'
   | 'escribir:ofrecimiento'
   | 'escribir:voluntario'
   | 'escribir:vehiculo'
@@ -86,6 +93,8 @@ export interface LecturasBackend {
   comentarios?: () => Promise<ComentarioPeticion[]>
   /** Sitios donde vivir. Dos fuentes publican arriendos y no se solapan. */
   alojamientos?: () => Promise<Alojamiento[]>
+  /** Daños en edificios, vías y servicios. No son peticiones: son el terreno. */
+  afectaciones?: () => Promise<Afectacion[]>
   voluntarios?: () => Promise<Voluntario[]>
   vehiculos?: () => Promise<Vehiculo[]>
 }

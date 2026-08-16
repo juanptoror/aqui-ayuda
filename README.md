@@ -1,22 +1,27 @@
 # Ayudas Colombia
 
 Directorio de centros de acopio y ayuda humanitaria. Web app en Vite + React +
-TypeScript sobre **dos backends**:
+TypeScript sobre **cinco backends**:
 
 | Fuente | Backend | Qué aporta | Dónde se ve |
 |---|---|---|---|
 | **Ayudas Pereira** | Supabase `yjkyzfuixdpuhgthoeua` | Centros de acopio, qué necesitan y su inventario | `/ciudades`, `/ciudad/:slug`, `/centro/:id`, `/que-falta` |
 | **Corag** | `ayuda.corag.app` | Ayuda directa entre personas, con WhatsApp | `/ayuda-directa` |
+| **Pereira Unida** | Supabase `ivnrelkbqqfebyullfeb` | Vecinos que piden y que ofrecen, con teléfono; arriendos de Risaralda | `/ayuda-directa`, `/vivienda` |
+| **Encuéntralo a un Clic** | Supabase `jdxptkifjcewckbslpno` | Inmuebles en arriendo con foto, sobre todo del Quindío | `/vivienda` |
+| **Pereira Responde** | `pereiraresponde.co` | Edificios afectados, vías cerradas y servicios abiertos | `/danos`, `/mapa` |
 
 Viven en pantallas separadas a propósito: a un centro se le lleva una donación,
-a una persona se le escribe.
+a una persona se le escribe, y de un edificio a punto de caerse hay que
+apartarse.
 
 **Cada dato lleva su sello de procedencia** ([Fuente.tsx](src/components/Fuente.tsx)):
-amarillo para Ayudas Pereira, lima para Corag. No es decoración — si un teléfono
-no responde o una dirección está mal, hay que poder saber quién lo publicó y a
-quién reclamar. Y las reglas difieren: los centros los publica un equipo local,
-las peticiones de Corag las publica cualquiera sin registro. Un test falla si
-una tarjeta aparece sin sello o con el de la fuente equivocada.
+amarillo para Ayudas Pereira, lima para Corag, naranja para Pereira Unida,
+grafito para Pereira Responde. No es decoración — si un teléfono no responde o
+una dirección está mal, hay que poder saber quién lo publicó y a quién reclamar.
+Y las reglas difieren: los centros los publica un equipo local, las peticiones
+de Corag las publica cualquiera sin registro. Un test falla si una tarjeta
+aparece sin sello o con el de la fuente equivocada.
 
 **En producción:** https://ayudas-colombia-web.vercel.app
 
@@ -178,6 +183,45 @@ Si la API falla, la pantalla **lo dice**: un 500 no se presenta como "no hay
 nadie pidiendo ayuda". Esa distinción importa — decir que no hay necesidades
 cuando en realidad no se pudo preguntar es desinformar en plena emergencia.
 
+## 4c. Quinta fuente: Pereira Responde (daños estructurales)
+
+`/danos` consume la API pública documentada en
+[pereiraresponde.co/api/docs](https://pereiraresponde.co/api/docs)
+([backend](src/backends/pereira-responde/)). Es la única fuente que no habla de
+ayuda: dice qué edificio está tocado y por qué calle no se pasa. Cuatro cosas
+medidas contra la API antes de escribir una línea de interfaz, y las cuatro
+condicionan el código:
+
+- **Es de solo lectura.** No hay endpoint público para publicar: el formulario
+  de la fuente escribe contra `/api/reports`, que no está en el contrato
+  público. Por eso "Reportar un daño" es un enlace a su mapa y no un formulario
+  nuestro. Un formulario propio perdería el reporte de alguien que se ha jugado
+  acercarse a un edificio inestable.
+- **`limit` por defecto es 100 y hoy hay 180 reportes.** No pedirlo recorta la
+  ciudad casi a la mitad sin avisar. Se pide siempre el máximo (500), y si
+  llegan exactamente 500 la pantalla dice que puede haber más: la API no pagina.
+- **`area` no es el barrio.** El esquema lo ejemplifica como `"Barrio Boston"`,
+  pero en el formulario de origen es la nota opcional, y 163 de 180 traen el
+  relleno `"Ubicación registrada"`. Se descarta en vez de pintarlo como si fuera
+  una dirección.
+- **Las fotos pesan entre 3 y 7 MB.** Son el JPEG que salió del teléfono, sin
+  miniatura ni versión reducida, y 179 de 180 reportes traen al menos una. Una
+  rejilla que las cargue sola son cientos de megas sobre la red de una ciudad
+  que acaba de temblar: **ninguna se descarga hasta que alguien la pide**, y al
+  pedirla se avisa del peso.
+
+Dos más que se ven en el modelo:
+
+- `risk` solo es una gravedad en los reportes de vivienda. En vías y servicios
+  repite el tipo (`risk: "road"`), así que ahí se dice `sin-clasificar` en lugar
+  de inventar un nivel.
+- La fuente **solo cubre Pereira**. Cuando el radio no devuelve nada, la
+  pantalla lo dice explícitamente: leer "cero daños" desde Manizales sería
+  entender que allí no pasó nada.
+
+Su mapa oficial dibuja además unas "zonas rojas" que la API pública no expone.
+Esta pantalla no es un sustituto del suyo y no lo aparenta.
+
 ## 5. Acceso
 
 Código de un solo uso al correo ([sesion.tsx](src/state/sesion.tsx)). Se usa el
@@ -196,7 +240,7 @@ dice explícitamente en vez de mostrar huecos sin explicación.
 ```bash
 npm run build                  # tsc -b && vite build, sin errores
 npm run test:e2e:install       # una sola vez
-npm run test                   # 34 tests
+npm run test                   # 117 tests
 npm run capturas               # 36 PNG: 6 pantallas x 3 anchos x 2 temas
 npm run capturas:viewport      # primera pantalla, sin fullPage
 npm run capturas:interaccion   # diálogo, hoja, estados vacíos y de carga
@@ -213,7 +257,11 @@ Los tests fallan si:
 - un centro no declara si está abierto o cerrado;
 - se rompe un flujo: elegir municipio, `/?ciudad=slug`, redirección de ciudad
   fusionada, cambio de modo, persistencia del tema, o la navegación por
-  dispositivo.
+  dispositivo;
+- la consulta de daños deja de pedir `limit=500`, o alguna foto de 5 MB se carga
+  sin que nadie la haya pedido, o el relleno `"Ubicación registrada"` llega a la
+  pantalla, o `/danos` ofrece un formulario de reporte que no tiene dónde
+  escribir.
 
 Contra el build de producción en vez del dev server:
 
@@ -233,9 +281,10 @@ src/
   data/         queries (React Query) y composición por municipio
   state/        sesión, tema, ubicación y municipio recordado
   components/   shell, tarjetas, selector, acceso, piezas del sistema
-  pages/        Home, Ciudad, Ciudades, Centro, QueFalta, ComoAyudar, Acerca
+  backends/     un directorio por fuente + el contrato y el registro
+  pages/        Home, Ciudad, Ciudades, Centro, QueFalta, Danos, ComoAyudar, Acerca
   styles/       tokens, base, ui, shell
-e2e/            overflow y flujos; datos y acceso
+e2e/            overflow y flujos; datos y acceso; daños
 scripts/        capturas y diagnóstico de overflow
 ```
 
