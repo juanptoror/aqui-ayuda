@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
-import { BrowserRouter, Link, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Compass, TriangleAlert } from 'lucide-react'
 import { AppShell } from '@/components/AppShell'
@@ -10,7 +10,7 @@ import { Landing } from '@/pages/Landing'
 import { Ciudad } from '@/pages/Ciudad'
 import { Ciudades } from '@/pages/Ciudades'
 import { Centro } from '@/pages/Centro'
-import { Danos } from '@/pages/Danos'
+import { Afectaciones } from '@/pages/Afectaciones'
 import { QueFalta } from '@/pages/QueFalta'
 import { AyudaDirecta } from '@/pages/AyudaDirecta'
 import { ComoAyudar } from '@/pages/ComoAyudar'
@@ -118,7 +118,11 @@ export function App() {
                   <Route path="/ayuda-directa" element={<AyudaDirecta />} />
                   <Route path="/manos" element={<Manos />} />
                   <Route path="/mapa" element={<Mapa />} />
-                  <Route path="/danos" element={<Danos />} />
+                  <Route path="/afectaciones" element={<Afectaciones />} />
+                  {/* La pantalla vivió un tiempo en /danos y esa dirección ya
+                      se compartió por ahí. Redirige en vez de dar un 404: un
+                      enlace muerto a un mapa de peligros es peor que feo. */}
+                  <Route path="/danos" element={<Navigate to="/afectaciones" replace />} />
                   <Route path="/vivienda" element={<Vivienda />} />
                   <Route path="/quiero-ayudar" element={<QuieroAyudar />} />
                   <Route path="/como-ayudar" element={<ComoAyudar />} />

@@ -231,6 +231,17 @@
   }
 }
 
+/* A 375px la barra va exactamente llena: marca 35 + municipio 176 + dos
+   botones de 42, más cuatro huecos de 12 y 32 de padding, dan los 375 justos.
+   Sin holgura el que cede es el texto del municipio, que es el único que lleva
+   información. Se recorta el hueco, que a 12px sobra en una barra compacta, y
+   los 16px que salen se los queda el nombre. */
+@media (max-width: 639px) {
+  .topbar {
+    gap: var(--sp-2);
+  }
+}
+
 /* --------------------------- Navegación inferior -------------------------- */
 
 .bottomnav {
@@ -423,6 +434,15 @@
   overscroll-behavior: contain;
   flex: 1 1 auto;
   min-height: 0;
+}
+
+/* Lista de destinos dentro de una hoja: reusa `.navlink` para que un destino
+   se vea igual aquí que en la barra lateral, que es donde vivían todos hasta
+   que se descubrió que por debajo de 1024px no había forma de llegar a ellos. */
+.sheet__nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
 }
 
 .sheet__footer {
@@ -654,16 +674,39 @@
 /* En la barra superior compite con la marca y los dos botones de icono: se
    queda solo con el nombre y se recorta antes que nada, porque de los cuatro
    es el único cuyo texto puede tener veinte caracteres. */
+/* 12rem da para "Dosquebradas" entero. Antes eran 11rem, y por debajo de 400px
+   se bajaba además a 7.5rem: en un celular de 375px eso dejaba el nombre en
+   "Do...", 38px visibles de los 101 que mide. El ancho no había que sacarlo de
+   estrechar el municipio —de los cuatro elementos de la barra es el único que
+   cambia y el único del que depende el resto de la app— sino de la marca, que
+   por debajo de 640px pasa a ser solo el pin. `flex: 0 1 auto` deja que se
+   encoja igualmente cuando de verdad no quepa: esto es un techo, no un suelo. */
 .municipio--compacto {
   width: auto;
-  max-width: 11rem;
+  max-width: 12rem;
   margin-bottom: 0;
   flex: 0 1 auto;
   padding: var(--sp-2) var(--sp-3);
+  /* Por el mismo motivo que el hueco de la barra: aquí dentro compiten el pin,
+     el nombre y el chevron, y de los tres solo el nombre dice algo. */
+  gap: var(--sp-2);
 }
 
-@media (max-width: 400px) {
-  .municipio--compacto {
-    max-width: 7.5rem;
+/* --------------------------- Marca de la barra ---------------------------- */
+/* Mismo corte que `.oculto-movil`: por debajo de 640px el lockup horizontal se
+   come el ancho que necesita el municipio, y el pin está pensado para
+   funcionar suelto. Se cambia la pieza entera en vez de encogerla. */
+
+.marca-compacta__pin {
+  display: none;
+}
+
+@media (max-width: 639px) {
+  .marca-compacta__lockup {
+    display: none;
+  }
+
+  .marca-compacta__pin {
+    display: block;
   }
 }

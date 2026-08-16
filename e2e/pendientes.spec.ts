@@ -533,8 +533,14 @@ test.describe('el menú cabe en un pulgar', () => {
     const items = await page.$$eval('.bottomnav__item', (n) =>
       n.map((e) => (e as HTMLElement).innerText.trim()),
     )
-    expect(items).toHaveLength(5)
-    expect(new Set(items).size).toBe(5)
+    /* Cinco destinos más el botón "Más", que abre el resto. Seis huecos en
+       375px salen a 56px cada uno: sigue siendo pulsable con el pulgar, y por
+       eso las etiquetas son de una sola palabra. */
+    expect(items).toHaveLength(6)
+    expect(new Set(items).size).toBe(6)
+    expect(items[items.length - 1]).toBe('Más')
+    // Y ningún destino de la barra puede repetirse dentro de "Más".
+    expect(items.slice(0, 5)).not.toContain('Más')
   })
 
   test('las dos caras de una pregunta comparten una sola entrada de menú', async ({ page }) => {

@@ -89,7 +89,7 @@ interface AfectacionVista extends Afectacion {
   reciente: boolean
 }
 
-export function Danos() {
+export function Afectaciones() {
   const { ubicacion, fijarUbicacion, ciudadGuardada } = usePreferencias()
   const [tipo, setTipo] = useState<FiltroTipo>('todo')
   const [soloAlto, setSoloAlto] = useState(false)

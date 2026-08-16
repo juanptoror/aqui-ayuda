@@ -9,7 +9,7 @@ TypeScript sobre **cinco backends**:
 | **Corag** | `ayuda.corag.app` | Ayuda directa entre personas, con WhatsApp | `/ayuda-directa` |
 | **Pereira Unida** | Supabase `ivnrelkbqqfebyullfeb` | Vecinos que piden y que ofrecen, con teléfono; arriendos de Risaralda | `/ayuda-directa`, `/vivienda` |
 | **Encuéntralo a un Clic** | Supabase `jdxptkifjcewckbslpno` | Inmuebles en arriendo con foto, sobre todo del Quindío | `/vivienda` |
-| **Pereira Responde** | `pereiraresponde.co` | Edificios afectados, vías cerradas y servicios abiertos | `/danos`, `/mapa` |
+| **Pereira Responde** | `pereiraresponde.co` | Edificios afectados, vías cerradas y servicios abiertos | `/afectaciones`, `/mapa` |
 
 Cuatro se leen desde el navegador. La quinta también, pero **publicar en ella
 pasa por un servidor propio**: es la única que exige una clave, y una clave en
@@ -21,8 +21,9 @@ a una persona se le escribe, y de un edificio a punto de caerse hay que
 apartarse.
 
 **Cada dato lleva su sello de procedencia** ([Fuente.tsx](src/components/Fuente.tsx)):
-amarillo para Ayudas Pereira, lima para Corag, naranja para Pereira Unida,
-grafito para Pereira Responde, y hueco —sin relleno, solo borde— para Vivienda,
+amarillo para Ayudas Pereira, lima para Corag, naranja para Pereira Unida, rojo
+para Pereira Responde —su propio color de marca, y un sello dice de quién es el
+dato, no cómo de grave es— y hueco —sin relleno, solo borde— para Vivienda,
 la única que no es ayuda de nadie sino un catálogo comercial. No es decoración
 — si un teléfono no responde o una dirección está mal, hay que poder saber quién
 lo publicó y a quién reclamar.
@@ -213,7 +214,7 @@ cuando en realidad no se pudo preguntar es desinformar en plena emergencia.
 
 ## 4c. Quinta fuente: Pereira Responde (daños estructurales)
 
-`/danos` consume la API pública documentada en
+`/afectaciones` consume la API pública documentada en
 [pereiraresponde.co/api/docs](https://pereiraresponde.co/api/docs)
 ([backend](src/backends/pereira-responde/)). Es la única fuente que no habla de
 ayuda: dice qué edificio está tocado y por qué calle no se pasa. Cuatro cosas
@@ -295,6 +296,13 @@ público y sin registro —como toda la app—, cualquiera puede publicar a trav
 él. La moderación de la fuente sigue siendo la última palabra, igual que con su
 propio formulario.
 
+Al reportar, el GPS solo **centra** el mapa: el pin lo coloca quien reporta
+([MapaElegirPunto.tsx](src/components/MapaElegirPunto.tsx)). Publicar la posición
+del teléfono era publicar mal —reportar bien exige apartarse del edificio, y
+apartarse mueve el punto a la acera de enfrente— y en un mapa de peligros eso
+manda a alguien a rodear la manzana equivocada. Hay un test que lo fija: mueve el
+pin y comprueba que lo publicado NO son las coordenadas del GPS.
+
 Si la clave no está configurada, nada se rompe: la pantalla pregunta primero
 (`GET /api/reportes` → `{"disponible": false}`) y el botón "Reportar un daño"
 sale al mapa de la fuente en vez de abrir un formulario que fallaría al enviar,
@@ -322,7 +330,7 @@ dice explícitamente en vez de mostrar huecos sin explicación.
 ```bash
 npm run build                  # tsc -b && vite build, sin errores
 npm run test:e2e:install       # una sola vez
-npm run test                   # 130 tests
+npm run test                   # 134 tests
 npm run capturas               # 36 PNG: 6 pantallas x 3 anchos x 2 temas
 npm run capturas:viewport      # primera pantalla, sin fullPage
 npm run capturas:interaccion   # diálogo, hoja, estados vacíos y de carga
@@ -342,7 +350,7 @@ Los tests fallan si:
   dispositivo;
 - la consulta de daños deja de pedir `limit=500`, o alguna foto de 5 MB se carga
   sin que nadie la haya pedido, o el relleno `"Ubicación registrada"` llega a la
-  pantalla, o `/danos` ofrece un formulario de reporte que no tiene dónde
+  pantalla, o `/afectaciones` ofrece un formulario de reporte que no tiene dónde
   escribir;
 - un punto del mapa deja de tener a dónde ir: las tres formas —cuadrado, círculo
   y círculo rojo— tienen que abrir su detalle, no solo la primera;

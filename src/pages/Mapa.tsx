@@ -47,7 +47,7 @@ export function Mapa() {
   const [verDanos, setVerDanos] = useState(true)
   /* Tocar un punto tiene que llevar a algún sitio, sea cual sea su forma. El
      centro tiene pantalla propia; la persona y el daño se abren en su ficha,
-     la misma que usan `/ayuda-directa` y `/danos`. Antes solo el cuadrado
+     la misma que usan `/ayuda-directa` y `/afectaciones`. Antes solo el cuadrado
      llevaba a alguna parte y las otras dos formas eran callejones sin salida. */
   const [fichaAyuda, setFichaAyuda] = useState<AyudaCorag | null>(null)
   const [fichaDano, setFichaDano] = useState<Afectacion | null>(null)

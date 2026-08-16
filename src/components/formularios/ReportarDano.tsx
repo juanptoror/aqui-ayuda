@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ComponentType } from 'react'
 import { Camera, CircleCheck, LocateFixed, Trash2, TriangleAlert } from 'lucide-react'
 import { Sheet, Notice } from '../ui'
 import { Alternativa, Campo, CampoArea, CampoGrupo, QueFalta } from './Campos'
@@ -10,9 +10,10 @@ import {
   usePublicarAfectacion,
   type CategoriaApoyo,
 } from '@/backends/pereira-responde/publicar'
-import { TIPOS_AFECTACION, type TipoAfectacion } from '@/dominio/modelos'
+import { TIPOS_AFECTACION, type Coordenada, type TipoAfectacion } from '@/dominio/modelos'
 import { FORMATOS_ACEPTADOS, pesoLegible, prepararFoto, type FotoPreparada } from '@/lib/imagenes'
 import { obtenerUbicacion } from '@/lib/geo'
+import { usePreferencias } from '@/state/preferencias'
 
 /**
  * Reportar un daño desde aquí.
@@ -27,10 +28,12 @@ import { obtenerUbicacion } from '@/lib/geo'
  * 1. **El aviso de seguridad va arriba, no en la letra pequeña.** Quien rellena
  *    esto está delante de algo que se puede caer. La fuente pone el mismo aviso
  *    en su formulario y aquí no se rebaja.
- * 2. **La ubicación es el GPS y se dice.** No hay mapa para señalar un punto a
- *    mano, así que se publica donde está la persona. Si se ha apartado del
- *    sitio —que es lo correcto— el punto sale desplazado, y eso se avisa con la
- *    salida a la fuente, que sí deja marcarlo en su mapa.
+ * 2. **El GPS centra el mapa; el pin lo pone la persona.** Publicar la posición
+ *    del teléfono era publicar mal: reportar bien exige apartarse del edificio,
+ *    y apartarse mueve el punto a la acera de enfrente o al portal del vecino.
+ *    En un mapa de peligros eso manda a alguien a rodear la manzana equivocada.
+ *    Así que el GPS es el punto de partida y el pin se arrastra al sitio exacto,
+ *    igual que en el formulario de la propia fuente.
  * 3. **La foto se reduce antes de salir.** Una foto de teléfono pesa varios
  *    megas y quien reporta está con datos móviles en la calle. Se manda una de
  *    unos 300 KB que enseña exactamente la misma grieta.
@@ -47,7 +50,15 @@ const TIPOS: { valor: TipoAfectacion; texto: string }[] = [
   { valor: 'apoyo', texto: 'Servicio' },
 ]
 
+/** Lo que expone `MapaElegirPunto`, para poder cargarlo con `import()`. */
+type CapaMapa = ComponentType<{
+  punto: Coordenada | null
+  alElegir: (c: Coordenada) => void
+  tema: 'light' | 'dark'
+}>
+
 export function ReportarDano({ abierto, alCerrar }: { abierto: boolean; alCerrar: () => void }) {
+  const { tema } = usePreferencias()
   const [tipo, setTipo] = useState<TipoAfectacion>('vivienda')
   const [clase, setClase] = useState('')
   const [gravedad, setGravedad] = useState<'alta' | 'media'>('alta')
@@ -63,6 +74,29 @@ export function ReportarDano({ abierto, alCerrar }: { abierto: boolean; alCerrar
 
   const entradaFoto = useRef<HTMLInputElement>(null)
   const publicar = usePublicarAfectacion()
+
+  /* Leaflet pesa lo que pesa y solo hace falta aquí dentro, así que baja cuando
+     se abre la hoja y no antes. Si no llega —red caída, CDN bloqueado— el
+     formulario sigue sirviendo con el punto del GPS: se avisa de que no se
+     puede afinar, en vez de dejar un hueco gris y un campo obligatorio
+     imposible de rellenar. */
+  const [Mapa, setMapa] = useState<CapaMapa | null>(null)
+  const [sinMapa, setSinMapa] = useState(false)
+
+  useEffect(() => {
+    if (!abierto || Mapa || sinMapa) return
+    let vivo = true
+    import('../MapaElegirPunto')
+      .then((m) => {
+        if (vivo) setMapa(() => m.MapaElegirPunto)
+      })
+      .catch(() => {
+        if (vivo) setSinMapa(true)
+      })
+    return () => {
+      vivo = false
+    }
+  }, [abierto, Mapa, sinMapa])
 
   const clases = CLASES_POR_TIPO[tipo]
 
@@ -290,7 +324,11 @@ export function ReportarDano({ abierto, alCerrar }: { abierto: boolean; alCerrar
         <CampoGrupo
           etiqueta="Dónde está"
           obligatorio
-          ayuda="Se publica el punto donde estás ahora. Si te has apartado del sitio —que es lo que hay que hacer— el punto sale algo desplazado; para señalarlo a mano en un mapa, usa la web de la fuente."
+          ayuda={
+            sinMapa
+              ? 'No se pudo cargar el mapa, así que se publicará el punto del GPS. Si te apartaste del sitio, el aviso saldrá algo desplazado.'
+              : 'Tu ubicación centra el mapa; el pin lo pones tú. Muévelo al edificio o al tramo exacto: quien lea el aviso va a fiarse de ese punto para saber por dónde no pasar.'
+          }
         >
           <div className="row row--wrap" style={{ gap: 'var(--sp-3)' }}>
             <button
@@ -300,7 +338,7 @@ export function ReportarDano({ abierto, alCerrar }: { abierto: boolean; alCerrar
               disabled={buscandoPunto}
             >
               <LocateFixed size={17} />
-              <span>{buscandoPunto ? 'Buscando…' : punto ? 'Volver a tomar' : 'Usar mi ubicación'}</span>
+              <span>{buscandoPunto ? 'Buscando…' : 'Centrar donde estoy'}</span>
             </button>
             {punto && (
               <span className="num" style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
@@ -308,6 +346,12 @@ export function ReportarDano({ abierto, alCerrar }: { abierto: boolean; alCerrar
               </span>
             )}
           </div>
+
+          {Mapa && (
+            <div style={{ marginTop: 'var(--sp-3)' }}>
+              <Mapa punto={punto} alElegir={setPunto} tema={tema} />
+            </div>
+          )}
         </CampoGrupo>
 
         {errorPunto && <Notice tono="warning">{errorPunto}</Notice>}

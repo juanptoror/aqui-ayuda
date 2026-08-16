@@ -53,7 +53,12 @@ export function Badge({
   return (
     <span className={`badge badge--${tono}${grande ? ' badge--lg' : ''}`}>
       {Icono && <Icono size={grande ? 14 : 12} strokeWidth={2.5} />}
-      {children}
+      {/* El texto va envuelto a propósito. `.badge` es un contenedor flex, y en
+          un flex el texto suelto se convierte en un item anónimo al que
+          `text-overflow: ellipsis` no se le aplica: el badge recortaba a mitad
+          de palabra ("6 CENTROS TIE") sin puntos suspensivos. Dentro de este
+          span sí es texto de bloque y la elipsis funciona. */}
+      <span className="badge__texto">{children}</span>
     </span>
   )
 }
