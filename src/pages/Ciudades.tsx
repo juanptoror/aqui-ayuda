@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Building2, ChevronRight, LocateFixed, MapPin, Search, TriangleAlert } from 'lucide-react'
 import { PageHeader, EmptyState, SkeletonLinea, Notice } from '@/components/ui'
+import { FuentesDeLaPantalla } from '@/components/Fuente'
 import { usePreferencias } from '@/state/preferencias'
 import { useCiudadesCercanas } from '@/datos/useDatosCiudad'
 import { coordenadaDeCiudad, formatearDistancia, obtenerUbicacion } from '@/lib/geo'
@@ -58,6 +59,8 @@ export function Ciudades() {
       />
 
       <div className="container">
+        <FuentesDeLaPantalla origenes={['ayudas-pereira']} nota="Los municipios y sus centros los publica el equipo que coordina cada centro, no la comunidad." />
+
         {errorUbicacion && (
           <div className="stack">
             <Notice tono="warning">{errorUbicacion}</Notice>
