@@ -1778,3 +1778,9 @@
   border-color: var(--warning-border);
   color: var(--warning-on-soft);
 }
+
+/* El interruptor entre las dos caras de una misma pregunta. Reutiliza el
+   segmented, pero con enlaces: cada cara tiene su URL y se puede compartir. */
+.segmented--enlaces .segmented__option {
+  text-decoration: none;
+}

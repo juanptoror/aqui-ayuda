@@ -12,6 +12,7 @@ import { PublicarVivienda } from '@/components/formularios/PublicarVivienda'
 import { ComoLlegar } from '@/components/ComoLlegar'
 import { SelloFuente, FuentesDeLaPantalla } from '@/components/Fuente'
 import { MapaPuntos, type PuntoMapa } from '@/components/MapaPuntos'
+import { BuscanTecho } from '@/components/BuscanTecho'
 import { useAlojamientos } from '@/datos/consultas'
 import { usePreferencias } from '@/state/preferencias'
 import { distanciaKm } from '@/lib/geo'
@@ -166,6 +167,10 @@ export function Vivienda() {
   const [f, setF] = useState<Filtros>(VACIO)
   const [publicando, setPublicando] = useState(false)
   const [verMapa, setVerMapa] = useState(false)
+  /* Los dos lados del mismo mercado. Nunca en la misma lista: mezclar quien
+     ofrece con quien busca haría que un botón "Escribir" signifique dos cosas
+     distintas en filas contiguas. */
+  const [lado, setLado] = useState<'ofrecen' | 'buscan'>('ofrecen')
 
   const q = useAlojamientos()
   const todos = q.data ?? []
@@ -293,8 +298,33 @@ export function Vivienda() {
           />
         )}
 
+        <section className="section" style={{ marginTop: 0 }}>
+          <div className="segmented" role="tablist" style={{ maxWidth: 560 }}>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={lado === 'ofrecen'}
+              className="segmented__option"
+              onClick={() => setLado('ofrecen')}
+            >
+              <span>Se arrienda</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={lado === 'buscan'}
+              className="segmented__option"
+              onClick={() => setLado('buscan')}
+            >
+              <span>Buscan techo</span>
+            </button>
+          </div>
+        </section>
+
+        {lado === 'buscan' && <BuscanTecho />}
+
         {/* ------------------------------- FILTROS ------------------------------ */}
-        <section className="section" aria-label="Filtros">
+        <section className="section" aria-label="Filtros" hidden={lado === 'buscan'}>
           <div className="filtros">
             <div className="filtros__buscar">
               <input
@@ -430,7 +460,7 @@ export function Vivienda() {
           )}
         </section>
 
-        <section className="section">
+        <section className="section" hidden={lado === 'buscan'}>
           <SectionHead
             titulo={verMapa ? 'En el mapa' : 'Resultados'}
             conteo={q.isLoading ? undefined : conteo(resultados.length, 'sitio', 'sitios')}

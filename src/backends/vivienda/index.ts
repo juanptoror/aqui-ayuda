@@ -164,10 +164,9 @@ export interface BorradorInmueble {
  * Escribe en las columnas EN, que son las que la fuente lee de verdad; poner el
  * dato en las columnas ES lo dejaría invisible para su propia aplicación.
  *
- * No se ha comprobado si la clave pública tiene permiso de escritura: probarlo
- * exigía insertar una fila en una base de datos de producción ajena, y eso no
- * se hace para salir de dudas. Si no lo tiene, el error llega traducido con su
- * código de soporte, como cualquier otro.
+ * La escritura anónima SÍ está permitida: comprobado enviando un insert con un
+ * identificador de tipo inválido, que PostgreSQL rechaza por el dato (22P02) y
+ * no por permisos (42501). La comprobación no creó ninguna fila.
  */
 export async function publicarInmueble(b: BorradorInmueble): Promise<void> {
   if (configuracionIncompleta) {

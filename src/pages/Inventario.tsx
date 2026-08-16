@@ -19,6 +19,7 @@ import {
 } from '@/components/ui'
 import { SelectorCiudad } from '@/components/SelectorCiudad'
 import { FuentesDeLaPantalla } from '@/components/Fuente'
+import { CambioDeVista, VISTAS_MUNICIPIO } from '@/components/CambioDeVista'
 import { Acceso } from '@/components/Acceso'
 import { ProgramarTransporte } from '@/components/formularios/ProgramarTransporte'
 import { usePreferencias } from '@/state/preferencias'
@@ -148,6 +149,10 @@ export function Inventario() {
           origenes={['ayudas-pereira']}
           nota="Solo los centros de acopio llevan inventario: las otras fuentes publican personas, no bodegas."
         />
+
+        <div className="section" style={{ marginTop: 0 }}>
+          <CambioDeVista vistas={VISTAS_MUNICIPIO} />
+        </div>
         {datos.error ? (
           <div className="stack">
             <AvisoError error={datos.error} origen="AP" />
