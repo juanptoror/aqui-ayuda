@@ -246,10 +246,10 @@ export interface BorradorReporte {
  * Publica la misma petición también en este tablón.
  *
  * Es una escritura de mejor esfuerzo: quien la llama ya publicó en Corag y esto
- * solo amplía el alcance. Si falla —la clave pública podría no tener permiso de
- * inserción, cosa que no hemos comprobado porque exigía escribir en una base de
- * producción ajena— la petición original sigue publicada, y eso es lo que se le
- * cuenta a la persona.
+ * solo amplía el alcance. El permiso está comprobado —un insert con identificador
+ * inválido falla por el dato (22P02) y no por permisos (42501), sin crear fila—,
+ * pero la red puede caerse igual: si falla, la petición original sigue publicada
+ * y eso es lo que se le cuenta a la persona.
  */
 export async function publicarReporte(b: BorradorReporte): Promise<void> {
   if (configuracionIncompleta) {

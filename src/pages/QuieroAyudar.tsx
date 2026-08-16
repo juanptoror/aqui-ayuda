@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { HandHeart, LocateFixed, MessageCircle, PackageSearch } from 'lucide-react'
 import { PageHeader, SectionHead, EmptyState, Badge, Notice, SkeletonLinea } from '@/components/ui'
 import { SelloFuente, FuentesDeLaPantalla } from '@/components/Fuente'
+import { CambioDeVista, VISTAS_AYUDAR } from '@/components/CambioDeVista'
 import { ComoLlegar } from '@/components/ComoLlegar'
 import { usePreferencias } from '@/state/preferencias'
 import { useSesion } from '@/state/sesion'
@@ -226,6 +227,10 @@ export function QuieroAyudar() {
           origenes={['ayudas-pereira', 'corag', 'pereira-unida']}
           nota="Se cruza contra las tres a la vez con una taxonomía común: los tres vocabularios son distintos y sin traducirlos no encajaría nada."
         />
+
+        <div className="section" style={{ marginTop: 0 }}>
+          <CambioDeVista vistas={VISTAS_AYUDAR} />
+        </div>
 
         <section className="section" style={{ marginTop: 0 }}>
           <SectionHead titulo="¿Qué tienes?" />

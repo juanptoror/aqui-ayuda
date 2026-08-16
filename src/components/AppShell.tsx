@@ -1,7 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import {
   BedDouble,
-  Boxes,
   Building2,
   ChevronsUpDown,
   HandHeart,
@@ -13,7 +12,6 @@ import {
   Moon,
   Sun,
   TriangleAlert,
-  Users,
 } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { usePreferencias } from '@/state/preferencias'
@@ -33,18 +31,22 @@ interface Destino {
    cortas de la barra inferior son de una sola palabra. */
 const DESTINOS: Destino[] = [
   { a: '/', etiqueta: 'Inicio', etiquetaCorta: 'Inicio', icono: Home },
-  { a: '/ciudades', etiqueta: 'Centros de acopio', etiquetaCorta: 'Centros', icono: Building2 },
-  { a: '/ayuda-directa', etiqueta: 'Ayuda entre personas', etiquetaCorta: 'Personas', icono: HandHeart },
-  { a: '/que-falta', etiqueta: 'Qué falta', etiquetaCorta: 'Falta', icono: TriangleAlert },
-  { a: '/inventario', etiqueta: 'Qué hay y dónde', etiquetaCorta: 'Qué hay', icono: Boxes },
+  { a: '/ayuda-directa', etiqueta: 'Quién necesita ayuda', etiquetaCorta: 'Piden', icono: HandHeart },
+  { a: '/quiero-ayudar', etiqueta: 'Quiero ayudar', etiquetaCorta: 'Ayudar', icono: HeartHandshake },
+  { a: '/que-falta', etiqueta: 'Qué falta y qué hay', etiquetaCorta: 'Qué falta', icono: TriangleAlert },
+  { a: '/vivienda', etiqueta: 'Dónde vivir', etiquetaCorta: 'Vivienda', icono: BedDouble },
 ]
 
-/** Destinos que solo aparecen en la barra lateral, por falta de sitio abajo. */
+/**
+ * Destinos que no entran en los cinco de abajo.
+ *
+ * No son menos importantes: son menos frecuentes. El directorio de centros se
+ * consulta una vez y luego se vuelve por el municipio guardado, y el mapa es
+ * una forma de mirar lo mismo que ya está en las otras pantallas.
+ */
 const SECUNDARIOS: Destino[] = [
-  { a: '/quiero-ayudar', etiqueta: 'Tengo algo que dar', etiquetaCorta: 'Tengo', icono: HandHeart },
+  { a: '/ciudades', etiqueta: 'Centros de acopio', etiquetaCorta: 'Centros', icono: Building2 },
   { a: '/mapa', etiqueta: 'Mapa de la ayuda', etiquetaCorta: 'Mapa', icono: MapPin },
-  { a: '/manos', etiqueta: 'Quién puede ayudar', etiquetaCorta: 'Manos', icono: Users },
-  { a: '/vivienda', etiqueta: 'Vivienda en arriendo', etiquetaCorta: 'Vivienda', icono: BedDouble },
   { a: '/como-ayudar', etiqueta: 'Cómo ayudar', etiquetaCorta: 'Guía', icono: HeartHandshake },
 ]
 
@@ -58,6 +60,8 @@ const SECUNDARIOS: Destino[] = [
  */
 const HIJAS: Record<string, string[]> = {
   '/ciudades': ['/ciudad/', '/centro/'],
+  '/que-falta': ['/inventario'],
+  '/quiero-ayudar': ['/manos'],
 }
 
 function esActivo(pathname: string, destino: string): boolean {

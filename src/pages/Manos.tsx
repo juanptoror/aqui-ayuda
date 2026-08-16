@@ -17,6 +17,7 @@ import { usePreferencias } from '@/state/preferencias'
 import { useMunicipios, useVehiculos, useVoluntarios } from '@/datos/consultas'
 import { VecinosQueOfrecen } from '@/components/VecinosQueOfrecen'
 import { FuentesDeLaPantalla } from '@/components/Fuente'
+import { CambioDeVista, VISTAS_AYUDAR } from '@/components/CambioDeVista'
 import { conteo } from '@/lib/format'
 
 /**
@@ -154,6 +155,10 @@ export function Manos() {
           origenes={['pereira-unida', 'ayudas-pereira']}
           nota="Los vecinos del tablón publican su teléfono; los voluntarios de los centros no, porque su backend lo reserva a quien coordina."
         />
+
+        <div className="section" style={{ marginTop: 0 }}>
+          <CambioDeVista vistas={VISTAS_AYUDAR} />
+        </div>
         {error ? (
           <div className="stack">
             <AvisoError error={error} origen="AP" />

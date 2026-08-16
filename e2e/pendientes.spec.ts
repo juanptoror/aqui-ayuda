@@ -471,3 +471,92 @@ test.describe('publicar una petición', () => {
     expect(casillas).toBeGreaterThanOrEqual(2)
   })
 })
+
+test.describe('el menú cabe en un pulgar', () => {
+  test('la barra inferior tiene cinco destinos y ninguno repetido', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 })
+    await page.goto('/')
+    await page.waitForTimeout(1500)
+
+    const items = await page.$$eval('.bottomnav__item', (n) =>
+      n.map((e) => (e as HTMLElement).innerText.trim()),
+    )
+    expect(items).toHaveLength(5)
+    expect(new Set(items).size).toBe(5)
+  })
+
+  test('las dos caras de una pregunta comparten una sola entrada de menú', async ({ page }) => {
+    await page.addInitScript(() => {
+      try {
+        localStorage.setItem('ac.ciudad', 'pereira-2')
+      } catch {
+        /* sin almacenamiento */
+      }
+    })
+
+    /* "Qué falta" y "Qué hay" miran el mismo inventario del mismo municipio por
+       sus dos caras, así que ocupan un destino y no dos. Lo mismo con "dónde
+       encaja lo mío" y "quién más ayuda". */
+    for (const [ruta, pareja] of [
+      ['/que-falta', '/inventario'],
+      ['/quiero-ayudar', '/manos'],
+    ]) {
+      await page.goto(ruta)
+      await page.waitForSelector('.segmented--enlaces', { timeout: 45_000 })
+      const antes = await page.$$eval('.sidebar .navlink--active', (n) =>
+        n.map((e) => (e as HTMLElement).innerText.trim()),
+      )
+
+      await page.goto(pareja)
+      await page.waitForSelector('.segmented--enlaces', { timeout: 45_000 })
+      const despues = await page.$$eval('.sidebar .navlink--active', (n) =>
+        n.map((e) => (e as HTMLElement).innerText.trim()),
+      )
+
+      expect(antes).toEqual(despues)
+      expect(antes).toHaveLength(1)
+    }
+  })
+})
+
+test.describe('quién busca techo', () => {
+  test('la demanda de vivienda vive al lado de la oferta', async ({ page }) => {
+    await page.goto('/vivienda')
+    await page.waitForSelector('.card__title', { timeout: 45_000 })
+
+    await page.locator('.segmented__option').filter({ hasText: 'Buscan techo' }).click()
+    await page.waitForTimeout(5000)
+
+    /* Es el único punto del rediseño donde unir crea una función que antes no
+       existía: 112 arriendos publicados y cero ofertas de refugio, con las
+       peticiones tiradas en otras pantallas donde nadie con un piso vacío mira. */
+    const filas = await page.locator('.panel li').count()
+    expect(filas).toBeGreaterThan(0)
+
+    const origenes = await page.$$eval('.panel li .sello-fuente', (n) =>
+      [...new Set(n.map((e) => e.getAttribute('data-origen')))].sort(),
+    )
+    expect(origenes.length).toBeGreaterThanOrEqual(2)
+
+    // Los dos lados no se mezclan: un botón "Escribir" no puede significar dos
+    // cosas distintas en filas contiguas.
+    expect(await page.locator('.card:visible').count()).toBe(0)
+  })
+})
+
+test.describe('acerca del proyecto', () => {
+  test('los términos cubren las cuatro fuentes', async ({ page }) => {
+    await page.goto('/acerca')
+    await page.waitForSelector('.section__title', { timeout: 30_000 })
+
+    const texto = await page.locator('main').innerText()
+    for (const fuente of ['Ayudas Pereira', 'Corag', 'Pereira Unida', 'Encuéntralo a un Clic']) {
+      expect(texto, `faltan las condiciones de ${fuente}`).toContain(fuente)
+    }
+
+    // Y sigue sin jerga técnica: nadie tiene que leer un código de Postgres.
+    expect(texto.toLowerCase()).not.toContain('supabase')
+    expect(texto).not.toContain('42501')
+    expect(texto.toLowerCase()).not.toContain('postgrest')
+  })
+})

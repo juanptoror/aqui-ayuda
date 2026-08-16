@@ -97,17 +97,25 @@ export function Acerca() {
         <section className="section">
           <SectionHead titulo="Quién guarda la información que ves" />
           <p className="section__desc">
-            Dos organizaciones distintas, cada una con sus reglas. Cada dato de la app lleva el
-            sello de la suya para que sepas siempre a quién corresponde.
+            Cuatro organizaciones distintas, cada una con sus reglas. Cada dato de la app lleva el
+            sello de la suya para que sepas siempre a quién corresponde y a quién reclamar.
           </p>
-          <div className="grid grid--halves">
+          <div className="grid grid--cards">
             <TarjetaFuente
               origen="ayudas-pereira"
               extra="Municipios, centros de acopio, qué necesitan y su inventario."
             />
             <TarjetaFuente
               origen="corag"
-              extra="La pantalla de ayuda entre personas y el formulario para publicar."
+              extra="Ayuda entre personas, con desglose de cuánto está cubierto."
+            />
+            <TarjetaFuente
+              origen="pereira-unida"
+              extra="Peticiones y ofrecimientos de vecinos, y los arriendos de Risaralda."
+            />
+            <TarjetaFuente
+              origen="vivienda"
+              extra="Inmuebles en arriendo con fotos, sobre todo en el Quindío."
             />
           </div>
         </section>
@@ -207,6 +215,76 @@ export function Acerca() {
               >
                 <span>Leer la política completa de Corag</span>
               </a>
+            </div>
+          </div>
+        </section>
+
+        {/* --------------------------- PEREIRA UNIDA ----------------------------- */}
+        <section className="section">
+          <SectionHead titulo="Condiciones de Pereira Unida" />
+          <div className="panel">
+            <div className="panel__body stack">
+              <Bloque titulo="Qué guardan">
+                <p>
+                  Un tablón abierto de la comunidad: lo que alguien pide, lo que alguien ofrece y
+                  los arriendos disponibles, cada uno con su <strong>nombre y su teléfono</strong>.
+                  También los comentarios que la gente deja en cada petición.
+                </p>
+              </Bloque>
+              <Bloque titulo="Los teléfonos son públicos allí, no aquí">
+                <p>
+                  Esta es la diferencia importante con las otras fuentes. En Ayudas Pereira el
+                  teléfono está reservado a quien coordina, y en Corag solo aparece si la persona
+                  marca una casilla. En Pereira Unida <strong>forma parte del aviso desde que se
+                  publica</strong>: nosotros no desbloqueamos nada, mostramos lo que cualquiera ve
+                  entrando en su web.
+                </p>
+              </Bloque>
+              <Bloque titulo="Qué no republicamos">
+                <p>
+                  La propia comunidad marca avisos como información falsa o duplicada, y hay
+                  peticiones ya resueltas. <strong>Esos no se muestran aquí</strong>, aunque sigan
+                  estando en el origen: repetir un aviso señalado como falso en una emergencia hace
+                  daño, y un duplicado manda a dos personas al mismo sitio a lo mismo.
+                </p>
+              </Bloque>
+              <Bloque titulo="Si publicas desde aquí">
+                <p>
+                  Cuando pides ayuda puedes marcar que tu petición se publique también en este
+                  tablón. Es una casilla, nunca automático, y va con el mismo teléfono que
+                  autorizaste. Para que la retiren, escríbeles a ellos.
+                </p>
+              </Bloque>
+            </div>
+          </div>
+        </section>
+
+        {/* ------------------------ ENCUÉNTRALO A UN CLIC ------------------------ */}
+        <section className="section">
+          <SectionHead titulo="Condiciones de Encuéntralo a un Clic" />
+          <div className="panel">
+            <div className="panel__body stack">
+              <Bloque titulo="Qué guardan">
+                <p>
+                  Anuncios de inmuebles en arriendo: qué es, dónde, cuánto cuesta, fotos y el
+                  WhatsApp de quien lo alquila. No es una fuente de la emergencia —existía antes—,
+                  pero quien perdió la casa necesita otra, no una caja más.
+                </p>
+              </Bloque>
+              <Bloque titulo="Qué publicamos nosotros">
+                <p>
+                  Si publicas una vivienda desde aquí, el anuncio se crea en su base de datos con
+                  lo que escribiste y tu WhatsApp. Aparecerá también en su propia web. Para
+                  modificarlo o retirarlo, hay que hablar con ellos.
+                </p>
+              </Bloque>
+              <Bloque titulo="Lo que no te enseñamos, y por qué">
+                <p>
+                  Sus anuncios traen coordenadas que apuntan siempre al mismo punto, y no es donde
+                  está el inmueble. <strong>No dibujamos esos anuncios en el mapa</strong>: un pin a
+                  150 kilómetros del sitio es peor que ninguno. Se muestra el barrio, que sí es real.
+                </p>
+              </Bloque>
             </div>
           </div>
         </section>
