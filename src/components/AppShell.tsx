@@ -1,6 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
 import {
-  Activity,
   BedDouble,
   Building2,
   ChevronsUpDown,
@@ -62,18 +61,15 @@ const SECUNDARIOS: Destino[] = [
  *
  * Existe porque la barra lateral solo aparece a partir de 1024px y llevaba
  * sola estos destinos: por debajo de esa anchura no había forma de llegar a
- * ellos. `/mapa`, `/afectaciones` y `/estado` no estaban enlazados desde ninguna de
- * las cinco pantallas de la barra, así que en un celular solo se alcanzaban
- * escribiendo la URL. `/afectaciones` es la pantalla de edificios afectados y vías
- * cerradas, en una app que da por hecho que quien la abre acaba de pasar por
- * un terremoto y la abre desde el celular.
- *
- * `/estado` no estaba ni siquiera en la lateral.
+ * ellos. `/mapa` y `/afectaciones` no estaban enlazados desde ninguna de las
+ * cinco pantallas de la barra, así que en un celular solo se alcanzaban
+ * escribiendo la URL. `/afectaciones` es la pantalla de edificios afectados y
+ * vías cerradas, en una app que da por hecho que quien la abre acaba de pasar
+ * por un terremoto y la abre desde el celular.
  */
 const EN_MAS: Destino[] = [
   ...SECUNDARIOS,
   { a: '/acerca', etiqueta: 'Acerca del proyecto', etiquetaCorta: 'Acerca', icono: Info },
-  { a: '/estado', etiqueta: 'Estado de las fuentes', etiquetaCorta: 'Estado', icono: Activity },
 ]
 
 /**

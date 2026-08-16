@@ -20,7 +20,7 @@ export type Origen =
 interface InfoFuente {
   nombre: string
   /** Qué es, en palabras de cualquiera. El nombre del proveedor técnico no
-      aparece aquí: eso vive en /estado, que es donde le sirve a alguien. */
+      aparece aquí: a quien busca dónde llevar una caja no le dice nada. */
   tipo: string
   descripcion: string
   quienPublica: string

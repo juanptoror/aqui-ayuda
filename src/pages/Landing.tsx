@@ -11,31 +11,12 @@ import {
 } from 'lucide-react'
 import { SectionHead, EmptyState, SkeletonLinea, Notice } from '@/components/ui'
 import { SelectorCiudad } from '@/components/SelectorCiudad'
-import { Isotipo, LockupVertical } from '@/components/Marca'
-import { TarjetaFuente } from '@/components/Fuente'
-import { PanoramaCorag } from '@/components/PanoramaCorag'
+import { LockupVertical } from '@/components/Marca'
 import { usePreferencias } from '@/state/preferencias'
 import { useCiudadesCercanas } from '@/datos/useDatosCiudad'
 import { obtenerUbicacion, formatearDistancia, coordenadaDeCiudad } from '@/lib/geo'
 import { conteo } from '@/lib/format'
 
-const PASOS = [
-  {
-    icono: MapPin,
-    titulo: 'Dinos dónde estás',
-    texto: 'Con tu ubicación o eligiendo tu municipio. No pedimos nada más.',
-  },
-  {
-    icono: Package,
-    titulo: 'Mira qué falta de verdad',
-    texto: 'Cada centro publica lo que necesita y lo que ya tiene cubierto.',
-  },
-  {
-    icono: HandHeart,
-    titulo: 'Actúa sobre seguro',
-    texto: 'Cómo llegar, a quién escribir y si está abierto ahora mismo.',
-  },
-]
 
 /**
  * Portada. La acción va ARRIBA y el relato debajo, no al revés: quien entra
@@ -167,11 +148,6 @@ export function Landing() {
             </div>
           )}
         </div>
-
-        {/* Las cifras van ANTES de los caminos: primero se ve el tamaño de lo
-            que pasa, y solo después se pregunta qué quiere hacer uno. Al revés
-            —la crítica que ya nos hicieron— era pedir una decisión a ciegas. */}
-        <PanoramaCorag />
 
         {/* --------------------------- LOS DOS CAMINOS --------------------------- */}
         <section className="section">
@@ -309,77 +285,6 @@ export function Landing() {
           )}
         </section>
 
-        {/* ------------------------------ CÓMO FUNCIONA -------------------------- */}
-        <section className="section">
-          <SectionHead titulo="Cómo funciona" />
-          <div className="grid grid--cards">
-            {PASOS.map((p, i) => (
-              <article key={p.titulo} className="card">
-                <div className="card__body">
-                  <div className="row">
-                    <span className="paso__numero">{i + 1}</span>
-                    <p.icono size={18} style={{ color: 'var(--text-subtle)' }} />
-                  </div>
-                  <h3 className="card__title">{p.titulo}</h3>
-                  <p style={{ color: 'var(--text-muted)', margin: 0 }}>{p.texto}</p>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        {/* ---------------------------- DE DÓNDE SALEN --------------------------- */}
-        <section className="section">
-          <SectionHead titulo="De dónde salen los datos" />
-          <p className="section__desc">
-            AquíAyuda no inventa información ni guarda nada: la reúne de{' '}
-            <strong>cinco fuentes abiertas e independientes</strong>. Cada dato lleva el sello de
-            la suya, para que sepas quién lo publicó y a quién acudir si algo no cuadra. Ninguna
-            cubre a las demás: por eso están las cinco.
-          </p>
-          <div className="grid grid--cards">
-            <TarjetaFuente
-              origen="ayudas-pereira"
-              extra="Municipios, centros de acopio, qué necesitan y su inventario."
-            />
-            <TarjetaFuente
-              origen="corag"
-              extra="Ayuda entre personas, con desglose de cuánto está cubierto."
-            />
-            <TarjetaFuente
-              origen="pereira-unida"
-              extra="Peticiones y ofrecimientos de vecinos, con teléfono, y 82 arriendos."
-            />
-            <TarjetaFuente
-              origen="vivienda"
-              extra="Inmuebles en arriendo con fotos, sobre todo en el Quindío."
-            />
-            <TarjetaFuente
-              origen="pereira-responde"
-              extra="Edificios afectados y vías cerradas en Pereira. Solo se lee: reportar se hace en su mapa."
-            />
-          </div>
-        </section>
-
-        {/* -------------------------------- CIERRE ------------------------------ */}
-        <section className="section">
-          <div className="cierre">
-            <Isotipo alto={44} />
-            <h2 className="cierre__titulo">Cualquiera puede ayudar</h2>
-            <p className="cierre__texto">
-              No hace falta traer nada: compartir esta página con quien esté cerca de un centro ya
-              sirve.
-            </p>
-            <div className="empty__actions">
-              <Link className="btn btn--primary btn--lg" to="/ciudades">
-                <span>Buscar mi municipio</span>
-              </Link>
-              <Link className="btn btn--lg" to="/acerca">
-                <span>Acerca del proyecto</span>
-              </Link>
-            </div>
-          </div>
-        </section>
       </div>
 
       <SelectorCiudad abierto={selectorAbierto} alCerrar={() => setSelectorAbierto(false)} />

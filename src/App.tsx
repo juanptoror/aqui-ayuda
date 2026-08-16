@@ -15,7 +15,6 @@ import { QueFalta } from '@/pages/QueFalta'
 import { AyudaDirecta } from '@/pages/AyudaDirecta'
 import { ComoAyudar } from '@/pages/ComoAyudar'
 import { Acerca } from '@/pages/Acerca'
-import { Estado } from '@/pages/Estado'
 import { Inventario } from '@/pages/Inventario'
 import { Manos } from '@/pages/Manos'
 import { Mapa } from '@/pages/Mapa'
@@ -127,7 +126,6 @@ export function App() {
                   <Route path="/quiero-ayudar" element={<QuieroAyudar />} />
                   <Route path="/como-ayudar" element={<ComoAyudar />} />
                   <Route path="/acerca" element={<Acerca />} />
-                  <Route path="/estado" element={<Estado />} />
                   <Route path="*" element={<NoEncontrada />} />
                 </Routes>
               </LimiteDeError>

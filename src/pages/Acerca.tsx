@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom'
 import { Ban, CircleCheck, Eye, HardDrive, Info, ScrollText } from 'lucide-react'
 import { PageHeader, SectionHead, Notice } from '@/components/ui'
 import { TarjetaFuente } from '@/components/Fuente'
@@ -10,9 +9,6 @@ import { TarjetaFuente } from '@/components/Fuente'
  * La idea que ordena la página es sencilla y cierta: AquíAyuda no guarda nada.
  * Es una ventana a dos servicios que sí guardan, y cada uno tiene sus propias
  * condiciones, enlazadas y resumidas aquí para que no haya que ir a buscarlas.
- *
- * El detalle técnico (estado de las tablas, permisos, errores) vive en /estado,
- * que es donde lo busca quien lo necesita.
  */
 export function Acerca() {
   return (
@@ -330,12 +326,6 @@ export function Acerca() {
           </div>
         </section>
 
-        <section className="section">
-          <p style={{ color: 'var(--text-subtle)', fontSize: 'var(--text-sm)' }}>
-            ¿Buscabas el detalle técnico? El estado de las fuentes de datos, los permisos y los
-            errores en vivo están en <Link to="/estado">estado del sistema</Link>.
-          </p>
-        </section>
       </div>
     </>
   )

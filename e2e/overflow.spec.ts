@@ -21,6 +21,10 @@ const RUTAS = [
   { nombre: 'inicio', url: '/' },
   { nombre: 'municipios', url: '/ciudades' },
   { nombre: 'ciudad', url: '/ciudad/dosquebradas' },
+  /* La ficha de un centro faltaba en esta lista, y ahí es donde apareció el
+     desborde: nombres largos, direcciones largas y una cabecera con sello y
+     estado que no caben en 375px. Un centro real y concreto, no uno de paja. */
+  { nombre: 'centro', url: '/centro/e7f85158-92b6-42bb-a4e4-a14b3b8e50ea' },
   { nombre: 'que-falta', url: '/que-falta' },
   { nombre: 'inventario', url: '/inventario' },
   { nombre: 'ayuda-directa', url: '/ayuda-directa' },
@@ -29,7 +33,6 @@ const RUTAS = [
   { nombre: 'afectaciones', url: '/afectaciones' },
   { nombre: 'como-ayudar', url: '/como-ayudar' },
   { nombre: 'acerca', url: '/acerca' },
-  { nombre: 'estado', url: '/estado' },
   { nombre: 'ruta-inexistente', url: '/no-existe-esta-ruta' },
 ]
 

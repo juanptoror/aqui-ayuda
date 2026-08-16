@@ -347,8 +347,14 @@
   box-shadow: none;
 }
 
+/* `flex-wrap` no es un adorno: la cabecera lleva icono, título, sello de fuente
+   y estado, y los tres últimos son `nowrap` por diseño —"Ayudas Pereira" partido
+   en dos líneas no es un sello—. En 375px eso no cabe de ninguna manera, y sin
+   envolver la cabecera se estiraba a 474px arrastrando al panel entero y a la
+   página con él. Envolviendo, el sello y el estado bajan a su propia línea. */
 .panel__header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--sp-3);
   padding: var(--sp-4) var(--sp-5);
@@ -1024,6 +1030,28 @@
   color: var(--text-subtle);
 }
 
+/**
+ * 16px en pantalla táctil, y no por gusto tipográfico.
+ *
+ * Safari en iPhone hace zoom automático al enfocar cualquier campo cuya letra
+ * mida menos de 16px, y el cuerpo de esta app son 15. Al tocar el buscador de
+ * municipios o la nota de un reporte, la página saltaba a un zoom del que solo
+ * se sale pellizcando: la barra inferior se iba de la pantalla y el formulario
+ * quedaba a medias fuera.
+ *
+ * La otra forma de arreglarlo es `maximum-scale=1` en el viewport, y ésa es
+ * peor: apaga el pellizco para todo el mundo, también para quien lo necesita
+ * para leer. Aquí solo sube el campo a 16px, que es lo que Safari pide para no
+ * intervenir, y quien quiera ampliar sigue pudiendo.
+ */
+@media (pointer: coarse) {
+  .input,
+  .select,
+  .textarea {
+    font-size: 1rem;
+  }
+}
+
 .input:hover,
 .select:hover,
 .textarea:hover {
@@ -1479,8 +1507,13 @@
 
 /* --------------------------- Lista descriptiva ---------------------------- */
 
+/* `minmax(0, 1fr)` y no la columna implícita: una pista automática nunca baja
+   del min-content de la fila más ancha, así que una dirección larga o el nombre
+   de un responsable ensanchaban la lista —y con ella el panel— hasta 100px por
+   fuera de un móvil. Con la pista acotada, el texto parte y se queda dentro. */
 .deflist {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--sp-3);
 }
 

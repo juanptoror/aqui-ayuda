@@ -18,35 +18,6 @@ async function conCiudad(page: Page, slug: string) {
   }, slug)
 }
 
-test.describe('panorama de la emergencia en la portada', () => {
-  test('muestra cifras reales y no un cero de relleno', async ({ page }) => {
-    await page.goto('/')
-    await page.waitForSelector('.kpi__value', { timeout: 45_000 })
-
-    const kpis = page.locator('.kpi__value')
-    expect(await kpis.count()).toBeGreaterThanOrEqual(3)
-
-    // Las tres cifras salen de la API. Si alguna fuese 0 con las otras dos
-    // pobladas, sería un campo mal leído y no un dato.
-    const valores = await kpis.allInnerTexts()
-    const numeros = valores.map((v) => Number(v.replace(/\D/g, '')))
-    expect(numeros.filter((n) => n > 0).length).toBeGreaterThanOrEqual(3)
-  })
-
-  test('la cobertura se dice tal cual es, aunque sea humillante', async ({ page }) => {
-    await page.goto('/')
-    await page.waitForSelector('.barra__relleno', { timeout: 45_000 })
-
-    // Hoy son 5 unidades comprometidas de 1345. La barra nunca puede estar al
-    // 100% mientras queden pendientes: maquillar eso sería mentir.
-    const ancho = await page.locator('.barra__relleno').first().evaluate((e) => e.style.width)
-    expect(ancho).not.toBe('100%')
-
-    const texto = await page.locator('.barra').locator('..').innerText()
-    expect(texto).toMatch(/sin cubrir/i)
-  })
-})
-
 test.describe('el mapa junta las dos fuentes', () => {
   test('dibuja centros y personas, y no solo una de las dos', async ({ page }) => {
     await conCiudad(page, 'pereira-2')

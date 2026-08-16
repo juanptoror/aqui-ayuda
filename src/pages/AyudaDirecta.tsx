@@ -5,6 +5,7 @@ import {
   ExternalLink,
   HandHeart,
   MapPin,
+  Megaphone,
   MessageCircle,
   PackageSearch,
   Plus,
@@ -20,6 +21,7 @@ import {
   SkeletonTarjeta,
 } from '@/components/ui'
 import { PublicarAyuda } from '@/components/PublicarAyuda'
+import { Fab } from '@/components/Fab'
 import { SelloFuente, FuentesDeLaPantalla } from '@/components/Fuente'
 import { TarjetaPeticionVecino } from '@/components/TarjetaPeticionVecino'
 import { FichaAyuda } from '@/components/FichaAyuda'
@@ -291,6 +293,8 @@ export function AyudaDirecta() {
       </div>
 
       <FichaAyuda ayuda={ficha} alCerrar={() => setFicha(null)} />
+
+      <Fab etiqueta="Publicar" icono={Megaphone} alPulsar={() => setPublicando(true)} />
 
       <PublicarAyuda
         abierto={publicando}

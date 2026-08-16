@@ -26,6 +26,7 @@ import { CentroCard } from '@/components/CentroCard'
 import { SelectorCiudad } from '@/components/SelectorCiudad'
 import { AvisoTelefonos, Acceso } from '@/components/Acceso'
 import { OfrecerDonacion } from '@/components/formularios/OfrecerDonacion'
+import { Fab } from '@/components/Fab'
 import { ApuntarseVoluntario } from '@/components/formularios/ApuntarseVoluntario'
 import { ApuntarVehiculo } from '@/components/formularios/ApuntarVehiculo'
 import { usePreferencias } from '@/state/preferencias'
@@ -474,7 +475,13 @@ export function Ciudad() {
 
       {ciudad && (
         <>
-          <OfrecerDonacion
+          {/* En celular la cabecera se queda arriba: al bajar por la lista de
+          centros, donar volvía a estar a un scroll de distancia. */}
+      {ciudad && (
+        <Fab etiqueta="Tengo algo" icono={PackagePlus} alPulsar={() => setDonando(true)} />
+      )}
+
+      <OfrecerDonacion
             abierto={donando}
             alCerrar={() => setDonando(false)}
             ciudadId={ciudad.id}
