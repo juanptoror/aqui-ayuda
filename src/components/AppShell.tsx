@@ -4,6 +4,7 @@ import {
   Building2,
   ChevronsUpDown,
   Construction,
+  ExternalLink,
   HandHeart,
   HeartHandshake,
   Home,
@@ -12,6 +13,7 @@ import {
   MapPinned,
   Menu,
   Moon,
+  SatelliteDish,
   Sun,
   TriangleAlert,
 } from 'lucide-react'
@@ -28,6 +30,8 @@ interface Destino {
   etiqueta: string
   etiquetaCorta: string
   icono: typeof Home
+  /** Sale de la aplicación: se pinta como enlace externo, no como ruta. */
+  externo?: boolean
 }
 
 /* Cinco destinos más el botón "Más": en 375px caben a 56px cada uno, y por eso
@@ -53,6 +57,18 @@ const SECUNDARIOS: Destino[] = [
   /* Va aquí y no abajo por una razón incómoda: se consulta una vez, cuando se
      va a salir a la calle. Las cinco de abajo se consultan todo el rato. */
   { a: '/afectaciones', etiqueta: 'Daños y vías cerradas', etiquetaCorta: 'Daños', icono: Construction },
+  /* Solicitar una antena Starlink para una comunidad o un servicio esencial.
+     No es una pantalla nuestra: el formulario, el criterio de priorización y el
+     seguimiento son de Conecta Colombia, y quien solicita tiene que saber a
+     quién le está dando su nombre y su teléfono. Por eso sale a su web en vez
+     de copiar aquí un formulario que no sabríamos atender. */
+  {
+    a: 'https://starlinkcolombia.org/',
+    etiqueta: 'Solicitar internet',
+    etiquetaCorta: 'Internet',
+    icono: SatelliteDish,
+    externo: true,
+  },
   { a: '/como-ayudar', etiqueta: 'Cómo ayudar', etiquetaCorta: 'Guía', icono: HeartHandshake },
 ]
 
@@ -87,9 +103,65 @@ const HIJAS: Record<string, string[]> = {
 }
 
 function esActivo(pathname: string, destino: string): boolean {
+  // Un destino externo no es ninguna pantalla de la app, así que nunca está
+  // "activo": sin esto, un `startsWith` contra una URL entera es una
+  // comparación que casualmente sale bien y deja de salir bien sola.
+  if (!destino.startsWith('/')) return false
   if (destino === '/') return pathname === '/'
   if (pathname === destino || pathname.startsWith(`${destino}/`)) return true
   return (HIJAS[destino] ?? []).some((prefijo) => pathname.startsWith(prefijo))
+}
+
+/**
+ * Un destino de la navegación, sea una pantalla nuestra o una web de fuera.
+ *
+ * Existe para que los dos sitios donde se pinta la lista —la barra lateral y la
+ * hoja de "Más"— no tengan que repetir la distinción cada uno por su lado. Lo
+ * externo se dice, no se disimula: icono de salida y `target="_blank"`, para
+ * que nadie pulse "Solicitar internet" creyendo que sigue dentro de la app y se
+ * encuentre de golpe en otra web pidiéndole su teléfono.
+ */
+function EnlaceDestino({
+  destino,
+  activo,
+  alNavegar,
+}: {
+  destino: Destino
+  activo: boolean
+  alNavegar?: () => void
+}) {
+  const contenido = (
+    <>
+      <destino.icono size={19} strokeWidth={2.1} />
+      <span>{destino.etiqueta}</span>
+    </>
+  )
+
+  if (destino.externo) {
+    return (
+      <a
+        className="navlink"
+        href={destino.a}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={alNavegar}
+      >
+        {contenido}
+        <ExternalLink size={15} strokeWidth={2.2} style={{ marginInlineStart: 'auto' }} />
+      </a>
+    )
+  }
+
+  return (
+    <Link
+      to={destino.a}
+      className={`navlink${activo ? ' navlink--active' : ''}`}
+      aria-current={activo ? 'page' : undefined}
+      onClick={alNavegar}
+    >
+      {contenido}
+    </Link>
+  )
 }
 
 function BotonTema({ compacto }: { compacto?: boolean }) {
@@ -225,15 +297,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <span className="sidebar__label">Navegación</span>
 
         {[...DESTINOS, ...SECUNDARIOS].map((d) => (
-          <Link
-            key={d.a}
-            to={d.a}
-            className={`navlink${esActivo(pathname, d.a) ? ' navlink--active' : ''}`}
-            aria-current={esActivo(pathname, d.a) ? 'page' : undefined}
-          >
-            <d.icono size={19} strokeWidth={2.1} />
-            <span>{d.etiqueta}</span>
-          </Link>
+          <EnlaceDestino key={d.a} destino={d} activo={esActivo(pathname, d.a)} />
         ))}
 
         {/* Orden pedido: tema, acerca y salir al final. Lo que se toca a diario
@@ -305,21 +369,14 @@ export function AppShell({ children }: { children: ReactNode }) {
         subtitulo="Las cinco de la barra se consultan a diario. Estas, de vez en cuando."
       >
         <div className="sheet__nav">
-          {EN_MAS.map((d) => {
-            const activo = esActivo(pathname, d.a)
-            return (
-              <Link
-                key={d.a}
-                to={d.a}
-                className={`navlink${activo ? ' navlink--active' : ''}`}
-                aria-current={activo ? 'page' : undefined}
-                onClick={() => setMasAbierto(false)}
-              >
-                <d.icono size={19} strokeWidth={2.1} />
-                <span>{d.etiqueta}</span>
-              </Link>
-            )
-          })}
+          {EN_MAS.map((d) => (
+            <EnlaceDestino
+              key={d.a}
+              destino={d}
+              activo={esActivo(pathname, d.a)}
+              alNavegar={() => setMasAbierto(false)}
+            />
+          ))}
         </div>
       </Sheet>
     </div>
