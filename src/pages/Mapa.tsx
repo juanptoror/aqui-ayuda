@@ -3,13 +3,15 @@ import { useNavigate } from 'react-router-dom'
 import { LocateFixed, MapPin } from 'lucide-react'
 import { PageHeader, EmptyState, Notice, SkeletonLinea } from '@/components/ui'
 import { MapaPuntos, type PuntoMapa } from '@/components/MapaPuntos'
+import { FichaAfectacion } from '@/components/FichaAfectacion'
+import { FichaAyuda } from '@/components/FichaAyuda'
 import { FuentesDeLaPantalla } from '@/components/Fuente'
 import { SelectorCiudad } from '@/components/SelectorCiudad'
 import { usePreferencias } from '@/state/preferencias'
 import { useSesion } from '@/state/sesion'
 import { useAfectaciones, useCentros } from '@/datos/consultas'
-import { useAyudas, LIMITE_MAX } from '@/backends/corag'
-import { TIPOS_AFECTACION, GRAVEDADES_AFECTACION } from '@/dominio/modelos'
+import { useAyudas, LIMITE_MAX, type AyudaCorag } from '@/backends/corag'
+import { TIPOS_AFECTACION, GRAVEDADES_AFECTACION, type Afectacion } from '@/dominio/modelos'
 import { obtenerUbicacion, coordenadaDeCiudad, distanciaKm } from '@/lib/geo'
 import { conteo } from '@/lib/format'
 
@@ -43,6 +45,12 @@ export function Mapa() {
   const [buscando, setBuscando] = useState(false)
   const [errorUbicacion, setErrorUbicacion] = useState<string | null>(null)
   const [verDanos, setVerDanos] = useState(true)
+  /* Tocar un punto tiene que llevar a algún sitio, sea cual sea su forma. El
+     centro tiene pantalla propia; la persona y el daño se abren en su ficha,
+     la misma que usan `/ayuda-directa` y `/danos`. Antes solo el cuadrado
+     llevaba a alguna parte y las otras dos formas eran callejones sin salida. */
+  const [fichaAyuda, setFichaAyuda] = useState<AyudaCorag | null>(null)
+  const [fichaDano, setFichaDano] = useState<Afectacion | null>(null)
 
   const qCentros = useCentros(!!sesion)
   const qDanos = useAfectaciones()
@@ -107,6 +115,7 @@ export function Mapa() {
           .join(' · '),
         origen: 'corag',
         destacado: a.urgency === 'urgent',
+        alPulsar: () => setFichaAyuda(a),
       })
     }
 
@@ -128,6 +137,8 @@ export function Mapa() {
             .join(' · '),
           origen: 'pereira-responde',
           destacado: d.gravedad === 'alta',
+          etiquetaAccion: 'Ver el daño',
+          alPulsar: () => setFichaDano(d),
         })
       }
     }
@@ -329,6 +340,19 @@ export function Mapa() {
       </div>
 
       <SelectorCiudad abierto={selectorAbierto} alCerrar={() => setSelectorAbierto(false)} />
+      <FichaAyuda ayuda={fichaAyuda} alCerrar={() => setFichaAyuda(null)} />
+      {/* `key` por reporte: sin ella la foto abierta de uno seguiría abierta al
+          abrir el siguiente, y son varios megas que nadie pidió. */}
+      <FichaAfectacion
+        key={fichaDano?.id ?? 'ninguna'}
+        afectacion={fichaDano}
+        distanciaKm={
+          origen && fichaDano?.lat != null && fichaDano?.lng != null
+            ? distanciaKm(origen, { lat: fichaDano.lat, lng: fichaDano.lng })
+            : null
+        }
+        alCerrar={() => setFichaDano(null)}
+      />
     </>
   )
 }

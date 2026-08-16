@@ -34,6 +34,8 @@ export interface PuntoMapa {
   /** Resalta el punto: peticiones urgentes, centro seleccionado. */
   destacado?: boolean
   alPulsar?: () => void
+  /** Texto del botón de la ficha. Por defecto, "Ver ficha". */
+  etiquetaAccion?: string
 }
 
 /**
@@ -186,7 +188,7 @@ export function MapaPuntos({ puntos, yoEstoyAqui = null, alto }: Props) {
                 aquí se decide: leer la ficha o ir al sitio. */}
             {seleccionado.alPulsar && (
               <button type="button" className="btn btn--sm" onClick={seleccionado.alPulsar}>
-                <span>Ver ficha</span>
+                <span>{seleccionado.etiquetaAccion ?? 'Ver ficha'}</span>
               </button>
             )}
             {/* Nuestro mapa dice quién está cerca de qué; para *llegar* hace

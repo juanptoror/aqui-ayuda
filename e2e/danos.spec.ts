@@ -127,6 +127,56 @@ test.describe('daños y vías cerradas', () => {
     expect(leyenda).not.toMatch(/cuadrado/i)
   })
 
+  test('tocar un punto del mapa lleva a su ficha, no a un callejón sin salida', async ({
+    page,
+  }) => {
+    /* Durante un rato solo los centros de acopio tenían "Ver ficha": se tocaba
+       una persona o un daño y no había forma de ver nada más que el título,
+       con la mitad del dato —gravedad, nota, confirmaciones, foto— dentro y sin
+       manera de mirarlo. */
+    await conCiudad(page, 'pereira-2')
+    await page.goto('/danos')
+    await page.waitForSelector('.mapa__punto--dano', { timeout: 45_000 })
+
+    await page.locator('.mapa__punto--dano').first().click({ force: true })
+
+    const accion = page.getByRole('button', { name: /ver el daño/i }).first()
+    await expect(accion).toBeVisible()
+    await accion.click()
+
+    const ficha = page.locator('[role="dialog"]')
+    await expect(ficha).toBeVisible()
+    // Y trae lo que la tarjeta no cabía: el aviso de no acercarse y el recuento
+    // de confirmaciones, no solo el título repetido.
+    await expect(ficha).toContainText(/123/)
+    await expect(ficha).toContainText(/confirm/i)
+  })
+
+  test('abrir la ficha desde el mapa no descarga la foto de 5 MB', async ({ page }) => {
+    /* La ficha se abre tocando un punto, y eso nadie lo hace pensando en
+       gastarse los datos del mes. El permiso lo da el botón, no el gesto. */
+    const fotos: string[] = []
+    page.on('request', (r) => {
+      if (r.url().includes('/api/photos/')) fotos.push(r.url())
+    })
+
+    await conCiudad(page, 'pereira-2')
+    await page.goto('/danos')
+    await page.waitForSelector('.mapa__punto--dano', { timeout: 45_000 })
+
+    await page.locator('.mapa__punto--dano').first().click({ force: true })
+    await page.getByRole('button', { name: /ver el daño/i }).first().click()
+    await page.waitForSelector('[role="dialog"]', { timeout: 15_000 })
+    await page.waitForTimeout(1500)
+
+    expect(fotos).toHaveLength(0)
+    expect(await page.locator('[role="dialog"] img').count()).toBe(0)
+    // Pero se ofrece, con el peso por delante.
+    await expect(
+      page.locator('[role="dialog"]').getByRole('button', { name: /ver .*(foto|fotos)/i }),
+    ).toBeVisible()
+  })
+
   test('aquí no se reporta: la acción sale a la fuente', async ({ page }) => {
     /* La API pública es de solo lectura. Un formulario propio perdería el
        reporte de alguien que se ha jugado acercarse a un edificio inestable. */
