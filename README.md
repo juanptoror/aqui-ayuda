@@ -165,6 +165,27 @@ perdido), luego por cercanía real, y a igualdad por número de pedidos urgentes
 
 ---
 
+### "Me falta agua, ¿quién tiene agua?"
+
+La ficha de un centro decía qué le falta y ahí se acababa. Ahora cada pedido
+abierto lleva el cruce contra las **tres** fuentes que ya estaban cargadas
+([useCruces.ts](src/datos/useCruces.ts), `useQuienLoTiene`): el inventario de
+los demás centros, la gente que lo ofrece en Corag y los vecinos que lo ofrecen
+en Pereira Unida. El botón lleva el número por delante —"Lo tienen 25"— porque
+esconder la respuesta detrás de un clic obliga a abrir diez hojas para descubrir
+que nueve están vacías.
+
+La distinción que sostiene esa pantalla: **tener no es ofrecer.** Un centro con
+dieciocho cajas contadas es una existencia a la que se puede mandar un carro;
+una persona que se ofrece es una intención por confirmar. Van en dos bloques
+separados y con nombres distintos, porque un coordinador que trate un
+ofrecimiento como stock tacha una urgencia que sigue sin cubrir. Y lo que encaja
+solo por familia —"Agua" contra "Alimentos no perecederos"— se marca como
+*Parecido* en vez de mezclarse en la misma lista.
+
+El cruce inverso —una persona pide algo, ¿hay un centro que lo tenga?— ya
+existía en `useCrucesConCentros` y alimenta `/ayuda-directa`.
+
 ## 4b. Segundo backend: Corag
 
 `/ayuda-directa` consume `https://ayuda.corag.app/api/public/v1/help`
@@ -240,7 +261,7 @@ dice explícitamente en vez de mostrar huecos sin explicación.
 ```bash
 npm run build                  # tsc -b && vite build, sin errores
 npm run test:e2e:install       # una sola vez
-npm run test                   # 117 tests
+npm run test                   # 124 tests
 npm run capturas               # 36 PNG: 6 pantallas x 3 anchos x 2 temas
 npm run capturas:viewport      # primera pantalla, sin fullPage
 npm run capturas:interaccion   # diálogo, hoja, estados vacíos y de carga
@@ -261,7 +282,11 @@ Los tests fallan si:
 - la consulta de daños deja de pedir `limit=500`, o alguna foto de 5 MB se carga
   sin que nadie la haya pedido, o el relleno `"Ubicación registrada"` llega a la
   pantalla, o `/danos` ofrece un formulario de reporte que no tiene dónde
-  escribir.
+  escribir;
+- un punto del mapa deja de tener a dónde ir: las tres formas —cuadrado, círculo
+  y círculo rojo— tienen que abrir su detalle, no solo la primera;
+- el cruce de un pedido presenta un ofrecimiento como si fuera inventario, o el
+  propio centro aparece entre quienes lo tienen.
 
 Contra el build de producción en vez del dev server:
 
