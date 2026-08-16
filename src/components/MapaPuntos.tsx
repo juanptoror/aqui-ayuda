@@ -36,6 +36,34 @@ export interface PuntoMapa {
   alPulsar?: () => void
 }
 
+/**
+ * La forma de un punto, decidida en un solo sitio.
+ *
+ * Los tres colores de marca —amarillo, lima y naranja— son vecinos en el tono y
+ * mucha gente no los separa, así que la forma es lo que carga la información. Y
+ * tiene que significar lo mismo en las dos capas del mapa —esquema y tiles—,
+ * porque si al llegar los tiles un cuadrado se convirtiera en círculo la
+ * leyenda dejaría de ser cierta a mitad de carga.
+ *
+ * Cuadrado: un sitio fijo al que se va (centro de acopio, vivienda en arriendo).
+ * Círculo lima: una persona a la que se escribe.
+ * Círculo rojo con anillo: un daño del que hay que apartarse.
+ *
+ * El rojo es la convención del mapa de la propia fuente y es el único uso de
+ * ese color en la aplicación donde significa exactamente lo que parece. El
+ * anillo interior no es adorno: rojo y lima se parecen bastante con daltonismo
+ * rojo-verde, que es el más común, y sin él dos círculos casi iguales serían
+ * "una persona" o "un edificio a punto de caerse" según el tono. El anillo se
+ * ve aunque el color no.
+ */
+export type FormaPunto = 'sitio' | 'persona' | 'dano'
+
+export function formaDe(origen: Origen): FormaPunto {
+  if (origen === 'corag') return 'persona'
+  if (origen === 'pereira-responde') return 'dano'
+  return 'sitio'
+}
+
 /** Lo que necesita cualquiera de las dos capas para dibujar lo mismo. */
 export interface PropsCapaMapa {
   puntos: PuntoMapa[]
@@ -99,6 +127,7 @@ export function MapaPuntos({ puntos, yoEstoyAqui = null, alto }: Props) {
   }, [])
 
   const seleccionado = puntos.find((p) => p.id === activo) ?? null
+  const formas = new Set(puntos.map((p) => formaDe(p.origen)))
 
   return (
     <div>
@@ -161,9 +190,14 @@ export function MapaPuntos({ puntos, yoEstoyAqui = null, alto }: Props) {
               </button>
             )}
             {/* Nuestro mapa dice quién está cerca de qué; para *llegar* hace
-                falta la app del teléfono, con su tráfico y su voz. */}
+                falta la app del teléfono, con su tráfico y su voz.
+
+                A un daño NO se navega. Ofrecer "cómo llegar" hasta un edificio
+                que se está cayendo o una vía cortada es dar la peor indicación
+                posible: ahí se enseña dónde está, para rodearlo. */}
             <ComoLlegar
               destino={{ lat: seleccionado.lat, lng: seleccionado.lng, nombre: seleccionado.titulo }}
+              modo={formaDe(seleccionado.origen) === 'dano' ? 'ver' : 'dir'}
               tamano="sm"
             />
           </div>
@@ -174,18 +208,34 @@ export function MapaPuntos({ puntos, yoEstoyAqui = null, alto }: Props) {
         )}
       </div>
 
+      {/* Cada forma se nombra solo si está dibujada. Una leyenda fija describía
+          "centros" y "personas" en la pantalla de daños, donde no hay ni unos
+          ni otras: hacía buscar en el mapa dos cosas que no existían. */}
       <div className="mapa__leyenda">
-        <span>
-          <i
-            className="mapa__punto-leyenda"
-            style={{ background: 'var(--brand)', borderRadius: '3px' }}
-          />
-          Centros de acopio (cuadrado)
-        </span>
-        <span>
-          <i className="mapa__punto-leyenda" style={{ background: 'var(--lima)' }} />
-          Personas que piden o dan (círculo)
-        </span>
+        {formas.has('sitio') && (
+          <span>
+            <i
+              className="mapa__punto-leyenda"
+              style={{ background: 'var(--brand)', borderRadius: '3px' }}
+            />
+            Centros de acopio (cuadrado)
+          </span>
+        )}
+        {formas.has('persona') && (
+          <span>
+            <i className="mapa__punto-leyenda" style={{ background: 'var(--lima)' }} />
+            Personas que piden o dan (círculo)
+          </span>
+        )}
+        {formas.has('dano') && (
+          <span>
+            <i
+              className="mapa__punto-leyenda mapa__punto-leyenda--dano"
+              style={{ background: 'var(--rojo)' }}
+            />
+            Daños y vías cerradas (círculo rojo)
+          </span>
+        )}
         {yoEstoyAqui && (
           <span>
             <i className="mapa__punto-leyenda" style={{ background: 'var(--mapa-yo)' }} />

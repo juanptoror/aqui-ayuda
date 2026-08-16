@@ -278,3 +278,84 @@ export interface Alojamiento {
   contactos: number | null
   publicadoEn: string
 }
+
+/* ------------------------------ Afectaciones ------------------------------- */
+
+/**
+ * Un daño en el terreno: un edificio tocado, una vía cortada, un servicio
+ * abierto.
+ *
+ * Es la única cosa de esta aplicación que NO es una petición ni una oferta.
+ * Nadie está pidiendo nada aquí: es el estado físico de la ciudad después del
+ * terremoto. Se modela aparte de `PeticionPersona` justamente por eso —un
+ * edificio a punto de caerse no tiene teléfono al que llamar ni categoría de
+ * donación— y porque mezclarlo haría que la pantalla de "quién necesita ayuda"
+ * mandara a alguien a tocar el timbre de una casa colapsada.
+ */
+export type TipoAfectacion = 'vivienda' | 'via' | 'apoyo'
+
+/**
+ * Gravedad declarada por quien reportó.
+ *
+ * Solo existe de verdad en las afectaciones de vivienda. En vías y servicios la
+ * fuente repite el tipo dentro del campo de riesgo (`risk: "road"`), así que ahí
+ * no hay severidad que enseñar y se dice `sin-clasificar` en vez de inventar una.
+ */
+export type GravedadAfectacion = 'alta' | 'media' | 'sin-clasificar'
+
+export interface Afectacion {
+  id: string
+  tipo: TipoAfectacion
+  gravedad: GravedadAfectacion
+  /** Clase del daño, del catálogo cerrado de la fuente. */
+  titulo: string
+  /** Qué servicio es: refugio, acopio. Null en vivienda y vía. */
+  subtipo: string | null
+  /** Nota de quien reportó. Null cuando no escribió ninguna. */
+  nota: string | null
+  /** null solo por defensa: los 180 reportes reales traen coordenada. */
+  lat: number | null
+  lng: number | null
+  /** Fotos a tamaño de cámara. Ver la nota de peso en el backend. */
+  fotos: string[]
+  /** Cuánta gente confirmó que sigue así. */
+  confirmaciones: number
+  /** Balance de votos. Coincide con las confirmaciones mientras nadie vote en contra. */
+  balance: number
+  reportadaEn: string
+}
+
+/**
+ * Cómo se nombra cada tipo en pantalla.
+ *
+ * Se respeta el vocabulario de la fuente —"Edificio", "Vía", "Servicio
+ * abierto"— porque es el que ve quien reporta. Que la app y la fuente llamen
+ * distinto a lo mismo obliga a traducir mentalmente justo cuando nadie tiene
+ * cabeza para eso.
+ */
+export const TIPOS_AFECTACION: Record<
+  TipoAfectacion,
+  { nombre: string; plural: string; descripcion: string }
+> = {
+  vivienda: {
+    nombre: 'Edificio',
+    plural: 'Edificios',
+    descripcion: 'Casas y edificios con daño estructural.',
+  },
+  via: {
+    nombre: 'Vía',
+    plural: 'Vías',
+    descripcion: 'Calles cerradas o con paso restringido.',
+  },
+  apoyo: {
+    nombre: 'Servicio abierto',
+    plural: 'Servicios abiertos',
+    descripcion: 'Refugios y zonas de acopio señaladas en el terreno.',
+  },
+}
+
+export const GRAVEDADES_AFECTACION: Record<GravedadAfectacion, string> = {
+  alta: 'Riesgo alto',
+  media: 'Riesgo medio',
+  'sin-clasificar': 'Sin clasificar',
+}

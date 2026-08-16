@@ -3,6 +3,7 @@ import {
   BedDouble,
   Building2,
   ChevronsUpDown,
+  Construction,
   HandHeart,
   HeartHandshake,
   Home,
@@ -47,6 +48,9 @@ const DESTINOS: Destino[] = [
 const SECUNDARIOS: Destino[] = [
   { a: '/ciudades', etiqueta: 'Centros de acopio', etiquetaCorta: 'Centros', icono: Building2 },
   { a: '/mapa', etiqueta: 'Mapa de la ayuda', etiquetaCorta: 'Mapa', icono: MapPin },
+  /* Va aquí y no abajo por una razón incómoda: se consulta una vez, cuando se
+     va a salir a la calle. Las cinco de abajo se consultan todo el rato. */
+  { a: '/danos', etiqueta: 'Daños y vías cerradas', etiquetaCorta: 'Daños', icono: Construction },
   { a: '/como-ayudar', etiqueta: 'Cómo ayudar', etiquetaCorta: 'Guía', icono: HeartHandshake },
 ]
 

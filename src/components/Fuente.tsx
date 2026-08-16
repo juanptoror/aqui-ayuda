@@ -1,4 +1,4 @@
-import { BedDouble, Database, Network, Users } from 'lucide-react'
+import { BedDouble, Construction, Database, Network, Users } from 'lucide-react'
 
 /**
  * Sello de procedencia del dato.
@@ -10,7 +10,12 @@ import { BedDouble, Database, Network, Users } from 'lucide-react'
  * cualquiera— y esa diferencia cambia cuánto te puedes fiar de lo que lees.
  */
 
-export type Origen = 'ayudas-pereira' | 'corag' | 'pereira-unida' | 'vivienda'
+export type Origen =
+  | 'ayudas-pereira'
+  | 'corag'
+  | 'pereira-unida'
+  | 'vivienda'
+  | 'pereira-responde'
 
 interface InfoFuente {
   nombre: string
@@ -55,6 +60,14 @@ export const FUENTES: Record<Origen, InfoFuente> = {
     quienPublica: 'Propietarios e inmobiliarias.',
     url: 'https://encuentraloaunclic.com',
     icono: BedDouble,
+  },
+  'pereira-responde': {
+    nombre: 'Pereira Responde',
+    tipo: 'Daños y vías cerradas',
+    descripcion: 'Qué edificio está tocado y por qué calle no se pasa, con foto y coordenada.',
+    quienPublica: 'Cualquier persona desde el mapa de Pereira Responde.',
+    url: 'https://pereiraresponde.co',
+    icono: Construction,
   },
 }
 

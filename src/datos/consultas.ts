@@ -8,6 +8,7 @@ import type {
 } from '@/backends/contrato'
 import { ErrorApp, mensajeDe } from '@/lib/errores'
 import type {
+  Afectacion,
   Centro,
   Ciudad,
   ItemInventario,
@@ -185,6 +186,31 @@ export function useAlojamientos(): UseQueryResult<Alojamiento[]> {
         throw (partes[0] as PromiseRejectedResult).reason
       }
       return todos.filter((a) => a.disponible)
+    },
+  })
+}
+
+/**
+ * Daños en el terreno: edificios tocados, vías cortadas, servicios abiertos.
+ *
+ * Se refresca más a menudo que el resto (30 s) porque es lo único que puede
+ * cambiar de golpe: una réplica cierra una calle y quien va conduciendo
+ * necesita enterarse, no leer lo de hace cinco minutos.
+ *
+ * No se filtra nada aquí. Con las peticiones sí se filtra —hay reportes
+ * marcados como falsos o duplicados que no deben republicarse—, pero la fuente
+ * de afectaciones ya entrega solo lo visible: lo que oculta su moderación no
+ * sale por la API. Descartar algo más sería borrar un peligro del mapa.
+ */
+export function useAfectaciones(): UseQueryResult<Afectacion[]> {
+  return useQuery({
+    queryKey: ['afectaciones'],
+    ...BASE,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const b = backendPrincipalPara('leer:afectaciones')
+      if (!b?.leer.afectaciones) faltaProveedor('daños y vías cerradas')
+      return b.leer.afectaciones()
     },
   })
 }

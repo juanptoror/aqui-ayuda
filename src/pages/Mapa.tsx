@@ -7,17 +7,25 @@ import { FuentesDeLaPantalla } from '@/components/Fuente'
 import { SelectorCiudad } from '@/components/SelectorCiudad'
 import { usePreferencias } from '@/state/preferencias'
 import { useSesion } from '@/state/sesion'
-import { useCentros } from '@/datos/consultas'
+import { useAfectaciones, useCentros } from '@/datos/consultas'
 import { useAyudas, LIMITE_MAX } from '@/backends/corag'
+import { TIPOS_AFECTACION, GRAVEDADES_AFECTACION } from '@/dominio/modelos'
 import { obtenerUbicacion, coordenadaDeCiudad, distanciaKm } from '@/lib/geo'
 import { conteo } from '@/lib/format'
 
 /**
- * Las dos fuentes en una sola vista.
+ * Las fuentes en una sola vista.
  *
- * Es el único sitio de la aplicación donde centros y personas aparecen juntos.
- * Por separado cada lista responde "qué hay"; juntas responden la pregunta que
- * de verdad se hace alguien con un carro cargado: "¿qué me pilla de camino?".
+ * Es el único sitio de la aplicación donde centros, personas y daños aparecen
+ * juntos. Por separado cada lista responde "qué hay"; juntas responden la
+ * pregunta que de verdad se hace alguien con un carro cargado: "¿qué me pilla
+ * de camino y por dónde no paso?".
+ *
+ * Los daños son la capa que se puede apagar, y nace encendida. Encendida es la
+ * respuesta correcta —una vía cortada cambia la ruta antes de arrancar— pero
+ * son 180 puntos rojos sobre el centro de Pereira y hay momentos en que estorban
+ * para ver los centros. Apagarla es una decisión de quien mira; empezar apagada
+ * sería una decisión nuestra de esconder un peligro.
  *
  * Se filtra por radio en vez de por municipio: los límites administrativos no
  * significan nada cuando lo que importa son diez minutos de coche, y Pereira y
@@ -34,8 +42,10 @@ export function Mapa() {
   const [selectorAbierto, setSelectorAbierto] = useState(false)
   const [buscando, setBuscando] = useState(false)
   const [errorUbicacion, setErrorUbicacion] = useState<string | null>(null)
+  const [verDanos, setVerDanos] = useState(true)
 
   const qCentros = useCentros(!!sesion)
+  const qDanos = useAfectaciones()
   /* Dos consultas y no una: la API exige `type` y responde 400 sin él. El
      mapa necesita las dos caras —quien pide y quien ofrece— así que pregunta
      dos veces y las junta aquí. */
@@ -100,8 +110,30 @@ export function Mapa() {
       })
     }
 
+    if (verDanos) {
+      for (const d of qDanos.data ?? []) {
+        if (d.lat == null || d.lng == null) continue
+        if (origen && distanciaKm(origen, { lat: d.lat, lng: d.lng }) > radioKm) continue
+        lista.push({
+          id: `pr-${d.id}`,
+          lat: d.lat,
+          lng: d.lng,
+          titulo: d.titulo,
+          detalle: [
+            TIPOS_AFECTACION[d.tipo].nombre,
+            d.gravedad === 'sin-clasificar' ? null : GRAVEDADES_AFECTACION[d.gravedad],
+            d.nota,
+          ]
+            .filter(Boolean)
+            .join(' · '),
+          origen: 'pereira-responde',
+          destacado: d.gravedad === 'alta',
+        })
+      }
+    }
+
     return lista
-  }, [qCentros.data, qPeticiones.data, qOfertas.data, origen, radioKm, navegar])
+  }, [qCentros.data, qPeticiones.data, qOfertas.data, qDanos.data, verDanos, origen, radioKm, navegar])
 
   async function usarMiUbicacion() {
     setBuscando(true)
@@ -122,11 +154,13 @@ export function Mapa() {
      llegan de Supabase en un parpadeo y Corag tarda bastante más; bloquear el
      mapa entero por la fuente lenta deja un rectángulo gris varios segundos.
      Así aparecen los centros de inmediato y las personas se suman después. */
-  const esperandoAlgo = qCentros.isLoading || qPeticiones.isLoading || qOfertas.isLoading
+  const esperandoAlgo =
+    qCentros.isLoading || qPeticiones.isLoading || qOfertas.isLoading || qDanos.isLoading
   const cargando = esperandoAlgo && puntos.length === 0
   const completandose = esperandoAlgo && puntos.length > 0
   const centros = puntos.filter((p) => p.origen === 'ayudas-pereira').length
-  const personas = puntos.length - centros
+  const danos = puntos.filter((p) => p.origen === 'pereira-responde').length
+  const personas = puntos.length - centros - danos
 
   return (
     <>
@@ -134,17 +168,21 @@ export function Mapa() {
         eyebrow={
           <>
             <MapPin size={13} strokeWidth={2.6} />
-            Las dos fuentes juntas
+            Las tres fuentes juntas
           </>
         }
         titulo="Mapa de la ayuda"
         subtitulo={
           cargando
-            ? 'Buscando ubicaciones en las dos fuentes…'
+            ? 'Buscando ubicaciones en las tres fuentes…'
             : /* El radio solo se nombra cuando de verdad se aplica. Sin origen no
                  hay nada que filtrar, y decir "en un radio de 15 km" sobre un
-                 mapa del país entero es prometer una cercanía que no existe. */
-              `${conteo(centros, 'centro de acopio', 'centros de acopio')} y ${conteo(personas, 'persona', 'personas')} ${
+                 mapa del país entero es prometer una cercanía que no existe.
+                 Los daños solo se cuentan si la capa está encendida: nombrar
+                 cero daños con la capa apagada sonaría a que no hay ninguno. */
+              `${conteo(centros, 'centro de acopio', 'centros de acopio')}, ${conteo(personas, 'persona', 'personas')}${
+                verDanos ? ` y ${conteo(danos, 'daño reportado', 'daños reportados')}` : ''
+              } ${
                 origen ? `en un radio de ${radioKm} km` : 'en todo el país, sin acotar por distancia'
               }.`
         }
@@ -168,8 +206,8 @@ export function Mapa() {
 
       <div className="container">
         <FuentesDeLaPantalla
-          origenes={['ayudas-pereira', 'corag']}
-          nota="Cuadrados los centros de acopio, círculos las personas. Cada fuente publica su propia coordenada; ninguna de las dos cubre a la otra."
+          origenes={['ayudas-pereira', 'corag', 'pereira-responde']}
+          nota="Cuadrados los centros de acopio, círculos lima las personas, círculos rojos los daños y las vías cerradas. Cada fuente publica su propia coordenada y ninguna cubre a las otras: los daños, además, solo llegan de Pereira."
         />
 
         {(errorUbicacion || !origen) && (
@@ -197,11 +235,12 @@ export function Mapa() {
         )}
 
         <section className="section" style={{ marginTop: errorUbicacion || !origen ? undefined : 0 }}>
-          {/* Las chips solo aparecen cuando hay origen. Un selector de radio que
-              no recorta nada es la misma mentira que el texto, en otro sitio. */}
-          {origen && (
-            <div className="chips" style={{ marginBottom: 'var(--sp-4)' }}>
-              {RADIOS.map((r) => (
+          {/* Las chips de radio solo aparecen cuando hay origen. Un selector de
+              radio que no recorta nada es la misma mentira que el texto, en
+              otro sitio. La de daños aparece siempre: no depende de dónde estés. */}
+          <div className="chips" style={{ marginBottom: 'var(--sp-4)' }}>
+            {origen &&
+              RADIOS.map((r) => (
                 <button
                   key={r}
                   type="button"
@@ -212,8 +251,16 @@ export function Mapa() {
                   <span>{r} km</span>
                 </button>
               ))}
-            </div>
-          )}
+            <button
+              type="button"
+              className="chip"
+              onClick={() => setVerDanos((v) => !v)}
+              aria-pressed={verDanos}
+              title="Puntos rojos: edificios afectados y vías cerradas en Pereira"
+            >
+              <span>Ver daños</span>
+            </button>
+          </div>
 
           {cargando ? (
             <div
@@ -230,7 +277,7 @@ export function Mapa() {
               titulo="No hay nada con coordenadas en este radio"
               texto={
                 origen
-                  ? 'Ni los centros ni las personas de este radio han dejado su ubicación. Prueba a ampliarlo.'
+                  ? 'Ni los centros, ni las personas, ni los daños de este radio han dejado una ubicación. Prueba a ampliarlo.'
                   : 'Dinos dónde estás y encuadramos el mapa a tu alrededor.'
               }
               acciones={
@@ -261,7 +308,7 @@ export function Mapa() {
                     fontSize: 'var(--text-sm)',
                   }}
                 >
-                  Aún llegando datos de la otra fuente…
+                  Aún llegando datos de alguna fuente…
                 </p>
               )}
             </>

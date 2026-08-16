@@ -10,6 +10,7 @@ import { Landing } from '@/pages/Landing'
 import { Ciudad } from '@/pages/Ciudad'
 import { Ciudades } from '@/pages/Ciudades'
 import { Centro } from '@/pages/Centro'
+import { Danos } from '@/pages/Danos'
 import { QueFalta } from '@/pages/QueFalta'
 import { AyudaDirecta } from '@/pages/AyudaDirecta'
 import { ComoAyudar } from '@/pages/ComoAyudar'
@@ -117,6 +118,7 @@ export function App() {
                   <Route path="/ayuda-directa" element={<AyudaDirecta />} />
                   <Route path="/manos" element={<Manos />} />
                   <Route path="/mapa" element={<Mapa />} />
+                  <Route path="/danos" element={<Danos />} />
                   <Route path="/vivienda" element={<Vivienda />} />
                   <Route path="/quiero-ayudar" element={<QuieroAyudar />} />
                   <Route path="/como-ayudar" element={<ComoAyudar />} />

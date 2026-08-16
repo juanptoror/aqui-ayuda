@@ -1,7 +1,13 @@
 import { Link } from 'react-router-dom'
 import { Activity, CircleCheck, Database, Lock, TriangleAlert } from 'lucide-react'
 import { PageHeader, SectionHead, Notice, SkeletonLinea } from '@/components/ui'
-import { useCentros, useMunicipios, useInventario, useNecesidades } from '@/datos/consultas'
+import {
+  useAfectaciones,
+  useCentros,
+  useMunicipios,
+  useInventario,
+  useNecesidades,
+} from '@/datos/consultas'
 import { useAyudas, useEmergencias } from '@/backends/corag'
 import { useSesion } from '@/state/sesion'
 import { usePreferencias } from '@/state/preferencias'
@@ -23,6 +29,7 @@ export function Estado() {
   const inventario = useInventario()
   const emergencias = useEmergencias()
   const ayudas = useAyudas({ tipo: 'request', ubicacion, radioKm: 150, limite: 1 })
+  const afectaciones = useAfectaciones()
 
   /* Cada consulta devuelve un tipo distinto; aquí solo interesan tres cosas de
      todas ellas, así que se tipan al mínimo común en vez de forzar uniones. */
@@ -47,6 +54,16 @@ export function Estado() {
       filas: [
         { nombre: '/help', q: emergencias, descripcion: 'Emergencias activas' },
         { nombre: '/help?view=list', q: ayudas, descripcion: 'Solicitudes y ofrecimientos' },
+      ],
+    },
+    {
+      grupo: 'Pereira Responde · API pública (solo lectura)',
+      filas: [
+        {
+          nombre: '/api/public/v1/reports',
+          q: afectaciones,
+          descripcion: 'Edificios, vías y servicios reportados en Pereira',
+        },
       ],
     },
   ]

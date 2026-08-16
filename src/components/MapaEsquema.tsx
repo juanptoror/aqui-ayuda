@@ -1,5 +1,5 @@
 import { useMemo, type KeyboardEvent } from 'react'
-import type { PropsCapaMapa } from './MapaPuntos'
+import { formaDe, type PropsCapaMapa } from './MapaPuntos'
 
 /**
  * El mapa que siempre carga: posiciones dibujadas en el dispositivo, sin
@@ -108,17 +108,21 @@ export function MapaEsquema({ puntos, yoEstoyAqui, activo, alActivar }: PropsCap
       )}
 
       {proyectados.puntos.map((p) => {
-        /* Los dos colores de marca —amarillo y lima— son vecinos en el tono
-           y mucha gente no los separa. La forma sí se distingue siempre:
-           cuadrado para un sitio fijo, círculo para una persona. El color
-           acompaña, no es lo que carga la información. */
-        const persona = p.origen === 'corag'
+        /* Los colores de marca son vecinos en el tono y mucha gente no los
+           separa. La forma sí se distingue siempre; el criterio está en
+           `formaDe` para que esta capa y la de tiles no puedan discrepar. */
+        const forma = formaDe(p.origen)
         const r = p.destacado ? 11 : 8
         const comun = {
-          className: `mapa__punto ${persona ? 'mapa__punto--persona' : 'mapa__punto--sitio'}${
+          className: `mapa__punto mapa__punto--${forma === 'persona' ? 'persona' : forma === 'dano' ? 'dano' : 'sitio'}${
             p.id === activo ? ' is-activo' : ''
           }`,
-          fill: persona ? 'var(--lima)' : 'var(--brand)',
+          fill:
+            forma === 'persona'
+              ? 'var(--lima)'
+              : forma === 'dano'
+                ? 'var(--rojo)'
+                : 'var(--brand)',
           /* Semitransparentes a propósito: en una ciudad hay decenas de
              puntos casi encima, y opacos se tapan unos a otros hasta
              parecer uno solo. Así el amontonamiento se ve más oscuro y
@@ -140,13 +144,37 @@ export function MapaEsquema({ puntos, yoEstoyAqui, activo, alActivar }: PropsCap
           },
         }
 
-        return persona ? (
-          <circle key={p.id} cx={p.x * 1000} cy={p.y * 1000} r={r} {...comun} />
-        ) : (
+        const cx = p.x * 1000
+        const cy = p.y * 1000
+
+        if (forma === 'persona') {
+          return <circle key={p.id} cx={cx} cy={cy} r={r} {...comun} />
+        }
+
+        if (forma === 'dano') {
+          /* Círculo rojo con el anillo claro dentro. El anillo va como segundo
+             elemento y NO es interactivo: si lo fuera se comería los eventos
+             del punto que tiene debajo y el toque no seleccionaría nada. */
+          return (
+            <g key={p.id}>
+              <circle cx={cx} cy={cy} r={r} {...comun} />
+              <circle
+                cx={cx}
+                cy={cy}
+                r={r * 0.42}
+                fill="var(--surface)"
+                opacity="0.9"
+                pointerEvents="none"
+              />
+            </g>
+          )
+        }
+
+        return (
           <rect
             key={p.id}
-            x={p.x * 1000 - r}
-            y={p.y * 1000 - r}
+            x={cx - r}
+            y={cy - r}
             width={r * 2}
             height={r * 2}
             rx={r / 2.5}
