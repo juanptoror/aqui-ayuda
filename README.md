@@ -22,8 +22,10 @@ apartarse.
 
 **Cada dato lleva su sello de procedencia** ([Fuente.tsx](src/components/Fuente.tsx)):
 amarillo para Ayudas Pereira, lima para Corag, naranja para Pereira Unida,
-grafito para Pereira Responde. No es decoración — si un teléfono no responde o
-una dirección está mal, hay que poder saber quién lo publicó y a quién reclamar.
+grafito para Pereira Responde, y hueco —sin relleno, solo borde— para Vivienda,
+la única que no es ayuda de nadie sino un catálogo comercial. No es decoración
+— si un teléfono no responde o una dirección está mal, hay que poder saber quién
+lo publicó y a quién reclamar.
 Y las reglas difieren: los centros los publica un equipo local, las peticiones
 de Corag las publica cualquiera sin registro. Un test falla si una tarjeta
 aparece sin sello o con el de la fuente equivocada.
@@ -233,8 +235,12 @@ condicionan el código:
 - **Las fotos pesan entre 3 y 7 MB.** Son el JPEG que salió del teléfono, sin
   miniatura ni versión reducida, y 179 de 180 reportes traen al menos una. Una
   rejilla que las cargue sola son cientos de megas sobre la red de una ciudad
-  que acaba de temblar: **ninguna se descarga hasta que alguien la pide**, y al
-  pedirla se avisa del peso.
+  que acaba de temblar, así que **la lista no descarga ninguna**. La ficha sí
+  carga la suya al abrirse —quien abre el detalle de un edificio agrietado viene
+  justo a verla, y un botón extra era fricción para algo que se iba a pulsar
+  siempre—, pero solo la que se está mirando, y con el aviso del peso a la
+  vista. Hay un test que falla si la lista descarga una sola foto o si la ficha
+  descarga más de una.
 
 Dos más que se ven en el modelo:
 
@@ -316,7 +322,7 @@ dice explícitamente en vez de mostrar huecos sin explicación.
 ```bash
 npm run build                  # tsc -b && vite build, sin errores
 npm run test:e2e:install       # una sola vez
-npm run test                   # 129 tests
+npm run test                   # 130 tests
 npm run capturas               # 36 PNG: 6 pantallas x 3 anchos x 2 temas
 npm run capturas:viewport      # primera pantalla, sin fullPage
 npm run capturas:interaccion   # diálogo, hoja, estados vacíos y de carga
