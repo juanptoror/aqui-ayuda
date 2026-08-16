@@ -147,6 +147,8 @@ Un tablero de operaciones de emergencia, no una app de consumo. Definida en
 | Cabecera de página grande: antetítulo + título + subtítulo + acciones | `.page-header` |
 | Grilla multi-columna con tarjetas de altura uniforme por fila | `.grid--cards` + `.card { height: 100% }` |
 | Estados vacíos diseñados con tarjeta y CTA | `EmptyState` en [ui.tsx](src/components/ui.tsx) |
+| La acción principal al alcance del pulgar en móvil, encima de la barra | `Fab` en [Fab.tsx](src/components/Fab.tsx) |
+| Campos a 16px en pantalla táctil, para que Safari no haga zoom al enfocar | `@media (pointer: coarse)` en [ui.css](src/styles/ui.css) |
 | La estructura (KPIs, secciones) visible durante la carga | `Kpi cargando` + `SkeletonTarjeta` |
 | Diálogo centrado en escritorio, hoja inferior en móvil | `.overlay` / `.sheet`, mismo componente |
 | Textos largos con truncado o elipsis, sin desbordar | `.truncate`, `.clamp-2`, `min-width: 0` |
@@ -330,7 +332,7 @@ dice explícitamente en vez de mostrar huecos sin explicación.
 ```bash
 npm run build                  # tsc -b && vite build, sin errores
 npm run test:e2e:install       # una sola vez
-npm run test                   # 134 tests
+npm run test                   # 131 tests
 npm run capturas               # 36 PNG: 6 pantallas x 3 anchos x 2 temas
 npm run capturas:viewport      # primera pantalla, sin fullPage
 npm run capturas:interaccion   # diálogo, hoja, estados vacíos y de carga
@@ -356,6 +358,8 @@ Los tests fallan si:
   y círculo rojo— tienen que abrir su detalle, no solo la primera;
 - el cruce de un pedido presenta un ofrecimiento como si fuera inventario, o el
   propio centro aparece entre quienes lo tienen;
+- una ruta desborda horizontalmente en 375, 834 o 1440px —la ficha de un centro
+  real está en esa lista desde que se salía 117px por la derecha—;
 - **la clave de escritura aparece en el bundle** —hay un test que lo descarga y
   busca la variable y la cabecera `Bearer`—, o el formulario de reporte deja
   publicar una vía con gravedad de edificio, o manda la foto sin reducir o con

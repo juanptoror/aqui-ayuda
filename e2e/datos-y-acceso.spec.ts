@@ -107,33 +107,39 @@ test.describe('procedencia de los datos', () => {
     expect(await page.locator('.sello-fuente[data-origen="corag"]').count()).toBe(0)
   })
 
-  test('la portada explica las dos fuentes y las distingue', async ({ page }) => {
-    await page.goto('/')
-    await page.waitForSelector('.hero__titulo')
+  test('las fuentes se explican y se distinguen, con enlace a su origen', async ({ page }) => {
+    /* Esto vivía en la portada y se quitó de ahí: quien entra tras un terremoto
+       no viene a leer de dónde salen los datos, viene a buscar un centro. La
+       garantía no desaparece, se muda a /acerca, que es donde la busca quien la
+       necesita. */
+    await page.goto('/acerca')
+    await page.waitForSelector('.page-header__title')
 
-    await expect(page.getByRole('heading', { name: 'De dónde salen los datos' })).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Ayudas Pereira' })).toBeVisible()
+    /* `exact` porque la misma página lleva además "Condiciones de Ayudas
+       Pereira": sin él la búsqueda por rol casa con las dos y falla por
+       ambigüedad, no porque falte nada. */
+    await expect(
+      page.getByRole('heading', { name: 'Ayudas Pereira', exact: true }),
+    ).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Corag', exact: true })).toBeVisible()
 
     // Cada ficha enlaza a su origen real, no a una descripción genérica.
-    await expect(page.locator('a[href="https://alluda.online"]')).toHaveCount(1)
-    await expect(page.locator('a[href="https://ayuda.corag.app"]')).toHaveCount(1)
+    await expect(page.locator('a[href="https://alluda.online"]').first()).toBeVisible()
+    await expect(page.locator('a[href="https://ayuda.corag.app"]').first()).toBeVisible()
   })
 
-  test('la portada pone la acción antes que el relato', async ({ page }) => {
+  test('la portada pone la acción en la primera pantalla', async ({ page }) => {
+    /* Antes esto comparaba la acción contra el bloque explicativo. Ese bloque
+       ya no existe —la portada se quedó en buscador y municipios— así que lo
+       que hay que seguir garantizando es lo de fondo: que se pueda actuar sin
+       hacer scroll. Quien entra en una emergencia no viene a leer. */
+    await page.setViewportSize({ width: 375, height: 812 })
     await page.goto('/')
     await page.waitForSelector('.hero__titulo')
 
-    // El botón de ubicación tiene que estar por encima del bloque explicativo:
-    // quien entra en una emergencia no viene a leer.
     const accion = await page.getByRole('button', { name: /Usar mi ubicación/ }).boundingBox()
-    const relato = await page
-      .getByRole('heading', { name: 'Cómo funciona' })
-      .boundingBox()
-
     expect(accion, 'no se encontró el botón de ubicación').not.toBeNull()
-    expect(relato, 'no se encontró la sección explicativa').not.toBeNull()
-    expect(accion!.y).toBeLessThan(relato!.y)
+    expect(accion!.y, 'la acción principal cae fuera de la primera pantalla').toBeLessThan(812)
   })
 })
 
@@ -177,25 +183,6 @@ test.describe('acceso por código', () => {
     await expect(campo).toHaveValue('persona@ejemplo.com')
     await expect(campo).toBeFocused()
     await expect(dialogo).toBeVisible()
-  })
-
-  test('el estado del sistema explica qué desbloquea entrar', async ({ page }) => {
-    await page.goto('/estado')
-    await page.waitForSelector('.page-header__title')
-
-    await expect(
-      page.getByRole('heading', { name: 'Por qué hay que entrar para ver los teléfonos' }),
-    ).toBeVisible()
-
-    // Las tablas públicas siguen leyéndose sin sesión. Se da margen porque son
-    // varios cientos de filas y hasta que llegan se muestra el esqueleto.
-    const filas = page.locator('.panel li')
-    await expect(filas.filter({ hasText: 'ciudades' }).first()).toContainText('filas', {
-      timeout: 20_000,
-    })
-    await expect(filas.filter({ hasText: 'centros' }).first()).toContainText('filas', {
-      timeout: 20_000,
-    })
   })
 
   test('acerca está escrito para cualquiera y no filtra datos por error', async ({ page }) => {

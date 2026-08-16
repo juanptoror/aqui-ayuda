@@ -22,6 +22,7 @@ import {
 import { ComoLlegar } from '@/components/ComoLlegar'
 import { FichaAfectacion } from '@/components/FichaAfectacion'
 import { ReportarDano } from '@/components/formularios/ReportarDano'
+import { Fab } from '@/components/Fab'
 import { FuentesDeLaPantalla, SelloFuente } from '@/components/Fuente'
 import { MapaPuntos, type PuntoMapa } from '@/components/MapaPuntos'
 import { SelectorCiudad } from '@/components/SelectorCiudad'
@@ -481,6 +482,12 @@ export function Afectaciones() {
       </div>
 
       <SelectorCiudad abierto={selectorAbierto} alCerrar={() => setSelectorAbierto(false)} />
+      {/* Solo si de verdad se puede publicar. Un botón enorme y permanente que
+          al pulsarlo saca a otra web no es un atajo, es una trampa. */}
+      {puedePublicar.data && (
+        <Fab etiqueta="Reportar" icono={Construction} alPulsar={() => setReportando(true)} />
+      )}
+
       <ReportarDano abierto={reportando} alCerrar={() => setReportando(false)} />
       {/* `key` por reporte: sin ella, abrir un reporte con tres fotos y luego
           otro dejaría seleccionada la foto 3 de uno que solo tiene una. */}

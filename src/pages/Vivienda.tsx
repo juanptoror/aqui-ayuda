@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { BedDouble, Home, MapPin, MessageCircle, Plus, SlidersHorizontal, X } from 'lucide-react'
+import { BedDouble, Home, HousePlus, MapPin, MessageCircle, Plus, SlidersHorizontal, X } from 'lucide-react'
 import {
   PageHeader,
   SectionHead,
@@ -9,6 +9,7 @@ import {
   SkeletonTarjeta,
 } from '@/components/ui'
 import { PublicarVivienda } from '@/components/formularios/PublicarVivienda'
+import { Fab } from '@/components/Fab'
 import { ComoLlegar } from '@/components/ComoLlegar'
 import { SelloFuente, FuentesDeLaPantalla } from '@/components/Fuente'
 import { MapaPuntos, type PuntoMapa } from '@/components/MapaPuntos'
@@ -516,6 +517,8 @@ export function Vivienda() {
           )}
         </section>
       </div>
+
+      <Fab etiqueta="Publicar" icono={HousePlus} alPulsar={() => setPublicando(true)} />
 
       <PublicarVivienda
         abierto={publicando}
