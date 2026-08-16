@@ -106,6 +106,29 @@ test.describe('el mapa junta las dos fuentes', () => {
     expect(radios).toBe(0)
   })
 
+  test('las tres formas llevan a alguna parte, no solo el cuadrado', async ({ page }) => {
+    /* El centro de acopio tenía su pantalla y las otras dos formas eran un
+       callejón: se tocaba una persona o un daño y la ficha del mapa enseñaba el
+       título y nada más. Ahora cada forma abre su detalle. */
+    await conCiudad(page, 'pereira-2')
+    await page.goto('/mapa')
+    await page.waitForSelector('.mapa__punto--persona', { timeout: 45_000 })
+    await page.waitForSelector('.mapa__punto--dano', { timeout: 45_000 })
+
+    /* Se despacha el evento en el elemento en vez de pinchar por coordenadas:
+       en el centro de Pereira hay 180 puntos casi encima y un clic real se lo
+       lleva el que quede arriba, no el que se buscaba. */
+    for (const [forma, etiqueta] of [
+      ['.mapa__punto--sitio', /ver ficha/i],
+      ['.mapa__punto--persona', /ver ficha/i],
+      ['.mapa__punto--dano', /ver el daño/i],
+    ] as const) {
+      await page.locator(forma).first().dispatchEvent('click')
+      const accion = page.getByRole('button', { name: etiqueta }).first()
+      await expect(accion, `${forma} no ofrece cómo ver su detalle`).toBeVisible()
+    }
+  })
+
   test('la forma distingue las fuentes sin depender del color', async ({ page }) => {
     await conCiudad(page, 'pereira-2')
     await page.goto('/mapa')

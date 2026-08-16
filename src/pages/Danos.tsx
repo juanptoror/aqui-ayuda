@@ -4,7 +4,6 @@ import {
   Clock,
   Construction,
   ExternalLink,
-  Image as ImagenIcono,
   LocateFixed,
   Route,
   ThumbsUp,
@@ -18,10 +17,10 @@ import {
   Notice,
   PageHeader,
   SectionHead,
-  Sheet,
   SkeletonTarjeta,
 } from '@/components/ui'
 import { ComoLlegar } from '@/components/ComoLlegar'
+import { FichaAfectacion } from '@/components/FichaAfectacion'
 import { FuentesDeLaPantalla, SelloFuente } from '@/components/Fuente'
 import { MapaPuntos, type PuntoMapa } from '@/components/MapaPuntos'
 import { SelectorCiudad } from '@/components/SelectorCiudad'
@@ -97,7 +96,10 @@ export function Danos() {
   const [selectorAbierto, setSelectorAbierto] = useState(false)
   const [buscando, setBuscando] = useState(false)
   const [errorUbicacion, setErrorUbicacion] = useState<string | null>(null)
-  const [fotosDe, setFotosDe] = useState<AfectacionVista | null>(null)
+  /* La misma ficha se abre desde la tarjeta y desde el mapa. `conFotos` guarda
+     de dónde vino: si se llegó pulsando "ver la foto", el permiso para gastar
+     varios megas ya está dado; tocando un punto del mapa, no. */
+  const [ficha, setFicha] = useState<{ a: AfectacionVista; conFotos: boolean } | null>(null)
 
   const consulta = useAfectaciones()
 
@@ -180,6 +182,8 @@ export function Danos() {
             .join(' · '),
           origen: 'pereira-responde',
           destacado: a.gravedad === 'alta',
+          etiquetaAccion: 'Ver el daño',
+          alPulsar: () => setFicha({ a, conFotos: false }),
         })),
     [visibles],
   )
@@ -452,7 +456,7 @@ export function Danos() {
                         key={a.id}
                         a={a}
                         conOrigen={!!origen}
-                        alVerFotos={() => setFotosDe(a)}
+                        alAbrir={(conFotos) => setFicha({ a, conFotos })}
                       />
                     ))}
                   </div>
@@ -464,7 +468,16 @@ export function Danos() {
       </div>
 
       <SelectorCiudad abierto={selectorAbierto} alCerrar={() => setSelectorAbierto(false)} />
-      <VisorFotos afectacion={fotosDe} alCerrar={() => setFotosDe(null)} />
+      {/* `key` por reporte: sin ella, la foto abierta de uno se quedaría abierta
+          al abrir el siguiente, y sería una descarga de varios megas que nadie
+          pidió. */}
+      <FichaAfectacion
+        key={ficha ? `${ficha.a.id}-${ficha.conFotos}` : 'ninguna'}
+        afectacion={ficha?.a ?? null}
+        distanciaKm={origen ? (ficha?.a.distanciaKm ?? null) : null}
+        conFotosAbiertas={ficha?.conFotos ?? false}
+        alCerrar={() => setFicha(null)}
+      />
     </>
   )
 }
@@ -474,11 +487,12 @@ export function Danos() {
 function TarjetaAfectacion({
   a,
   conOrigen,
-  alVerFotos,
+  alAbrir,
 }: {
   a: AfectacionVista
   conOrigen: boolean
-  alVerFotos: () => void
+  /** `true` si quien abre pidió expresamente la foto. */
+  alAbrir: (conFotos: boolean) => void
 }) {
   return (
     <article className="card">
@@ -542,8 +556,11 @@ function TarjetaAfectacion({
           </span>
         )}
         <div className="spacer" />
+        <button type="button" className="btn btn--sm" onClick={() => alAbrir(false)}>
+          <span>Ver el daño</span>
+        </button>
         {a.fotos.length > 0 && (
-          <button type="button" className="btn btn--sm" onClick={alVerFotos}>
+          <button type="button" className="btn btn--sm" onClick={() => alAbrir(true)}>
             <Camera size={15} strokeWidth={2.2} />
             <span>
               {a.fotos.length === 1 ? 'Ver la foto' : `Ver ${numero(a.fotos.length)} fotos`}
@@ -552,83 +569,5 @@ function TarjetaAfectacion({
         )}
       </div>
     </article>
-  )
-}
-
-/* -------------------------------- El visor --------------------------------- */
-
-/**
- * Las fotos, una a una y solo bajo petición.
- *
- * Medidas contra la fuente: entre 3 y 7 MB por imagen, porque son el archivo
- * que salió de la cámara sin redimensionar. No hay miniatura que pedir. Cargar
- * la primera al abrir es razonable —para eso se pulsó—, pero se avisa del peso
- * antes de que alguien con datos contados se gaste la tarifa del mes, y las
- * siguientes se piden una a una.
- */
-function VisorFotos({
-  afectacion,
-  alCerrar,
-}: {
-  afectacion: AfectacionVista | null
-  alCerrar: () => void
-}) {
-  const [indice, setIndice] = useState(0)
-
-  if (!afectacion) return null
-
-  const total = afectacion.fotos.length
-  const actual = afectacion.fotos[Math.min(indice, total - 1)]
-
-  return (
-    <Sheet
-      abierta
-      alCerrar={() => {
-        setIndice(0)
-        alCerrar()
-      }}
-      titulo={afectacion.titulo}
-      subtitulo={`${TIPOS_AFECTACION[afectacion.tipo].nombre} · ${desde(afectacion.reportadaEn)}`}
-    >
-      <div className="stack">
-        <Notice tono="info" icono={ImagenIcono}>
-          La fuente publica las fotos tal como salen del teléfono, sin reducir:{' '}
-          <strong>cada una pesa varios megas</strong>. Si vas con datos contados, quizá prefieras
-          esperar a tener wifi.
-        </Notice>
-
-        <img
-          src={actual}
-          alt={`Evidencia de ${afectacion.titulo}`}
-          loading="lazy"
-          decoding="async"
-          style={{
-            width: '100%',
-            height: 'auto',
-            maxHeight: '58vh',
-            objectFit: 'contain',
-            borderRadius: 'var(--r-lg)',
-            border: '1px solid var(--border)',
-            background: 'var(--surface-inset)',
-          }}
-        />
-
-        {total > 1 && (
-          <div className="chips">
-            {afectacion.fotos.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                className="chip"
-                onClick={() => setIndice(i)}
-                aria-pressed={i === indice}
-              >
-                <span>Foto {i + 1}</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    </Sheet>
   )
 }
