@@ -21,6 +21,7 @@ import {
   EmptyState,
   SkeletonTarjeta,
 } from '@/components/ui'
+import { FuentesDeLaPantalla } from '@/components/Fuente'
 import { CentroCard } from '@/components/CentroCard'
 import { SelectorCiudad } from '@/components/SelectorCiudad'
 import { AvisoTelefonos, Acceso } from '@/components/Acceso'
@@ -190,6 +191,8 @@ export function Ciudad() {
       />
 
       <div className="container">
+        <FuentesDeLaPantalla origenes={['ayudas-pereira']} nota="Todo lo de este municipio —centros, qué piden y qué tienen— sale de una sola fuente." />
+
         <div className="stack">
           {datos.error ? <AvisoError error={datos.error} origen="AP" /> : null}
           <AvisoTelefonos />

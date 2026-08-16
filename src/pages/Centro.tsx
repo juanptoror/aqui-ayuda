@@ -22,6 +22,7 @@ import {
   Notice,
   AvisoError,
 } from '@/components/ui'
+import { FuentesDeLaPantalla } from '@/components/Fuente'
 import { AvisoTelefonos, Acceso } from '@/components/Acceso'
 import { SelloFuente } from '@/components/Fuente'
 import { OfrecerDonacion } from '@/components/formularios/OfrecerDonacion'
@@ -147,6 +148,8 @@ export function Centro() {
       />
 
       <div className="container">
+        <FuentesDeLaPantalla origenes={['ayudas-pereira']} nota="Esta ficha la mantiene el equipo del propio centro. El teléfono solo se ve con sesión iniciada." />
+
         <div className="stack">
           {unirse.isSuccess && (
             <Notice tono="info" icono={CircleCheck}>

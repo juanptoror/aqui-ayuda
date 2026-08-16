@@ -94,7 +94,10 @@ test.describe('procedencia de los datos', () => {
     const total = await tarjetas.count()
     expect(total).toBeGreaterThan(0)
 
-    const sellos = page.locator('.sello-fuente[data-origen="ayudas-pereira"]')
+    /* Dentro de la tarjeta, no en toda la página: la pantalla lleva además una
+       tira de procedencia en la cabecera, que responde a otra pregunta —de qué
+       fuentes va esta pantalla— y no debe contarse como sello de un dato. */
+    const sellos = page.locator('[data-tipo="centro"] .sello-fuente[data-origen="ayudas-pereira"]')
     expect(
       await sellos.count(),
       'hay tarjetas de centro sin sello de procedencia',
