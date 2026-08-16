@@ -51,10 +51,14 @@ test.describe('daños y vías cerradas', () => {
     for (const u of urls) expect(u).toContain('limit=500')
   })
 
-  test('no carga ninguna foto hasta que alguien la pide', async ({ page }) => {
-    /* Medidas contra la fuente: entre 3 y 7 MB por imagen, sin miniatura. Con
-       179 reportes con foto, una rejilla que las cargue sola son cientos de
-       megas sobre la red de una ciudad que acaba de temblar. */
+  test('la lista no carga ninguna foto; la ficha carga la suya y solo la suya', async ({
+    page,
+  }) => {
+    /* Entre 3 y 7 MB por imagen, sin miniatura, y 179 reportes con foto: una
+       rejilla que las cargue sola son cientos de megas sobre la red de una
+       ciudad que acaba de temblar. Al abrir un daño sí se carga —quien abre el
+       detalle viene a verla— pero UNA, la que se está mirando: con tres fotos,
+       traerlas todas de golpe triplica la factura para enseñar una. */
     const fotos: string[] = []
     page.on('request', (r) => {
       if (r.url().includes('/api/photos/')) fotos.push(r.url())
@@ -65,13 +69,13 @@ test.describe('daños y vías cerradas', () => {
     await esperarTarjetas(page)
     await page.waitForTimeout(2500)
 
-    expect(fotos).toHaveLength(0)
+    expect(fotos, 'la lista no debe descargar ninguna foto').toHaveLength(0)
 
-    // Y al pedirla, se carga esa y solo esa.
-    await page.getByRole('button', { name: /ver (la foto|\d+ fotos)/i }).first().click()
+    await page.getByRole('button', { name: /ver el daño/i }).first().click()
     await page.waitForSelector('[role="dialog"] img', { timeout: 30_000 })
-    expect(fotos.length).toBeGreaterThan(0)
-    expect(fotos.length).toBeLessThanOrEqual(2)
+    await page.waitForTimeout(1200)
+
+    expect(fotos.length).toBe(1)
   })
 
   test('el relleno "Ubicación registrada" no llega a la pantalla', async ({ page }) => {
@@ -152,29 +156,34 @@ test.describe('daños y vías cerradas', () => {
     await expect(ficha).toContainText(/confirm/i)
   })
 
-  test('abrir la ficha desde el mapa no descarga la foto de 5 MB', async ({ page }) => {
-    /* La ficha se abre tocando un punto, y eso nadie lo hace pensando en
-       gastarse los datos del mes. El permiso lo da el botón, no el gesto. */
-    const fotos: string[] = []
-    page.on('request', (r) => {
-      if (r.url().includes('/api/photos/')) fotos.push(r.url())
-    })
-
+  test('la ficha enseña la foto sin un segundo clic, y avisa de lo que pesa', async ({ page }) => {
+    /* La foto estuvo detrás de un botón por su peso. Se quitó porque quien abre
+       el detalle de un edificio agrietado viene justo a verla: era fricción
+       para algo que se iba a pulsar siempre. El aviso se queda, que informar no
+       cuesta un clic. */
     await conCiudad(page, 'pereira-2')
     await page.goto('/danos')
     await page.waitForSelector('.mapa__punto--dano', { timeout: 45_000 })
 
     await page.locator('.mapa__punto--dano').first().click({ force: true })
     await page.getByRole('button', { name: /ver el daño/i }).first().click()
-    await page.waitForSelector('[role="dialog"]', { timeout: 15_000 })
-    await page.waitForTimeout(1500)
 
-    expect(fotos).toHaveLength(0)
-    expect(await page.locator('[role="dialog"] img').count()).toBe(0)
-    // Pero se ofrece, con el peso por delante.
-    await expect(
-      page.locator('[role="dialog"]').getByRole('button', { name: /ver .*(foto|fotos)/i }),
-    ).toBeVisible()
+    const ficha = page.locator('[role="dialog"]')
+    await expect(ficha.locator('img')).toBeVisible({ timeout: 30_000 })
+    await expect(ficha).toContainText(/pesa varios megas/i)
+  })
+
+  test('la tarjeta ofrece una sola puerta al detalle, no dos iguales', async ({ page }) => {
+    /* Había "Ver el daño" y "Ver la foto". Desde que la ficha abre con la foto
+       puesta hacen lo mismo, y dos botones para una acción es una decisión que
+       no existe. */
+    await conCiudad(page, 'pereira-2')
+    await page.goto('/danos')
+    await esperarTarjetas(page)
+
+    const primera = page.locator('.card').first()
+    expect(await primera.getByRole('button').count()).toBe(1)
+    await expect(primera.getByRole('button')).toContainText(/ver el daño/i)
   })
 
   test('sin clave configurada, reportar sale a la fuente en vez de fallar', async ({ page }) => {

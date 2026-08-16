@@ -98,10 +98,8 @@ export function Danos() {
   const [selectorAbierto, setSelectorAbierto] = useState(false)
   const [buscando, setBuscando] = useState(false)
   const [errorUbicacion, setErrorUbicacion] = useState<string | null>(null)
-  /* La misma ficha se abre desde la tarjeta y desde el mapa. `conFotos` guarda
-     de dónde vino: si se llegó pulsando "ver la foto", el permiso para gastar
-     varios megas ya está dado; tocando un punto del mapa, no. */
-  const [ficha, setFicha] = useState<{ a: AfectacionVista; conFotos: boolean } | null>(null)
+  /** La misma ficha se abre desde la tarjeta y desde un punto del mapa. */
+  const [ficha, setFicha] = useState<AfectacionVista | null>(null)
   const [reportando, setReportando] = useState(false)
 
   const consulta = useAfectaciones()
@@ -192,7 +190,7 @@ export function Danos() {
           origen: 'pereira-responde',
           destacado: a.gravedad === 'alta',
           etiquetaAccion: 'Ver el daño',
-          alPulsar: () => setFicha({ a, conFotos: false }),
+          alPulsar: () => setFicha(a),
         })),
     [visibles],
   )
@@ -471,7 +469,7 @@ export function Danos() {
                         key={a.id}
                         a={a}
                         conOrigen={!!origen}
-                        alAbrir={(conFotos) => setFicha({ a, conFotos })}
+                        alAbrir={() => setFicha(a)}
                       />
                     ))}
                   </div>
@@ -484,14 +482,12 @@ export function Danos() {
 
       <SelectorCiudad abierto={selectorAbierto} alCerrar={() => setSelectorAbierto(false)} />
       <ReportarDano abierto={reportando} alCerrar={() => setReportando(false)} />
-      {/* `key` por reporte: sin ella, la foto abierta de uno se quedaría abierta
-          al abrir el siguiente, y sería una descarga de varios megas que nadie
-          pidió. */}
+      {/* `key` por reporte: sin ella, abrir un reporte con tres fotos y luego
+          otro dejaría seleccionada la foto 3 de uno que solo tiene una. */}
       <FichaAfectacion
-        key={ficha ? `${ficha.a.id}-${ficha.conFotos}` : 'ninguna'}
-        afectacion={ficha?.a ?? null}
-        distanciaKm={origen ? (ficha?.a.distanciaKm ?? null) : null}
-        conFotosAbiertas={ficha?.conFotos ?? false}
+        key={ficha?.id ?? 'ninguna'}
+        afectacion={ficha}
+        distanciaKm={origen ? (ficha?.distanciaKm ?? null) : null}
         alCerrar={() => setFicha(null)}
       />
     </>
@@ -507,8 +503,7 @@ function TarjetaAfectacion({
 }: {
   a: AfectacionVista
   conOrigen: boolean
-  /** `true` si quien abre pidió expresamente la foto. */
-  alAbrir: (conFotos: boolean) => void
+  alAbrir: () => void
 }) {
   return (
     <article className="card">
@@ -572,17 +567,16 @@ function TarjetaAfectacion({
           </span>
         )}
         <div className="spacer" />
-        <button type="button" className="btn btn--sm" onClick={() => alAbrir(false)}>
-          <span>Ver el daño</span>
+        {/* Un solo botón. Había dos —"Ver el daño" y "Ver la foto"— y desde que
+            la ficha abre con la foto puesta hacen exactamente lo mismo: dos
+            botones para una acción es una decisión que no existe. El icono de
+            cámara y el número dicen que hay evidencia sin fingir otra puerta. */}
+        <button type="button" className="btn btn--sm" onClick={alAbrir}>
+          {a.fotos.length > 0 && <Camera size={15} strokeWidth={2.2} />}
+          <span>
+            {a.fotos.length > 1 ? `Ver el daño (${numero(a.fotos.length)} fotos)` : 'Ver el daño'}
+          </span>
         </button>
-        {a.fotos.length > 0 && (
-          <button type="button" className="btn btn--sm" onClick={() => alAbrir(true)}>
-            <Camera size={15} strokeWidth={2.2} />
-            <span>
-              {a.fotos.length === 1 ? 'Ver la foto' : `Ver ${numero(a.fotos.length)} fotos`}
-            </span>
-          </button>
-        )}
       </div>
     </article>
   )

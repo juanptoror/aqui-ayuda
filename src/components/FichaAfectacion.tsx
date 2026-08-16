@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Camera, ExternalLink, Image as ImagenIcono, ThumbsUp, TriangleAlert } from 'lucide-react'
+import { ExternalLink, Image as ImagenIcono, ThumbsUp, TriangleAlert } from 'lucide-react'
 import { Badge, Notice, Sheet } from './ui'
 import { ComoLlegar } from './ComoLlegar'
 import { SelloFuente } from './Fuente'
@@ -10,7 +10,7 @@ import {
   type Afectacion,
 } from '@/dominio/modelos'
 import { formatearDistancia } from '@/lib/geo'
-import { conteo, desde, numero } from '@/lib/format'
+import { conteo, desde } from '@/lib/format'
 
 /**
  * La ficha completa de un daño.
@@ -25,26 +25,24 @@ import { conteo, desde, numero } from '@/lib/format'
  * objeto que el listado, comprobado campo a campo. Todo lo que se enseña aquí
  * llegó en la primera consulta.
  *
- * **Las fotos siguen sin cargarse solas.** Pesan de 3 a 7 MB porque son el
- * archivo que salió de la cámara, y esta ficha se abre también tocando un punto
- * del mapa —un gesto que nadie hace pensando en gastarse datos—. Solo se
- * descargan si se pulsa el botón, o si se venía justamente de pulsar "ver la
- * foto" en una tarjeta.
+ * **La foto se carga al abrir la ficha.** Estuvo un tiempo detrás de un botón,
+ * porque pesa de 3 a 7 MB: es el archivo que salió de la cámara y la fuente no
+ * publica miniaturas. No compensaba. Quien abre el detalle de un edificio
+ * agrietado viene justo a ver la foto, así que ese segundo toque era fricción
+ * para algo que se iba a pulsar siempre. El aviso del peso se queda —informar
+ * no cuesta un clic— y lo que no se toca es la lista: 180 miniaturas de 5 MB
+ * son casi un giga y ahí el ahorro sí es real.
  */
 export function FichaAfectacion({
   afectacion,
   distanciaKm,
-  conFotosAbiertas = false,
   alCerrar,
 }: {
   afectacion: Afectacion | null
   /** Solo si quien abre la ficha ha podido calcularla de verdad. */
   distanciaKm?: number | null
-  /** Se abre con la foto ya cargada: quien pulsó "ver la foto" ya dio el sí. */
-  conFotosAbiertas?: boolean
   alCerrar: () => void
 }) {
-  const [verFotos, setVerFotos] = useState(conFotosAbiertas)
   const [indice, setIndice] = useState(0)
 
   if (!afectacion) return null
@@ -146,25 +144,20 @@ export function FichaAfectacion({
           <p style={{ margin: 0, color: 'var(--text-subtle)', fontSize: 'var(--text-sm)' }}>
             Este reporte se publicó sin foto.
           </p>
-        ) : !verFotos ? (
-          <button type="button" className="btn" onClick={() => setVerFotos(true)}>
-            <Camera size={17} strokeWidth={2.2} />
-            <span>
-              {total === 1 ? 'Ver la foto' : `Ver ${numero(total)} fotos`} (varios MB)
-            </span>
-          </button>
         ) : (
           <>
             <Notice tono="info" icono={ImagenIcono}>
               La fuente publica las fotos tal como salen del teléfono, sin reducir:{' '}
-              <strong>cada una pesa varios megas</strong>. Si vas con datos contados, quizá
-              prefieras esperar a tener wifi.
+              <strong>cada una pesa varios megas</strong>. Si vas con datos contados, ten en
+              cuenta lo que gasta abrir varias fichas seguidas.
             </Notice>
 
+            {/* Solo se descarga la que se está mirando. Con dos o tres fotos,
+                traerlas todas de golpe multiplicaría por tres la factura de
+                datos para enseñar una. */}
             <img
               src={a.fotos[Math.min(indice, total - 1)]}
               alt={`Evidencia de ${a.titulo}`}
-              loading="lazy"
               decoding="async"
               style={{
                 width: '100%',
