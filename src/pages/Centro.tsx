@@ -26,7 +26,9 @@ import { FuentesDeLaPantalla } from '@/components/Fuente'
 import { AvisoTelefonos, Acceso } from '@/components/Acceso'
 import { SelloFuente } from '@/components/Fuente'
 import { OfrecerDonacion } from '@/components/formularios/OfrecerDonacion'
+import { QuienLoTiene } from '@/components/QuienLoTiene'
 import { useUnirseACentro } from '@/datos/consultas'
+import { useQuienLoTiene } from '@/datos/useCruces'
 import type { Necesidad } from '@/dominio/modelos'
 import { usePreferencias } from '@/state/preferencias'
 import { useCentros } from '@/datos/consultas'
@@ -44,6 +46,7 @@ export function Centro() {
 
   const unirse = useUnirseACentro()
   const [ofreciendo, setOfreciendo] = useState<Necesidad | null>(null)
+  const [buscandoQuienTiene, setBuscandoQuienTiene] = useState<Necesidad | null>(null)
   const [accesoAbierto, setAccesoAbierto] = useState(false)
 
   /** Unirse exige sesión: si no la hay, se abre el acceso en vez de fallar. */
@@ -67,6 +70,18 @@ export function Centro() {
 
   const datos = useDatosCiudad(slug, ubicacion)
   const centro = datos.centros.find((c) => c.id === id) ?? null
+
+  /* "Me falta agua, ¿quién tiene agua?". Se mide desde el centro que pide, no
+     desde quien mira la pantalla: lo que importa es qué hay cerca de la bodega
+     que se ha quedado sin cosas, no de la casa de quien lo está consultando.
+
+     Va antes de los retornos tempranos porque es un hook, y con las listas
+     vacías mientras carga no cruza nada. */
+  const quienLoTiene = useQuienLoTiene(
+    centro?.necesidades ?? [],
+    centro?.lat != null && centro?.lng != null ? { lat: centro.lat, lng: centro.lng } : null,
+    centro?.id ?? null,
+  )
 
   if (qCentros.isLoading || (centroSuelto && datos.cargando)) {
     return (
@@ -299,40 +314,65 @@ export function Centro() {
                   {pendientes
                     .slice()
                     .sort((a, b) => peso(b.prioridad) - peso(a.prioridad))
-                    .map((n) => (
-                      <li key={n.id} className="row" style={{ alignItems: 'flex-start' }}>
-                        <span style={{ flexShrink: 0, marginTop: 2 }}>
-                          {n.prioridad === 'urgente' ? (
-                            <Badge tono="critical">Urgente</Badge>
-                          ) : n.prioridad === 'alta' ? (
-                            <Badge tono="warning">Alta</Badge>
-                          ) : (
-                            <Badge tono="neutral">Normal</Badge>
-                          )}
-                        </span>
-                        <div className="min0" style={{ flex: '1 1 auto' }}>
-                          <div style={{ fontWeight: 650 }}>{n.categoria}</div>
-                          {n.descripcion && (
-                            <div style={{ color: 'var(--text-muted)', overflowWrap: 'break-word' }}>
-                              {n.descripcion}
+                    .map((n) => {
+                      const cruce = quienLoTiene.get(n.id)
+                      return (
+                        <li key={n.id} className="row row--wrap" style={{ alignItems: 'flex-start' }}>
+                          <span style={{ flexShrink: 0, marginTop: 2 }}>
+                            {n.prioridad === 'urgente' ? (
+                              <Badge tono="critical">Urgente</Badge>
+                            ) : n.prioridad === 'alta' ? (
+                              <Badge tono="warning">Alta</Badge>
+                            ) : (
+                              <Badge tono="neutral">Normal</Badge>
+                            )}
+                          </span>
+                          <div className="min0" style={{ flex: '1 1 12rem' }}>
+                            <div style={{ fontWeight: 650 }}>{n.categoria}</div>
+                            {n.descripcion && (
+                              <div style={{ color: 'var(--text-muted)', overflowWrap: 'break-word' }}>
+                                {n.descripcion}
+                              </div>
+                            )}
+                            <div style={{ color: 'var(--text-subtle)', fontSize: 'var(--text-sm)' }}>
+                              Reportado {desde(n.creadaEn)}
                             </div>
-                          )}
-                          <div style={{ color: 'var(--text-subtle)', fontSize: 'var(--text-sm)' }}>
-                            Reportado {desde(n.creadaEn)}
                           </div>
-                        </div>
-                        {/* Ofrecer contra ESTA necesidad: el ofrecimiento queda
-                            ligado a ella, así el centro sabe qué cubre. */}
-                        <button
-                          type="button"
-                          className="btn btn--sm btn--primary"
-                          style={{ flexShrink: 0 }}
-                          onClick={() => setOfreciendo(n)}
-                        >
-                          <span>Yo tengo</span>
-                        </button>
-                      </li>
-                    ))}
+
+                          {/* La otra mitad de la decisión: antes de salir a
+                              comprar, mirar si alguien ya lo tiene. El botón
+                              lleva el número porque "¿lo tiene alguien?" con la
+                              respuesta escondida detrás de un clic obliga a
+                              abrir diez hojas para descubrir que nueve no. */}
+                          {cruce && (
+                            <button
+                              type="button"
+                              className="btn btn--sm"
+                              style={{ flexShrink: 0 }}
+                              onClick={() => setBuscandoQuienTiene(n)}
+                            >
+                              <Boxes size={15} strokeWidth={2.2} />
+                              <span>
+                                {cruce.conStock > 0
+                                  ? `Lo tienen ${numero(cruce.conStock)}`
+                                  : `Lo ofrecen ${numero(cruce.todos.length)}`}
+                              </span>
+                            </button>
+                          )}
+
+                          {/* Ofrecer contra ESTA necesidad: el ofrecimiento queda
+                              ligado a ella, así el centro sabe qué cubre. */}
+                          <button
+                            type="button"
+                            className="btn btn--sm btn--primary"
+                            style={{ flexShrink: 0 }}
+                            onClick={() => setOfreciendo(n)}
+                          >
+                            <span>Yo tengo</span>
+                          </button>
+                        </li>
+                      )
+                    })}
                 </ul>
               )}
 
@@ -367,6 +407,11 @@ export function Centro() {
           centroNombre={centro.nombre}
         />
       )}
+      <QuienLoTiene
+        necesidad={buscandoQuienTiene}
+        cruce={buscandoQuienTiene ? quienLoTiene.get(buscandoQuienTiene.id) : undefined}
+        alCerrar={() => setBuscandoQuienTiene(null)}
+      />
       <Acceso abierto={accesoAbierto} alCerrar={() => setAccesoAbierto(false)} />
     </>
   )
