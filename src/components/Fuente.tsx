@@ -64,7 +64,8 @@ export const FUENTES: Record<Origen, InfoFuente> = {
   'pereira-responde': {
     nombre: 'Pereira Responde',
     tipo: 'Daños y vías cerradas',
-    descripcion: 'Qué edificio está tocado y por qué calle no se pasa, con foto y coordenada.',
+    descripcion:
+      'Qué edificio está tocado, por qué calle no se pasa y qué barrio quedó sin servicio.',
     quienPublica: 'Cualquier persona desde el mapa de Pereira Responde.',
     url: 'https://pereiraresponde.co',
     icono: Construction,

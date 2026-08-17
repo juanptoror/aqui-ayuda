@@ -191,7 +191,8 @@ export function useAlojamientos(): UseQueryResult<Alojamiento[]> {
 }
 
 /**
- * Daños en el terreno: edificios tocados, vías cortadas, servicios abiertos.
+ * Daños en el terreno: edificios tocados, vías cortadas, servicios abiertos y
+ * cortes de luz, agua, gas o internet.
  *
  * Se refresca más a menudo que el resto (30 s) porque es lo único que puede
  * cambiar de golpe: una réplica cierra una calle y quien va conduciendo

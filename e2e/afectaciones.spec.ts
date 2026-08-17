@@ -266,6 +266,52 @@ test.describe('daños y vías cerradas', () => {
     expect(await page.locator('.card').count()).toBe(0)
   })
 
+  test('un corte de servicio no sale rotulado como edificio dañado', async ({ page }) => {
+    /* `utility` —luz, agua, gas, internet, postes— llegó a la fuente después que
+       los otros tres tipos. Mientras no estuvo en el mapeador, cada corte caía
+       en el respaldo `?? 'vivienda'` y aparecía como "Edificio": decirle a
+       alguien que hay un daño estructural donde lo único que pasa es que no hay
+       luz. Se fija con datos propios para que la prueba no dependa de que hoy
+       haya un corte reportado en Pereira. */
+    await page.route(RUTA_API, (ruta) =>
+      ruta.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reports: [
+            {
+              id: '183',
+              type: 'utility',
+              category: null,
+              risk: 'utility',
+              title: 'Sin servicio de internet',
+              area: 'Movistar',
+              coords: [4.8098, -75.66],
+              createdAt: new Date().toISOString(),
+              // Sin foto: el contrato la deja opcional justo en este tipo.
+              photos: [],
+              score: 0,
+              votes: 0,
+              userVote: 0,
+            },
+          ],
+        }),
+      }),
+    )
+
+    await conCiudad(page, 'pereira-2')
+    await page.goto('/afectaciones')
+    await esperarTarjetas(page)
+
+    const tarjeta = page.locator('.card').first()
+    await expect(tarjeta).toContainText(/servicio público/i)
+    await expect(tarjeta, 'un corte de luz no es un edificio dañado').not.toContainText(/edificio/i)
+
+    // Y tiene chip propio: mezclarlo con los servicios abiertos —sitios que
+    // siguen atendiendo— sería juntar lo que funciona con lo que se cayó.
+    await expect(page.locator('.chip').filter({ hasText: /^Servicios públicos$/ })).toBeVisible()
+  })
+
   test('avisa cuando la lista puede venir recortada por el tope de la API', async ({ page }) => {
     /* La API no pagina: si devuelve justo el tope, no hay forma de pedir el
        resto. Enseñar 500 como si fueran todos escondería una ciudad entera. */
@@ -397,6 +443,41 @@ test.describe('reportar un daño', () => {
     // `category` solo la llevan los servicios abiertos; en el resto va vacía.
     expect(c.category).toBeNull()
     expect(c.coords).toEqual([4.8143, -75.6946])
+  })
+
+  test('un corte de servicio se publica como `utility` y sin exigir foto', async ({ page }) => {
+    /* Dos reglas del contrato a la vez: `utility` exige `risk: "utility"` —otra
+       combinación son 400 y un envío gastado— y es el único tipo con
+       `photos.minItems: 0`. Pedir foto igual dejaría sin publicar justo a quien
+       está a oscuras, que es quien menos tiene que enseñar. */
+    let enviado: Record<string, unknown> | null = null
+    const hoja = await conFormulario(page, (c) => {
+      enviado = c as Record<string, unknown>
+    })
+
+    await hoja.getByRole('tab', { name: 'Servicio público' }).click()
+    // La gravedad sigue siendo cosa de los edificios, y la categoría de los sitios.
+    await expect(hoja.getByRole('tab', { name: /riesgo alto/i })).toHaveCount(0)
+    await expect(hoja.locator('#categoria')).toHaveCount(0)
+    await expect(hoja).toContainText(/opcional aquí/i)
+
+    await hoja.locator('#clase').selectOption('Sin servicio de luz')
+    await hoja.getByRole('button', { name: /centrar donde estoy/i }).click()
+    await expect(hoja.locator('.num')).toContainText('4.81430', { timeout: 20_000 })
+
+    const publicar = hoja.getByRole('button', { name: /publicar el reporte/i })
+    await expect(publicar, 'sin una sola foto tiene que poder enviarse').toBeEnabled({
+      timeout: 15_000,
+    })
+    await publicar.click()
+    await expect(hoja).toContainText(/reporte publicado/i, { timeout: 20_000 })
+
+    expect(enviado).not.toBeNull()
+    const c = enviado as unknown as Record<string, unknown>
+    expect(c.type).toBe('utility')
+    expect(c.risk).toBe('utility')
+    expect(c.category).toBeNull()
+    expect(c.photos).toEqual([])
   })
 
   test('el punto que se publica es el que se señala, no donde está el teléfono', async ({

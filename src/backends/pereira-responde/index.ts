@@ -87,16 +87,18 @@ const TIPO: Record<TipoReporte, TipoAfectacion> = {
   housing: 'vivienda',
   road: 'via',
   support: 'apoyo',
+  utility: 'servicio-publico',
 }
 
-/* `road` y `support` no son gravedades: son el tipo repetido dentro del campo
-   de riesgo. Traducirlos a "alta" o "media" pondría una alarma donde la fuente
-   no la puso, y traducirlos a "media" bajaría el listón de un colapso. */
+/* `road`, `support` y `utility` no son gravedades: son el tipo repetido dentro
+   del campo de riesgo. Traducirlos a "alta" o "media" pondría una alarma donde
+   la fuente no la puso, y traducirlos a "media" bajaría el listón de un colapso. */
 const GRAVEDAD: Record<RiesgoReporte, GravedadAfectacion> = {
   high: 'alta',
   medium: 'media',
   road: 'sin-clasificar',
   support: 'sin-clasificar',
+  utility: 'sin-clasificar',
 }
 
 /** Los dos únicos valores de `category` en los datos, ambos de tipo `support`. */
@@ -141,6 +143,12 @@ function aAfectacion(r: Reporte): Afectacion {
 
   return {
     id: r.id,
+    /* Ojo con este respaldo: no es inocuo. Cuando la fuente estrenó `utility`,
+       cada corte de luz cayó aquí y salió rotulado "Edificio", que es decirle a
+       alguien que hay un daño estructural donde solo falta la luz. Al añadir un
+       tipo nuevo, `TIPO` es lo primero que hay que tocar. Se deja en 'vivienda'
+       —y no en 'apoyo'— porque equivocarse hacia la precaución es preferible a
+       pintar de verde algo que nadie ha comprobado. */
     tipo: TIPO[r.type] ?? 'vivienda',
     gravedad: GRAVEDAD[r.risk] ?? 'sin-clasificar',
     titulo,
@@ -181,7 +189,8 @@ export const pereiraResponde: Backend = {
     id: 'pereira-responde',
     nombre: 'Pereira Responde',
     tipo: 'Daños y vías cerradas',
-    descripcion: 'Edificios afectados, calles cortadas y servicios abiertos, con foto y coordenada.',
+    descripcion:
+      'Edificios afectados, calles cortadas, servicios abiertos y cortes de luz, agua o internet, con coordenada.',
     quienPublica: 'Cualquier persona desde el mapa de Pereira Responde.',
     url: URL_FUENTE,
     capacidades: ['leer:afectaciones', 'escribir:afectacion'],

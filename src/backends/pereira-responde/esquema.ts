@@ -21,14 +21,23 @@ export const URL_FUENTE = 'https://pereiraresponde.co'
  */
 export const LIMITE_MAX = 500
 
-export type TipoReporte = 'housing' | 'road' | 'support'
+/**
+ * Las cuatro clases de reporte.
+ *
+ * `utility` llegó después que las otras tres —daño o corte en un servicio
+ * público: luz, agua, gas, internet, postes— y no es un matiz cosmético: hasta
+ * que estuvo en este tipo, un corte de luz entraba por el `?? 'vivienda'` del
+ * mapeador y salía en pantalla etiquetado como **edificio dañado**. Un tipo
+ * nuevo en una fuente ajena no avisa; lo que avisa es que la etiqueta mienta.
+ */
+export type TipoReporte = 'housing' | 'road' | 'support' | 'utility'
 
 /**
- * `risk` según el esquema. Ojo: `road` y `support` no son niveles de riesgo,
- * son el tipo repetido dentro del campo. Solo `high` y `medium` dicen algo, y
- * solo aparecen en reportes de vivienda.
+ * `risk` según el esquema. Ojo: `road`, `support` y `utility` no son niveles de
+ * riesgo, son el tipo repetido dentro del campo. Solo `high` y `medium` dicen
+ * algo, y solo aparecen en reportes de vivienda.
  */
-export type RiesgoReporte = 'high' | 'medium' | 'road' | 'support'
+export type RiesgoReporte = 'high' | 'medium' | 'road' | 'support' | 'utility'
 
 export interface Reporte {
   id: string
@@ -51,7 +60,13 @@ export interface Reporte {
   /** [lat, lng]. Presente en los 180 reportes visibles. */
   coords: [number, number]
   createdAt: string
-  /** URLs absolutas a `/api/photos/{id}`. Sin miniaturas: ver nota en index.ts. */
+  /**
+   * URLs absolutas a `/api/photos/{id}`. Sin miniaturas: ver nota en index.ts.
+   *
+   * Puede venir vacío. En `housing`, `road` y `support` la fuente exige al
+   * menos una foto al publicar, pero en `utility` es opcional —un corte de luz
+   * no se fotografía— y el único reporte de ese tipo llegó sin ninguna.
+   */
   photos: string[]
   /** Balance de votos. */
   score: number
