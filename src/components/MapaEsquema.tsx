@@ -111,7 +111,7 @@ export function MapaEsquema({ puntos, yoEstoyAqui, activo, alActivar }: PropsCap
         /* Los colores de marca son vecinos en el tono y mucha gente no los
            separa. La forma sí se distingue siempre; el criterio está en
            `formaDe` para que esta capa y la de tiles no puedan discrepar. */
-        const forma = formaDe(p.origen)
+        const forma = formaDe(p)
         const r = p.destacado ? 11 : 8
         const comun = {
           className: `mapa__punto mapa__punto--${forma === 'persona' ? 'persona' : forma === 'dano' ? 'dano' : 'sitio'}${

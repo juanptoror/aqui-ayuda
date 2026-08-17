@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
 import type { FotoPreparada } from '@/lib/imagenes'
-import type { GravedadAfectacion, TipoAfectacion } from '@/dominio/modelos'
+import type { GravedadAfectacion, ServicioAfectado, TipoAfectacion } from '@/dominio/modelos'
 
 /**
  * Publicar un daño.
@@ -61,6 +61,21 @@ export const CLASES_POR_TIPO: Record<TipoAfectacion, readonly string[]> = {
     'Sin servicio de internet',
     'Poste o cable caído',
   ],
+}
+
+/**
+ * Qué servicio hay detrás de cada clase, en vocabulario del dominio.
+ *
+ * Existe para que el mismo reporte pueda salir también al tablón de cuadrillas
+ * de Pereira Unida, que llama a estas cosas por otro nombre. La traducción a
+ * SU nombre la hace su backend; aquí solo se dice qué es, no cómo lo llama nadie.
+ */
+export const SERVICIO_POR_CLASE: Record<string, ServicioAfectado> = {
+  'Sin servicio de luz': 'luz',
+  'Sin servicio de agua': 'agua',
+  'Sin servicio de gas': 'gas',
+  'Sin servicio de internet': 'internet',
+  'Poste o cable caído': 'poste-cable',
 }
 
 /**

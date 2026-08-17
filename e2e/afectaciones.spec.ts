@@ -32,6 +32,42 @@ async function esperarTarjetas(page: Page) {
 
 const RUTA_API = '**/api/public/v1/reports*'
 
+/**
+ * La segunda fuente del terreno: `service_outages` de Pereira Unida.
+ *
+ * Se lee por Supabase y no por su API pública con clave, así que lo que se
+ * intercepta aquí es PostgREST. Un daño de energía y un edificio agrietado caben
+ * en la misma pantalla porque responden a la misma pregunta —qué le pasa a la
+ * ciudad— y ninguna de las dos fuentes sabe lo de la otra.
+ */
+const RUTA_SERVICIOS = '**/rest/v1/service_outages*'
+
+const servicio = (extra: Record<string, unknown> = {}) => ({
+  id: '7f1c1a3e-0000-4000-8000-000000000001',
+  service: 'agua',
+  severity: 'corte_sector',
+  description: 'Sin agua desde anoche en todo el barrio.',
+  address: 'Cra 8 con Calle 21',
+  municipality: 'Dosquebradas',
+  department: 'Risaralda',
+  lat: 4.8351,
+  lng: -75.6741,
+  photo_urls: [],
+  status: 'reportado',
+  created_at: new Date().toISOString(),
+  ...extra,
+})
+
+/** Solo el daño de servicios: la otra fuente responde vacía a propósito. */
+async function soloServicios(page: Page, filas: Record<string, unknown>[]) {
+  await page.route(RUTA_API, (r) =>
+    r.fulfill({ status: 200, contentType: 'application/json', body: '{"reports":[]}' }),
+  )
+  await page.route(RUTA_SERVICIOS, (r) =>
+    r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(filas) }),
+  )
+}
+
 test.describe('daños y vías cerradas', () => {
   test('pide el máximo de reportes y no se queda con los 100 por defecto', async ({ page }) => {
     /* La API devuelve 100 si no se pide `limit`, y hoy hay 180 reportes: sin
@@ -90,21 +126,33 @@ test.describe('daños y vías cerradas', () => {
     expect(texto).not.toContain('Ubicación registrada')
   })
 
-  test('cada tarjeta lleva el sello de su fuente y ninguna otra', async ({ page }) => {
+  test('cada tarjeta lleva el sello de su fuente, y solo de las dos declaradas', async ({
+    page,
+  }) => {
+    /* Esta pantalla tuvo una sola fuente y ahora tiene dos: los edificios y las
+       vías de Pereira Responde, los daños de luz, agua, gas e internet del
+       tablón de Pereira Unida. Lo que sigue sin poder pasar es una tarjeta sin
+       sello, o con el sello de una fuente que esta pantalla no declara. */
     await conCiudad(page, 'pereira-2')
     await page.goto('/afectaciones')
     await esperarTarjetas(page)
 
     const tarjetas = await page.locator('.card').count()
-    const sellos = await page.locator(".card .sello-fuente[data-origen='pereira-responde']").count()
     expect(tarjetas).toBeGreaterThan(0)
-    expect(sellos).toBe(tarjetas)
 
-    // Nada de otra procedencia se cuela en esta lista.
-    const ajenos = await page
-      .locator(".card .sello-fuente:not([data-origen='pereira-responde'])")
+    const conSello = await page
+      .locator(
+        ".card .sello-fuente[data-origen='pereira-responde'], .card .sello-fuente[data-origen='pereira-unida']",
+      )
       .count()
-    expect(ajenos).toBe(0)
+    expect(conSello, 'ninguna tarjeta puede quedarse sin sello').toBe(tarjetas)
+
+    const ajenos = await page
+      .locator(
+        ".card .sello-fuente:not([data-origen='pereira-responde']):not([data-origen='pereira-unida'])",
+      )
+      .count()
+    expect(ajenos, 'nada de otra procedencia se cuela en esta lista').toBe(0)
   })
 
   test('el punto del daño es redondo y rojo, y se distingue sin ver el color', async ({ page }) => {
@@ -245,11 +293,15 @@ test.describe('daños y vías cerradas', () => {
     expect(radios).toBe(0)
   })
 
-  test('si la fuente falla, se dice; no se enseña "no hay daños"', async ({ page }) => {
+  test('si fallan todas las fuentes, se dice; no se enseña "no hay daños"', async ({ page }) => {
     /* Presentar un 500 como una ciudad intacta es desinformar en plena
-       emergencia: es exactamente la misma regla que ya cumple Corag. */
+       emergencia: es exactamente la misma regla que ya cumple Corag. Caen las
+       dos fuentes porque solo entonces no queda nada que enseñar. */
     await page.route(RUTA_API, (ruta) =>
       ruta.fulfill({ status: 500, contentType: 'application/json', body: '{"error":"caído"}' }),
+    )
+    await page.route(RUTA_SERVICIOS, (ruta) =>
+      ruta.fulfill({ status: 500, contentType: 'application/json', body: '{"message":"caído"}' }),
     )
 
     await conCiudad(page, 'pereira-2')
@@ -264,6 +316,33 @@ test.describe('daños y vías cerradas', () => {
     expect(texto).toMatch(/servidor|conexión|no pudimos/i)
     // Ni un cero presentado como buena noticia.
     expect(await page.locator('.card').count()).toBe(0)
+  })
+
+  test('si falla una sola fuente, se dice que la lista está incompleta', async ({ page }) => {
+    /* El caso nuevo, y el más traicionero de los dos: con dos fuentes, la que
+       sigue en pie devuelve una lista corta y NADA parece roto. Si Pereira
+       Responde se cae y la otra no tiene daños de servicios que contar, la
+       pantalla enseñaría cero tarjetas sobre una ciudad con 165 edificios
+       tocados, y "no hay nada reportado" se leería como "tu barrio está bien". */
+    await page.route(RUTA_API, (ruta) =>
+      ruta.fulfill({ status: 500, contentType: 'application/json', body: '{"error":"caído"}' }),
+    )
+    await page.route(RUTA_SERVICIOS, (ruta) =>
+      ruta.fulfill({ status: 200, contentType: 'application/json', body: '[]' }),
+    )
+
+    await conCiudad(page, 'pereira-2')
+    await page.goto('/afectaciones')
+
+    const aviso = page.locator('.notice', { hasText: /lista está incompleta/i })
+    await expect(aviso).toBeVisible({ timeout: 60_000 })
+    // Y se nombra a la fuente que faltó, que es a quien hay que reclamar.
+    await expect(aviso).toContainText(/Pereira Responde/)
+
+    // Lo que NO puede aparecer: un vacío presentado como buena noticia.
+    const texto = await page.locator('main').innerText()
+    expect(texto).not.toMatch(/no hay nada reportado/i)
+    expect(texto).not.toMatch(/ningún reporte cumple estos filtros/i)
   })
 
   test('un corte de servicio no sale rotulado como edificio dañado', async ({ page }) => {
@@ -310,6 +389,96 @@ test.describe('daños y vías cerradas', () => {
     // Y tiene chip propio: mezclarlo con los servicios abiertos —sitios que
     // siguen atendiendo— sería juntar lo que funciona con lo que se cayó.
     await expect(page.locator('.chip').filter({ hasText: /^Servicios públicos$/ })).toBeVisible()
+  })
+
+  test('un daño de servicios de Pereira Unida entra en la lista con su sello', async ({ page }) => {
+    await soloServicios(page, [servicio()])
+    await conCiudad(page, 'pereira-2')
+    await page.goto('/afectaciones')
+    await esperarTarjetas(page)
+
+    const tarjeta = page.locator('.card').first()
+    await expect(tarjeta.locator(".sello-fuente[data-origen='pereira-unida']")).toBeVisible()
+    await expect(tarjeta).toContainText(/servicio público/i)
+    // El título se compone de `service` + `severity`: la tabla no trae ninguno.
+    await expect(tarjeta).toContainText(/sector sin agua/i)
+    // Y la dirección, que es lo que esta fuente aporta y la otra no.
+    await expect(tarjeta).toContainText(/Cra 8 con Calle 21, Dosquebradas/)
+  })
+
+  test('un cable caído se dibuja como daño, no como sitio al que ir', async ({ page }) => {
+    /* La forma del punto se decidía solo por el origen, y Pereira Unida publica
+       dos clases de cosa: vecinos pidiendo ayuda y daños de servicios. Con ese
+       criterio, un poste con el cable en el suelo salía con el cuadrado de un
+       centro de acopio y la ficha ofrecía "cómo llegar" hasta él. */
+    await soloServicios(page, [servicio({ service: 'energia', severity: 'peligro_critico' })])
+    await conCiudad(page, 'pereira-2')
+    await page.goto('/afectaciones')
+    await page.waitForSelector('.mapa__punto--dano', { timeout: 45_000 })
+
+    expect(await page.locator('.mapa__punto--sitio').count()).toBe(0)
+
+    // `peligro_critico` es la única severidad que sí es un nivel de riesgo.
+    await expect(page.locator('.card').first()).toContainText(/riesgo alto/i)
+
+    const leyenda = await page.locator('.mapa__leyenda').innerText()
+    expect(leyenda).toMatch(/rojo/i)
+    expect(leyenda).not.toMatch(/cuadrado/i)
+  })
+
+  test('un corte de sector no se presenta como un riesgo que nadie declaró', async ({ page }) => {
+    /* `corte_sector` dice a cuánta gente afecta, no cómo de peligroso es.
+       Traducirlo a "riesgo medio" pintaría una alarma que la fuente no puso. El
+       alcance no se pierde: lo dice el título. */
+    await soloServicios(page, [servicio()])
+    await conCiudad(page, 'pereira-2')
+    await page.goto('/afectaciones')
+    await esperarTarjetas(page)
+
+    const tarjeta = page.locator('.card').first()
+    await expect(tarjeta).not.toContainText(/riesgo alto|riesgo medio/i)
+    await expect(tarjeta).toContainText(/sector sin agua/i)
+  })
+
+  test('los daños ya resueltos se descartan en la consulta, no en la pantalla', async ({ page }) => {
+    /* Un poste que la cuadrilla ya levantó no es un peligro, y dejarlo en el
+       mapa manda a alguien a rodear una calle que está abierta. Se comprueba lo
+       que se pide de verdad, no contando tarjetas. */
+    const urls: string[] = []
+    page.on('request', (r) => {
+      if (r.url().includes('/rest/v1/service_outages')) urls.push(r.url())
+    })
+
+    await conCiudad(page, 'pereira-2')
+    await page.goto('/afectaciones')
+    await esperarTarjetas(page)
+
+    expect(urls.length).toBeGreaterThan(0)
+    for (const u of urls) expect(decodeURIComponent(u)).toContain('status=neq.resuelto')
+  })
+
+  test('la ficha de un daño de servicios no promete confirmaciones que no existen', async ({
+    page,
+  }) => {
+    /* Solo Pereira Responde tiene votos. En este tablón no hay forma de
+       confirmar un daño, así que "todavía nadie lo ha confirmado" anunciaría un
+       botón que no está en ninguna parte. */
+    await soloServicios(page, [servicio()])
+    await conCiudad(page, 'pereira-2')
+    await page.goto('/afectaciones')
+    await esperarTarjetas(page)
+
+    await page.getByRole('button', { name: /ver el daño/i }).first().click()
+    const ficha = page.locator('[role="dialog"]')
+    await expect(ficha).toBeVisible()
+
+    await expect(ficha).toContainText(/dirección/i)
+    await expect(ficha).not.toContainText(/confirm/i)
+    // Y el enlace sale a la fuente correcta, no a la del otro tablón.
+    await expect(ficha.getByRole('link', { name: /ver en pereira unida/i })).toHaveAttribute(
+      'href',
+      /pereiraunida\.com/,
+    )
   })
 
   test('avisa cuando la lista puede venir recortada por el tope de la API', async ({ page }) => {
@@ -478,6 +647,132 @@ test.describe('reportar un daño', () => {
     expect(c.risk).toBe('utility')
     expect(c.category).toBeNull()
     expect(c.photos).toEqual([])
+  })
+
+  /**
+   * El segundo destino: el tablón de cuadrillas de Pereira Unida.
+   *
+   * Va por Supabase, así que lo que se intercepta es el `POST` de PostgREST. La
+   * ruta atiende las dos mitades —el `GET` que llena la pantalla y el `POST` que
+   * publica— porque comparten URL y sin el `GET` la lista no carga.
+   */
+  async function conCuadrillas(page: Page, alInsertar: (fila: unknown) => void, falla = false) {
+    await page.route(RUTA_SERVICIOS, async (ruta) => {
+      if (ruta.request().method() === 'POST') {
+        alInsertar(JSON.parse(ruta.request().postData() ?? '{}'))
+        await ruta.fulfill(
+          falla
+            ? { status: 403, contentType: 'application/json', body: '{"message":"denegado"}' }
+            : { status: 201, contentType: 'application/json', body: '[]' },
+        )
+        return
+      }
+      await ruta.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
+    })
+  }
+
+  /** Deja el formulario listo para publicar un corte de luz o de agua. */
+  async function corteListo(hoja: ReturnType<Page['locator']>, clase: string) {
+    await hoja.getByRole('tab', { name: 'Servicio público' }).click()
+    await hoja.locator('#clase').selectOption(clase)
+    await hoja.getByRole('button', { name: /centrar donde estoy/i }).click()
+    await expect(hoja.locator('.num')).toContainText('4.81430', { timeout: 20_000 })
+  }
+
+  test('un corte de servicio se avisa también a las cuadrillas, con su alcance', async ({
+    page,
+  }) => {
+    /* Su tablón lo consultan los equipos que reparan luz, agua, gas e internet:
+       avisar ahí es la diferencia entre que alguien rodee el cable y que alguien
+       venga a quitarlo. El alcance es lo único que esa fuente necesita y esta no
+       preguntaba; deducirlo sería inventarlo. */
+    let insertado: Record<string, unknown> | null = null
+    await conCuadrillas(page, (f) => {
+      insertado = (Array.isArray(f) ? f[0] : f) as Record<string, unknown>
+    })
+    const hoja = await conFormulario(page)
+
+    await corteListo(hoja, 'Sin servicio de agua')
+    await hoja.getByRole('tab', { name: /solo una vivienda/i }).click()
+
+    await hoja.getByRole('button', { name: /publicar el reporte/i }).click()
+    await expect(hoja).toContainText(/reporte publicado/i, { timeout: 20_000 })
+    await expect(hoja).toContainText(/tablón de cuadrillas/i)
+
+    expect(insertado).not.toBeNull()
+    const f = insertado as unknown as Record<string, unknown>
+    expect(f.service).toBe('agua')
+    expect(f.severity).toBe('falla_puntual')
+    expect(f.status).toBe('reportado')
+    expect(f.lat).toBe(4.8143)
+    expect(f.lng).toBe(-75.6946)
+    // Nada personal viaja al segundo destino, ni la foto.
+    expect(f.photo_urls).toEqual([])
+    expect(JSON.stringify(f)).not.toMatch(/contact|phone|telefono/i)
+  })
+
+  test('un poste caído no pregunta el alcance: ya es el peligro crítico', async ({ page }) => {
+    /* Su escala define `peligro_critico` como "cable vivo o poste cayéndose".
+       Preguntar "¿a cuánta gente afecta?" ahí no tiene respuesta útil. */
+    let insertado: Record<string, unknown> | null = null
+    await conCuadrillas(page, (f) => {
+      insertado = (Array.isArray(f) ? f[0] : f) as Record<string, unknown>
+    })
+    const hoja = await conFormulario(page)
+
+    await corteListo(hoja, 'Poste o cable caído')
+    await expect(hoja.getByRole('tab', { name: /todo el sector/i })).toHaveCount(0)
+
+    await hoja.getByRole('button', { name: /publicar el reporte/i }).click()
+    await expect(hoja).toContainText(/reporte publicado/i, { timeout: 20_000 })
+
+    const f = insertado as unknown as Record<string, unknown>
+    expect(f.service).toBe('poste')
+    expect(f.severity).toBe('peligro_critico')
+  })
+
+  test('la casilla se puede quitar, y entonces no se publica en ningún otro sitio', async ({
+    page,
+  }) => {
+    let hubieraInsertado = false
+    await conCuadrillas(page, () => {
+      hubieraInsertado = true
+    })
+    const hoja = await conFormulario(page)
+
+    await corteListo(hoja, 'Sin servicio de luz')
+    await hoja.getByRole('checkbox').uncheck()
+    // Al quitarla desaparece la pregunta que solo servía para ese destino.
+    await expect(hoja.getByRole('tab', { name: /todo el sector/i })).toHaveCount(0)
+
+    await hoja.getByRole('button', { name: /publicar el reporte/i }).click()
+    await expect(hoja).toContainText(/reporte publicado/i, { timeout: 20_000 })
+    await expect(hoja).not.toContainText(/tablón de cuadrillas/i)
+
+    expect(hubieraInsertado, 'sin casilla no se escribe en la segunda fuente').toBe(false)
+  })
+
+  test('un edificio no ofrece la casilla: ese tablón solo recibe servicios', async ({ page }) => {
+    const hoja = await conFormulario(page)
+    await expect(hoja.getByRole('checkbox')).toHaveCount(0)
+
+    await hoja.getByRole('tab', { name: 'Vía' }).click()
+    await expect(hoja.getByRole('checkbox')).toHaveCount(0)
+  })
+
+  test('si el segundo destino falla, el reporte sigue publicado y se dice', async ({ page }) => {
+    /* Lo peor que podría hacer esta pantalla es decir "no se pudo publicar"
+       cuando sí se pudo: mandaría a alguien a rellenarlo otra vez desde la
+       calle, delante de un cable en el suelo. */
+    await conCuadrillas(page, () => {}, true)
+    const hoja = await conFormulario(page)
+
+    await corteListo(hoja, 'Sin servicio de luz')
+    await hoja.getByRole('button', { name: /publicar el reporte/i }).click()
+
+    await expect(hoja).toContainText(/reporte publicado/i, { timeout: 20_000 })
+    await expect(hoja).toContainText(/solo pudimos publicarlo/i)
+    await expect(hoja).toContainText(/está publicado igualmente/i)
   })
 
   test('el punto que se publica es el que se señala, no donde está el teléfono', async ({

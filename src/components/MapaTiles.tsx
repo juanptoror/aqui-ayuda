@@ -57,7 +57,7 @@ interface Props extends PropsCapaMapa {
  * elemento hijo y así el punto entero sigue siendo la zona de toque.
  */
 function iconoDe(p: PuntoMapa, activo: boolean): L.DivIcon {
-  const forma = formaDe(p.origen)
+  const forma = formaDe(p)
   const clases = ['mapa__punto', `mapa__punto--${forma}`]
   if (p.destacado) clases.push('is-destacado')
   if (activo) clases.push('is-activo')

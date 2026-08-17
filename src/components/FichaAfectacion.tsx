@@ -2,8 +2,7 @@ import { useState } from 'react'
 import { ExternalLink, Image as ImagenIcono, ThumbsUp, TriangleAlert } from 'lucide-react'
 import { Badge, Notice, Sheet } from './ui'
 import { ComoLlegar } from './ComoLlegar'
-import { SelloFuente } from './Fuente'
-import { URL_FUENTE } from '@/backends/pereira-responde'
+import { FUENTES, SelloFuente } from './Fuente'
 import {
   GRAVEDADES_AFECTACION,
   TIPOS_AFECTACION,
@@ -51,6 +50,11 @@ export function FichaAfectacion({
   const total = a.fotos.length
   const tipo = TIPOS_AFECTACION[a.tipo]
   const hayCoordenada = a.lat != null && a.lng != null
+  /* "La fuente" ya no es siempre la misma: los edificios vienen de Pereira
+     Responde y los daños de servicios del tablón de Pereira Unida. Mandar a
+     quien mira un cable caído a la web equivocada es peor que no ofrecer el
+     enlace. */
+  const fuente = FUENTES[a.origen]
 
   return (
     <Sheet
@@ -67,10 +71,12 @@ export function FichaAfectacion({
               modo="ver"
             />
           )}
-          <a className="btn" href={URL_FUENTE} target="_blank" rel="noopener noreferrer">
-            <ExternalLink size={17} />
-            <span>Ver en la fuente</span>
-          </a>
+          {fuente.url && (
+            <a className="btn" href={fuente.url} target="_blank" rel="noopener noreferrer">
+              <ExternalLink size={17} />
+              <span>Ver en {fuente.nombre}</span>
+            </a>
+          )}
         </>
       }
     >
@@ -86,7 +92,7 @@ export function FichaAfectacion({
             </Badge>
           )}
           <div className="spacer" />
-          <SelloFuente origen="pereira-responde" />
+          <SelloFuente origen={a.origen} />
         </div>
 
         {/* El título vive arriba solo cuando no hay subtipo; si lo hay, el
@@ -121,6 +127,16 @@ export function FichaAfectacion({
         )}
 
         <div className="deflist">
+          {/* Solo una de las dos fuentes da dirección de calle. Cuando la hay,
+              va lo primero: es lo que permite llegar sin depender del mapa. */}
+          {a.direccion && (
+            <div className="deflist__row">
+              <div className="deflist__content">
+                <div className="deflist__label">Dirección</div>
+                <div className="deflist__value">{a.direccion}</div>
+              </div>
+            </div>
+          )}
           <div className="deflist__row">
             <div className="deflist__content">
               <div className="deflist__label">Reportado</div>
@@ -135,18 +151,23 @@ export function FichaAfectacion({
               </div>
             </div>
           )}
-          <div className="deflist__row">
-            <div className="deflist__content">
-              <div className="deflist__label">Confirmaciones de la comunidad</div>
-              {/* Cero se dice con palabras: un "0" suelto se lee como "nadie lo
-                  cree", y lo que pasa es que nadie ha votado todavía. */}
-              <div className="deflist__value">
-                {a.confirmaciones > 0
-                  ? conteo(a.confirmaciones, 'persona lo confirmó', 'personas lo confirmaron')
-                  : 'Todavía nadie lo ha confirmado'}
+          {/* Solo Pereira Responde tiene votos. En el tablón de Pereira Unida no
+              existe forma de confirmar un daño, así que decir "todavía nadie lo
+              ha confirmado" prometería un botón que no hay en ninguna parte. */}
+          {a.origen === 'pereira-responde' && (
+            <div className="deflist__row">
+              <div className="deflist__content">
+                <div className="deflist__label">Confirmaciones de la comunidad</div>
+                {/* Cero se dice con palabras: un "0" suelto se lee como "nadie lo
+                    cree", y lo que pasa es que nadie ha votado todavía. */}
+                <div className="deflist__value">
+                  {a.confirmaciones > 0
+                    ? conteo(a.confirmaciones, 'persona lo confirmó', 'personas lo confirmaron')
+                    : 'Todavía nadie lo ha confirmado'}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* ------------------------------ FOTOS ------------------------------ */}

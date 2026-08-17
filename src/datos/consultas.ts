@@ -16,6 +16,7 @@ import type {
   Necesidad,
   Alojamiento,
   OfrecimientoPersona,
+  OrigenAfectacion,
   PeticionPersona,
   Transporte,
   TransporteItem,
@@ -198,20 +199,51 @@ export function useAlojamientos(): UseQueryResult<Alojamiento[]> {
  * cambiar de golpe: una réplica cierra una calle y quien va conduciendo
  * necesita enterarse, no leer lo de hace cinco minutos.
  *
+ * **Son dos fuentes, no una**, y se piden las dos: una cubre edificios y vías de
+ * Pereira, la otra los daños de energía, agua, gas e internet de Risaralda.
+ * Ninguna sabe lo de la otra, así que quedarse con la principal dejaría medio
+ * terreno sin contar.
+ *
+ * Lo que se hace cuando una falla NO es lo mismo que con la vivienda, y la
+ * diferencia importa. Allí basta con enseñar los pisos que sí llegaron. Aquí no:
+ * si Pereira Responde se cae y la otra contesta con cero daños de servicios, una
+ * lista vacía se lee como **"tu barrio está intacto"**, que es justo la mentira
+ * que esta pantalla no se puede permitir. Así que se devuelven las dos cosas —lo
+ * que llegó y quién no contestó— y la pantalla lo dice en voz alta. Solo cuando
+ * fallan todas se lanza el error, porque entonces no hay nada que enseñar.
+ *
  * No se filtra nada aquí. Con las peticiones sí se filtra —hay reportes
- * marcados como falsos o duplicados que no deben republicarse—, pero la fuente
- * de afectaciones ya entrega solo lo visible: lo que oculta su moderación no
- * sale por la API. Descartar algo más sería borrar un peligro del mapa.
+ * marcados como falsos o duplicados que no deben republicarse—, pero estas dos
+ * fuentes ya entregan solo lo publicable: una oculta por moderación lo que no
+ * sale por su API, y la otra descarta los daños resueltos en su propia consulta.
+ * Descartar algo más aquí sería borrar un peligro del mapa.
  */
-export function useAfectaciones(): UseQueryResult<Afectacion[]> {
+export interface LecturaAfectaciones {
+  todas: Afectacion[]
+  /** Fuentes que no contestaron. Vacío es la única forma de decir "están todas". */
+  fallidas: OrigenAfectacion[]
+}
+
+export function useAfectaciones(): UseQueryResult<LecturaAfectaciones> {
   return useQuery({
     queryKey: ['afectaciones'],
     ...BASE,
     staleTime: 30_000,
-    queryFn: async () => {
-      const b = backendPrincipalPara('leer:afectaciones')
-      if (!b?.leer.afectaciones) faltaProveedor('daños y vías cerradas')
-      return b.leer.afectaciones()
+    queryFn: async (): Promise<LecturaAfectaciones> => {
+      const fuentes = backendsCon('leer:afectaciones').filter((b) => b.leer.afectaciones)
+      if (fuentes.length === 0) faltaProveedor('daños y vías cerradas')
+
+      const partes = await Promise.allSettled(fuentes.map((b) => b.leer.afectaciones!()))
+      if (partes.every((p) => p.status === 'rejected')) {
+        throw (partes[0] as PromiseRejectedResult).reason
+      }
+
+      return {
+        todas: partes.flatMap((p) => (p.status === 'fulfilled' ? p.value : [])),
+        fallidas: fuentes
+          .filter((_, i) => partes[i].status === 'rejected')
+          .map((b) => b.descripcion.id as OrigenAfectacion),
+      }
     },
   })
 }

@@ -8,10 +8,17 @@ import {
   exigeFoto,
   MAX_FOTOS,
   MAX_NOTA,
+  SERVICIO_POR_CLASE,
   usePublicarAfectacion,
   type CategoriaApoyo,
 } from '@/backends/pereira-responde/publicar'
-import { TIPOS_AFECTACION, type Coordenada, type TipoAfectacion } from '@/dominio/modelos'
+import { publicarDanoServicio } from '@/backends/pereira-unida'
+import {
+  TIPOS_AFECTACION,
+  type AlcanceServicio,
+  type Coordenada,
+  type TipoAfectacion,
+} from '@/dominio/modelos'
 import { FORMATOS_ACEPTADOS, pesoLegible, prepararFoto, type FotoPreparada } from '@/lib/imagenes'
 import { obtenerUbicacion } from '@/lib/geo'
 import { usePreferencias } from '@/state/preferencias'
@@ -46,6 +53,14 @@ import { usePreferencias } from '@/state/preferencias'
  *    lo vería quien mire la lista entera y nadie más.
  * 5. **Lo que falta se dice antes de pulsar.** Un botón apagado sin explicación
  *    es una pantalla que no contesta.
+ * 6. **Un corte de servicio puede ir a dos sitios, y el segundo es una casilla.**
+ *    Pereira Unida tiene un tablón que consultan las cuadrillas que reparan luz,
+ *    agua, gas e internet: avisar ahí es la diferencia entre que alguien rodee
+ *    el cable y que alguien venga a quitarlo. Va marcada por defecto porque no
+ *    viaja ni un dato personal —ni nombre, ni teléfono, ni foto—, pero se ve y
+ *    se puede quitar, porque publicar en una segunda organización no es una
+ *    decisión que se tome por nadie. El envío es de mejor esfuerzo: si falla, el
+ *    reporte principal ya está publicado y eso es lo que se cuenta.
  */
 
 /**
@@ -83,6 +98,19 @@ export function ReportarDano({ abierto, alCerrar }: { abierto: boolean; alCerrar
   const [preparandoFoto, setPreparandoFoto] = useState(false)
   const [errorFoto, setErrorFoto] = useState<string | null>(null)
   const [creado, setCreado] = useState(false)
+
+  /* Mandar el daño también al tablón de cuadrillas de Pereira Unida. Marcada
+     por defecto: aquí no viaja ni un dato personal —ni nombre, ni teléfono, ni
+     foto—, solo qué se rompió y dónde, y al otro lado lo recibe quien puede ir
+     a arreglarlo. Aun así es una casilla y no una decisión nuestra: se publica
+     en una segunda organización y eso se ve y se puede quitar. */
+  const [tambienCuadrillas, setTambienCuadrillas] = useState(true)
+  /* Qué alcance tiene el corte. Es la única cosa que esa fuente necesita y esta
+     no pregunta; deducirla sería inventarla. */
+  const [alcance, setAlcance] = useState<AlcanceServicio>('sector')
+  /* El segundo envío es de mejor esfuerzo: si falla, el reporte YA está
+     publicado en Pereira Responde y eso es lo que hay que contar. */
+  const [falloCuadrillas, setFalloCuadrillas] = useState(false)
 
   const entradaFoto = useRef<HTMLInputElement>(null)
   const publicar = usePublicarAfectacion()
@@ -131,6 +159,9 @@ export function ReportarDano({ abierto, alCerrar }: { abierto: boolean; alCerrar
     setFotos([])
     setErrorFoto(null)
     setCreado(false)
+    setTambienCuadrillas(true)
+    setAlcance('sector')
+    setFalloCuadrillas(false)
     publicar.reset()
   }
 
@@ -196,10 +227,19 @@ export function ReportarDano({ abierto, alCerrar }: { abierto: boolean; alCerrar
   const listo = faltan.length === 0 && !publicar.isPending && !preparandoFoto
   const pesoTotal = fotos.reduce((s, f) => s + f.bytes, 0)
 
-  function enviar() {
+  /* Solo los cortes de servicio tienen dónde replicarse: el tablón de cuadrillas
+     recibe daños de luz, agua, gas, internet y postes, no edificios ni vías. */
+  const servicio = tipo === 'servicio-publico' ? SERVICIO_POR_CLASE[clase] : undefined
+  const puedeReplicar = !!servicio
+  /* Un poste o un cable caído ya ES el peligro crítico de su escala: preguntar
+     "¿a cuánta gente afecta?" ahí no tiene respuesta útil. */
+  const preguntarAlcance = puedeReplicar && servicio !== 'poste-cable'
+
+  async function enviar() {
     if (!listo || !punto) return
-    publicar.mutate(
-      {
+
+    try {
+      await publicar.mutateAsync({
         tipo,
         gravedad,
         clase,
@@ -208,9 +248,31 @@ export function ReportarDano({ abierto, alCerrar }: { abierto: boolean; alCerrar
         lat: punto.lat,
         lng: punto.lng,
         fotos,
-      },
-      { onSuccess: () => setCreado(true) },
-    )
+      })
+    } catch {
+      /* el error se muestra desde publicar.error */
+      return
+    }
+
+    /* Segundo envío, de mejor esfuerzo y DESPUÉS del principal. En su propio
+       `try`: si falla, el daño ya está publicado en Pereira Responde, y decir
+       "no se pudo" mandaría a alguien a rellenarlo otra vez desde la calle. */
+    if (tambienCuadrillas && servicio) {
+      try {
+        await publicarDanoServicio({
+          servicio,
+          alcance,
+          nota,
+          lat: punto.lat,
+          lng: punto.lng,
+        })
+      } catch (err) {
+        setFalloCuadrillas(true)
+        console.error('[AquíAyuda] no se pudo replicar en Pereira Unida', err)
+      }
+    }
+
+    setCreado(true)
   }
 
   /* ------------------------------ Ya publicado ---------------------------- */
@@ -238,6 +300,24 @@ export function ReportarDano({ abierto, alCerrar }: { abierto: boolean; alCerrar
             <strong>Queda sujeto a moderación y a los votos de la comunidad</strong>, igual que
             cualquier reporte hecho desde su web: si alguien confirma que sigue así, sube.
           </Notice>
+
+          {/* Solo se menciona el segundo destino cuando de verdad hubo uno. */}
+          {tambienCuadrillas && puedeReplicar && !falloCuadrillas && (
+            <Notice tono="info">
+              También se envió al <strong>tablón de cuadrillas de Pereira Unida</strong>, donde lo
+              ven los equipos que atienden cortes de luz, agua, gas e internet. Allí viajó el punto
+              y qué se rompió; la foto se queda en Pereira Responde.
+            </Notice>
+          )}
+
+          {falloCuadrillas && (
+            <Notice tono="warning">
+              Solo pudimos publicarlo en <strong>Pereira Responde</strong>: el tablón de cuadrillas
+              de Pereira Unida no aceptó la copia. Tu reporte está publicado igualmente y se ve
+              desde esta aplicación.
+            </Notice>
+          )}
+
           <p style={{ margin: 0, color: 'var(--text-muted)' }}>
             Aléjate del sitio si no lo has hecho ya. Si hay gente en peligro, llama al{' '}
             <strong>123</strong>: publicar un reporte no avisa a nadie.
@@ -263,7 +343,7 @@ export function ReportarDano({ abierto, alCerrar }: { abierto: boolean; alCerrar
           <button
             type="button"
             className="btn btn--primary"
-            onClick={enviar}
+            onClick={() => void enviar()}
             disabled={!listo}
           >
             <span>{publicar.isPending ? 'Publicando…' : 'Publicar el reporte'}</span>
@@ -457,6 +537,54 @@ export function ReportarDano({ abierto, alCerrar }: { abierto: boolean; alCerrar
         </CampoGrupo>
 
         {errorFoto && <Notice tono="warning">{errorFoto}</Notice>}
+
+        {/* --------------------- El segundo destino ---------------------- */}
+        {puedeReplicar && (
+          <div className="stack">
+            <label
+              className="panel panel--inset"
+              style={{
+                display: 'flex',
+                gap: 'var(--sp-3)',
+                padding: 'var(--sp-4)',
+                cursor: 'pointer',
+                alignItems: 'flex-start',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={tambienCuadrillas}
+                onChange={(e) => setTambienCuadrillas(e.target.checked)}
+                style={{ width: 20, height: 20, marginTop: 2, flexShrink: 0, cursor: 'pointer' }}
+              />
+              <span className="min0">
+                <span style={{ display: 'block', fontWeight: 650, marginBottom: 2 }}>
+                  Avisar también a las cuadrillas de Pereira Unida
+                </span>
+                <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
+                  Su tablón lo consultan los equipos que reparan luz, agua, gas e internet. Se
+                  envía qué se rompió y el punto exacto: <strong>ni tu nombre, ni tu teléfono, ni
+                  la foto</strong>.
+                </span>
+              </span>
+            </label>
+
+            {/* La única pregunta que esa fuente necesita y esta no hace. Solo
+                aparece si de verdad se va a mandar: preguntar por algo que no
+                va a ninguna parte es hacer perder el tiempo en la calle. */}
+            {tambienCuadrillas && preguntarAlcance && (
+              <Alternativa
+                etiqueta="A cuánta gente afecta"
+                opciones={[
+                  { valor: 'sector' as const, texto: 'Todo el sector' },
+                  { valor: 'vivienda' as const, texto: 'Solo una vivienda' },
+                ]}
+                valor={alcance}
+                alElegir={setAlcance}
+              />
+            )}
+          </div>
+        )}
 
         {publicar.error && (
           <Notice tono="critical" icono={TriangleAlert}>

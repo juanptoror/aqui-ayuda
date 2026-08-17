@@ -294,6 +294,29 @@ export interface Alojamiento {
  */
 export type TipoAfectacion = 'vivienda' | 'via' | 'apoyo' | 'servicio-publico'
 
+/** Las fuentes que informan del terreno. Se queda corto a propósito: no es
+    `Origen` entero, porque un centro de acopio no reporta daños. */
+export type OrigenAfectacion = 'pereira-responde' | 'pereira-unida'
+
+/**
+ * Qué servicio público falló.
+ *
+ * Vocabulario del medio, y existe por una razón concreta: un mismo reporte se
+ * publica en dos sitios que lo llaman distinto —una fuente dice "Sin servicio de
+ * luz" y la otra `service: "energia"`— y ninguna de las dos tiene por qué
+ * conocer el nombre de la otra. Cada backend traduce en su borde.
+ */
+export type ServicioAfectado = 'luz' | 'agua' | 'gas' | 'internet' | 'poste-cable'
+
+/**
+ * A cuánta gente afecta un corte.
+ *
+ * No es una gravedad: es un alcance. Se pregunta porque quien reporta lo sabe
+ * sin pensar —o está el barrio entero a oscuras o es solo su casa— y porque al
+ * otro lado ordena el tablero de una cuadrilla. Deducirlo sería inventarlo.
+ */
+export type AlcanceServicio = 'sector' | 'vivienda'
+
 /**
  * Gravedad declarada por quien reportó.
  *
@@ -305,6 +328,13 @@ export type GravedadAfectacion = 'alta' | 'media' | 'sin-clasificar'
 
 export interface Afectacion {
   id: string
+  /**
+   * Quién lo publicó. Dos fuentes distintas informan del terreno y no se
+   * solapan: una cubre edificios y vías de Pereira, la otra los daños de
+   * energía, agua, gas e internet de Risaralda. Sin este campo la pantalla no
+   * podría poner el sello correcto ni decir a quién reclamar.
+   */
+  origen: OrigenAfectacion
   tipo: TipoAfectacion
   gravedad: GravedadAfectacion
   /** Clase del daño, del catálogo cerrado de la fuente. */
@@ -313,6 +343,14 @@ export interface Afectacion {
   subtipo: string | null
   /** Nota de quien reportó. Null cuando no escribió ninguna. */
   nota: string | null
+  /**
+   * Dirección de calle, solo si la fuente la da.
+   *
+   * Va aparte de `nota` a propósito. La otra fuente llama `area` a un campo que
+   * NO es una dirección y ya cuesta un comentario entero explicarlo; meter aquí
+   * una calle de verdad dentro de "nota" repetiría el mismo error al revés.
+   */
+  direccion: string | null
   /** null solo por defensa: los 180 reportes reales traen coordenada. */
   lat: number | null
   lng: number | null
