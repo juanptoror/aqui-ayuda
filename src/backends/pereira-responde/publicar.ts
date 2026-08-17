@@ -20,10 +20,11 @@ const RUTA = '/api/reportes'
 
 /* --------------------------- Vocabulario de la fuente ---------------------- */
 
-export const TIPO_A_FUENTE: Record<TipoAfectacion, 'housing' | 'road' | 'support'> = {
+export const TIPO_A_FUENTE: Record<TipoAfectacion, 'housing' | 'road' | 'support' | 'utility'> = {
   vivienda: 'housing',
   via: 'road',
   apoyo: 'support',
+  'servicio-publico': 'utility',
 }
 
 /**
@@ -34,6 +35,14 @@ export const TIPO_A_FUENTE: Record<TipoAfectacion, 'housing' | 'road' | 'support
  * lista entera y nadie más. Las de vivienda salen de su desplegable —cinco,
  * incluida "Daño menor visible", que aún no aparece en ningún reporte
  * publicado— y las de vía y servicio, de los títulos que sí están en sus datos.
+ *
+ * Las de servicio público son el único caso donde no se pudo copiar la lista:
+ * su formulario todavía no ofrece este tipo en la web y en sus datos hay un
+ * solo reporte, "Sin servicio de internet". Las otras cuatro siguen ese mismo
+ * molde sobre los servicios que su propio contrato enumera —«luz, agua, gas,
+ * internet, postes»—, así que son la lista de la fuente escrita a partir de su
+ * documentación, no un invento nuestro. Si mañana publican su desplegable, se
+ * copia de ahí y esta nota sobra.
  */
 export const CLASES_POR_TIPO: Record<TipoAfectacion, readonly string[]> = {
   vivienda: [
@@ -45,6 +54,26 @@ export const CLASES_POR_TIPO: Record<TipoAfectacion, readonly string[]> = {
   ],
   via: ['Vía cerrada por derrumbe o inundación', 'Paso restringido'],
   apoyo: ['Refugio temporal', 'Zona de acopio'],
+  'servicio-publico': [
+    'Sin servicio de luz',
+    'Sin servicio de agua',
+    'Sin servicio de gas',
+    'Sin servicio de internet',
+    'Poste o cable caído',
+  ],
+}
+
+/**
+ * ¿Este tipo exige foto?
+ *
+ * El contrato la pide en `housing`, `road` y `support` y la deja opcional en
+ * `utility` (`photos.minItems: 0`), y tiene sentido: un corte de luz no se
+ * fotografía. Exigirla igual sería inventarnos un requisito que la fuente no
+ * tiene y dejar sin publicar a quien está a oscuras justamente porque no puede
+ * enseñar nada.
+ */
+export function exigeFoto(tipo: TipoAfectacion): boolean {
+  return tipo !== 'servicio-publico'
 }
 
 /** `category`, obligatoria solo en los servicios abiertos. */
@@ -81,13 +110,14 @@ export interface BorradorAfectacion {
 
 /**
  * `risk` no es libre: la fuente devuelve 400 si la combinación no encaja.
- * `housing` admite alto o medio; `road` y `support` repiten su propio tipo
- * dentro del campo, que es la rareza que ya obliga a decir "sin clasificar" al
- * leer.
+ * `housing` admite alto o medio; `road`, `support` y `utility` repiten su
+ * propio tipo dentro del campo, que es la rareza que ya obliga a decir "sin
+ * clasificar" al leer.
  */
-function riesgoDe(b: BorradorAfectacion): 'high' | 'medium' | 'road' | 'support' {
+function riesgoDe(b: BorradorAfectacion): 'high' | 'medium' | 'road' | 'support' | 'utility' {
   if (b.tipo === 'via') return 'road'
   if (b.tipo === 'apoyo') return 'support'
+  if (b.tipo === 'servicio-publico') return 'utility'
   return b.gravedad === 'alta' ? 'high' : 'medium'
 }
 

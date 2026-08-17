@@ -212,7 +212,18 @@ export function Alternativa<T extends string>({
       <legend className="field__label" style={{ padding: 0, marginBottom: 'var(--sp-2)' }}>
         {etiqueta}
       </legend>
-      <div className="segmented" style={{ ['--seg-count' as string]: String(opciones.length) }}>
+      {/* Con cuatro opciones o más, una sola fila deja columnas tan estrechas
+          que las etiquetas se cortan con puntos suspensivos —"Servicio púb…"— y
+          una alternativa que no se puede leer no es una alternativa. A partir de
+          ahí se parte en dos filas. */}
+      <div
+        className="segmented"
+        style={{
+          ['--seg-count' as string]: String(
+            opciones.length > 3 ? Math.ceil(opciones.length / 2) : opciones.length,
+          ),
+        }}
+      >
         {opciones.map((o) => (
           <button
             key={o.valor}

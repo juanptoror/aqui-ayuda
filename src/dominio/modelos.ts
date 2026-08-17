@@ -283,7 +283,7 @@ export interface Alojamiento {
 
 /**
  * Un daño en el terreno: un edificio tocado, una vía cortada, un servicio
- * abierto.
+ * abierto, un barrio sin luz.
  *
  * Es la única cosa de esta aplicación que NO es una petición ni una oferta.
  * Nadie está pidiendo nada aquí: es el estado físico de la ciudad después del
@@ -292,12 +292,12 @@ export interface Alojamiento {
  * donación— y porque mezclarlo haría que la pantalla de "quién necesita ayuda"
  * mandara a alguien a tocar el timbre de una casa colapsada.
  */
-export type TipoAfectacion = 'vivienda' | 'via' | 'apoyo'
+export type TipoAfectacion = 'vivienda' | 'via' | 'apoyo' | 'servicio-publico'
 
 /**
  * Gravedad declarada por quien reportó.
  *
- * Solo existe de verdad en las afectaciones de vivienda. En vías y servicios la
+ * Solo existe de verdad en las afectaciones de vivienda. En los demás tipos la
  * fuente repite el tipo dentro del campo de riesgo (`risk: "road"`), así que ahí
  * no hay severidad que enseñar y se dice `sin-clasificar` en vez de inventar una.
  */
@@ -329,9 +329,15 @@ export interface Afectacion {
  * Cómo se nombra cada tipo en pantalla.
  *
  * Se respeta el vocabulario de la fuente —"Edificio", "Vía", "Servicio
- * abierto"— porque es el que ve quien reporta. Que la app y la fuente llamen
- * distinto a lo mismo obliga a traducir mentalmente justo cuando nadie tiene
- * cabeza para eso.
+ * abierto", "servicio público"— porque es el que ve quien reporta. Que la app y
+ * la fuente llamen distinto a lo mismo obliga a traducir mentalmente justo
+ * cuando nadie tiene cabeza para eso.
+ *
+ * "Servicio abierto" y "Servicio público" se parecen y no son lo mismo: el
+ * primero es un sitio que sigue atendiendo —una farmacia, un refugio— y el
+ * segundo es la red que dejó de funcionar. En Colombia "servicios públicos" es
+ * justamente la factura de la luz y el agua, así que la palabra ya viene
+ * entendida de casa; los `descripcion` de cada uno terminan de separarlos.
  */
 export const TIPOS_AFECTACION: Record<
   TipoAfectacion,
@@ -351,6 +357,11 @@ export const TIPOS_AFECTACION: Record<
     nombre: 'Servicio abierto',
     plural: 'Servicios abiertos',
     descripcion: 'Refugios y zonas de acopio señaladas en el terreno.',
+  },
+  'servicio-publico': {
+    nombre: 'Servicio público',
+    plural: 'Servicios públicos',
+    descripcion: 'Cortes de luz, agua, gas o internet, y postes o cables caídos.',
   },
 }
 

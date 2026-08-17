@@ -104,10 +104,20 @@ export function FichaAfectacion({
           </p>
         )}
 
-        {a.tipo !== 'apoyo' && (
+        {/* Un servicio abierto es el único tipo al que sí conviene ir. En los
+            demás el aviso se queda, pero cambia: en un corte lo que mata no es
+            el edificio, es un cable en el suelo que puede seguir con corriente. */}
+        {a.tipo === 'servicio-publico' ? (
           <Notice tono="warning">
-            No te acerques a comprobarlo. Si hay peligro inmediato, llama al <strong>123</strong>.
+            No toques postes ni cables caídos, ni te acerques a comprobarlo: pueden seguir con
+            corriente. Si hay peligro inmediato, llama al <strong>123</strong>.
           </Notice>
+        ) : (
+          a.tipo !== 'apoyo' && (
+            <Notice tono="warning">
+              No te acerques a comprobarlo. Si hay peligro inmediato, llama al <strong>123</strong>.
+            </Notice>
+          )
         )}
 
         <div className="deflist">

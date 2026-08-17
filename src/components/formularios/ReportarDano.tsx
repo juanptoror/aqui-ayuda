@@ -5,6 +5,7 @@ import { Alternativa, Campo, CampoArea, CampoGrupo, QueFalta } from './Campos'
 import {
   CATEGORIAS_APOYO,
   CLASES_POR_TIPO,
+  exigeFoto,
   MAX_FOTOS,
   MAX_NOTA,
   usePublicarAfectacion,
@@ -34,9 +35,12 @@ import { usePreferencias } from '@/state/preferencias'
  *    En un mapa de peligros eso manda a alguien a rodear la manzana equivocada.
  *    Así que el GPS es el punto de partida y el pin se arrastra al sitio exacto,
  *    igual que en el formulario de la propia fuente.
- * 3. **La foto se reduce antes de salir.** Una foto de teléfono pesa varios
- *    megas y quien reporta está con datos móviles en la calle. Se manda una de
- *    unos 300 KB que enseña exactamente la misma grieta.
+ * 3. **La foto se reduce antes de salir, y en un corte de servicio no se pide.**
+ *    Una foto de teléfono pesa varios megas y quien reporta está con datos
+ *    móviles en la calle: se manda una de unos 300 KB que enseña exactamente la
+ *    misma grieta. Y en los cortes de luz, agua, gas o internet el contrato la
+ *    deja opcional —no hay nada que fotografiar en un barrio a oscuras—, así
+ *    que aquí tampoco se exige.
  * 4. **La clase de daño es un desplegable cerrado**, con las opciones de la
  *    propia fuente. Un título inventado deja el reporte fuera de sus filtros:
  *    lo vería quien mire la lista entera y nadie más.
@@ -44,10 +48,18 @@ import { usePreferencias } from '@/state/preferencias'
  *    es una pantalla que no contesta.
  */
 
+/**
+ * `apoyo` decía "Servicio" a secas hasta que la fuente estrenó los cortes de
+ * luz y agua, que en su vocabulario son "servicio público": dos pestañas
+ * llamadas casi igual, una para una farmacia abierta y otra para un barrio a
+ * oscuras. "Sitio abierto" nombra lo que de verdad es —un lugar que sigue
+ * atendiendo— y deja la palabra "servicio" para lo que dejó de funcionar.
+ */
 const TIPOS: { valor: TipoAfectacion; texto: string }[] = [
   { valor: 'vivienda', texto: TIPOS_AFECTACION.vivienda.nombre },
   { valor: 'via', texto: TIPOS_AFECTACION.via.nombre },
-  { valor: 'apoyo', texto: 'Servicio' },
+  { valor: 'apoyo', texto: 'Sitio abierto' },
+  { valor: 'servicio-publico', texto: TIPOS_AFECTACION['servicio-publico'].nombre },
 ]
 
 /** Lo que expone `MapaElegirPunto`, para poder cargarlo con `import()`. */
@@ -169,11 +181,17 @@ export function ReportarDano({ abierto, alCerrar }: { abierto: boolean; alCerrar
     })
   }
 
+  /* La foto es obligatoria en todo menos en los cortes de servicio: el contrato
+     la deja opcional ahí, y con razón —no hay nada que fotografiar en un barrio
+     a oscuras—. Pedirla igual dejaría sin publicar justo a quien no puede
+     enseñar nada. */
+  const fotoObligatoria = exigeFoto(tipo)
+
   const faltan: string[] = []
   if (!clase) faltan.push('la clase de afectación')
   if (tipo === 'apoyo' && !categoria) faltan.push('qué servicio es')
   if (!punto) faltan.push('la ubicación')
-  if (fotos.length === 0) faltan.push('una foto')
+  if (fotoObligatoria && fotos.length === 0) faltan.push('una foto')
 
   const listo = faltan.length === 0 && !publicar.isPending && !preparandoFoto
   const pesoTotal = fotos.reduce((s, f) => s + f.bytes, 0)
@@ -359,11 +377,13 @@ export function ReportarDano({ abierto, alCerrar }: { abierto: boolean; alCerrar
         {/* -------------------------------- Fotos ----------------------------- */}
         <CampoGrupo
           etiqueta={`Foto${fotos.length > 1 ? 's' : ''}`}
-          obligatorio
+          obligatorio={fotoObligatoria}
           ayuda={
             fotos.length > 0
               ? `Se envían reducidas: ${pesoLegible(pesoTotal)} en total en vez de varios megas.`
-              : `Hace falta al menos una y caben ${MAX_FOTOS}. Se reducen antes de subirlas para que no te cueste medio plan de datos.`
+              : fotoObligatoria
+                ? `Hace falta al menos una y caben ${MAX_FOTOS}. Se reducen antes de subirlas para que no te cueste medio plan de datos.`
+                : `Opcional aquí: un corte de luz o de agua no se ve en una foto. Si hay un poste o un cable caído, una foto ayuda a que lo confirmen; caben ${MAX_FOTOS}.`
           }
         >
           <div className="row row--wrap" style={{ gap: 'var(--sp-3)' }}>

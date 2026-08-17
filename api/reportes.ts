@@ -38,12 +38,22 @@ const DESTINO = 'https://pereiraresponde.co/api/public/v1/reports'
 const MAX_CUERPO = 3.5 * 1024 * 1024
 
 /** Lo que admite el contrato, copiado tal cual de su OpenAPI. */
-const TIPOS = ['housing', 'road', 'support'] as const
+const TIPOS = ['housing', 'road', 'support', 'utility'] as const
 const RIESGOS_POR_TIPO: Record<string, readonly string[]> = {
   housing: ['high', 'medium'],
   road: ['road'],
   support: ['support'],
+  utility: ['utility'],
 }
+/**
+ * Los tipos que exigen al menos una foto.
+ *
+ * `utility` —un corte de luz, agua, gas o internet— es el único que el contrato
+ * deja publicar sin ninguna (`photos.minItems: 0`), y con razón: no hay nada que
+ * fotografiar en un barrio a oscuras. Pedirla igual aquí sería inventarse un
+ * requisito que la fuente no tiene y rechazar el reporte antes de que salga.
+ */
+const TIPOS_CON_FOTO_OBLIGATORIA: readonly string[] = ['housing', 'road', 'support']
 const CATEGORIAS_APOYO = [
   'hospital',
   'shelter',
@@ -175,8 +185,12 @@ function validar(cuerpo: unknown): { ok: true; reporte: ReporteEntrante } | { ok
     return { ok: false, error: 'Falta la ubicación del reporte.' }
   }
 
-  const photos = c.photos
-  if (!Array.isArray(photos) || photos.length < 1 || photos.length > 3) {
+  const exigeFoto = TIPOS_CON_FOTO_OBLIGATORIA.includes(type)
+  const photos = c.photos ?? []
+  if (!Array.isArray(photos) || photos.length > 3) {
+    return { ok: false, error: 'Como mucho caben tres fotos.' }
+  }
+  if (exigeFoto && photos.length < 1) {
     return { ok: false, error: 'Hace falta al menos una foto, y como mucho tres.' }
   }
   const fotos: FotoEntrante[] = []

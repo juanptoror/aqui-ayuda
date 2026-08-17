@@ -9,7 +9,7 @@ TypeScript sobre **cinco backends**:
 | **Corag** | `ayuda.corag.app` | Ayuda directa entre personas, con WhatsApp | `/ayuda-directa` |
 | **Pereira Unida** | Supabase `ivnrelkbqqfebyullfeb` | Vecinos que piden y que ofrecen, con teléfono; arriendos de Risaralda | `/ayuda-directa`, `/vivienda` |
 | **Encuéntralo a un Clic** | Supabase `jdxptkifjcewckbslpno` | Inmuebles en arriendo con foto, sobre todo del Quindío | `/vivienda` |
-| **Pereira Responde** | `pereiraresponde.co` | Edificios afectados, vías cerradas y servicios abiertos | `/afectaciones`, `/mapa` |
+| **Pereira Responde** | `pereiraresponde.co` | Edificios afectados, vías cerradas, servicios abiertos y cortes de luz, agua, gas o internet | `/afectaciones`, `/mapa` |
 
 Cuatro se leen desde el navegador. La quinta también, pero **publicar en ella
 pasa por un servidor propio**: es la única que exige una clave, y una clave en
@@ -219,16 +219,18 @@ cuando en realidad no se pudo preguntar es desinformar en plena emergencia.
 `/afectaciones` consume la API pública documentada en
 [pereiraresponde.co/api/docs](https://pereiraresponde.co/api/docs)
 ([backend](src/backends/pereira-responde/)). Es la única fuente que no habla de
-ayuda: dice qué edificio está tocado y por qué calle no se pasa. Cuatro cosas
-medidas contra la API antes de escribir una línea de interfaz, y las cuatro
-condicionan el código:
+ayuda: dice qué edificio está tocado, por qué calle no se pasa y qué barrio
+quedó sin luz. Cuatro cosas medidas contra la API antes de escribir una línea de
+interfaz, y las cuatro condicionan el código:
 
-- **Es de solo lectura.** No hay endpoint público para publicar: el formulario
-  de la fuente escribe contra `/api/reports`, que no está en el contrato
-  público. Por eso "Reportar un daño" es un enlace a su mapa y no un formulario
-  nuestro. Un formulario propio perdería el reporte de alguien que se ha jugado
-  acercarse a un edificio inestable.
-- **`limit` por defecto es 100 y hoy hay 180 reportes.** No pedirlo recorta la
+- **Leer es público; publicar exige clave.** Cualquiera puede consultar los
+  reportes sin credencial, así que las consultas salen directas del navegador.
+  La escritura pide `Authorization: Bearer` y pasa por una función propia
+  ([más abajo](#publicar-un-daño-el-único-trozo-de-servidor-de-todo-el-proyecto)).
+  Si esa clave no está configurada, "Reportar un daño" vuelve a ser un enlace a
+  su mapa: un formulario que falla al enviar perdería el reporte de alguien que
+  se ha jugado acercarse a un edificio inestable.
+- **`limit` por defecto es 100 y hoy hay 181 reportes.** No pedirlo recorta la
   ciudad casi a la mitad sin avisar. Se pide siempre el máximo (500), y si
   llegan exactamente 500 la pantalla dice que puede haber más: la API no pagina.
 - **`area` no es el barrio.** El esquema lo ejemplifica como `"Barrio Boston"`,
@@ -245,11 +247,20 @@ condicionan el código:
   vista. Hay un test que falla si la lista descarga una sola foto o si la ficha
   descarga más de una.
 
-Dos más que se ven en el modelo:
+Tres más que se ven en el modelo:
 
-- `risk` solo es una gravedad en los reportes de vivienda. En vías y servicios
-  repite el tipo (`risk: "road"`), así que ahí se dice `sin-clasificar` en lugar
-  de inventar un nivel.
+- `risk` solo es una gravedad en los reportes de vivienda. En los demás tipos
+  repite el tipo (`risk: "road"`, `risk: "utility"`), así que ahí se dice
+  `sin-clasificar` en lugar de inventar un nivel.
+- **`type` tiene cuatro valores, no tres.** `utility` —daño o corte en un
+  servicio público: luz, agua, gas, internet, postes— se añadió al contrato
+  después que los otros, y un tipo nuevo en una fuente ajena no avisa. Lo que
+  avisa es la pantalla: mientras no estuvo en el mapeador, cada corte de luz
+  caía en el respaldo `?? 'vivienda'` y salía rotulado **"Edificio"**, o sea
+  anunciando un daño estructural donde solo faltaba la luz. Trae además la única
+  excepción del contrato de escritura: es el único tipo con `photos.minItems: 0`
+  —no hay nada que fotografiar en un barrio a oscuras—, y tanto el formulario
+  como el proxy dejan de exigir foto ahí y solo ahí. Hay un test por cada mitad.
 - La fuente **solo cubre Pereira**. Cuando el radio no devuelve nada, la
   pantalla lo dice explícitamente: leer "cero daños" desde Manizales sería
   entender que allí no pasó nada.
@@ -282,8 +293,9 @@ Lo que la función hace, y por qué:
 - **Valida el mismo contrato que la fuente antes de gastar cuota.** Un 400 al
   otro lado consume uno de los cinco envíos del minuto y solo dice "Datos de
   reporte inválidos.", sin decir cuál. Aquí se comprueban las combinaciones
-  raras: `road` exige `risk: "road"`, `support` exige `category`, y los demás
-  tipos la exigen vacía.
+  raras: `road` exige `risk: "road"`, `utility` exige `risk: "utility"`,
+  `support` exige `category`, los demás tipos la exigen vacía, y la foto es
+  obligatoria en todo menos en `utility`.
 - **Recorta el cuerpo en 3,5 MB**, muy por debajo de los 30 MB que admite la
   fuente, porque una función de Vercel devuelve 413 a partir de 4,5 MB y ese
   error llegaría *después* de que alguien haya subido la foto entera con datos

@@ -75,6 +75,7 @@ const FILTROS: { id: FiltroTipo; etiqueta: string }[] = [
   { id: 'vivienda', etiqueta: TIPOS_AFECTACION.vivienda.plural },
   { id: 'via', etiqueta: TIPOS_AFECTACION.via.plural },
   { id: 'apoyo', etiqueta: TIPOS_AFECTACION.apoyo.plural },
+  { id: 'servicio-publico', etiqueta: TIPOS_AFECTACION['servicio-publico'].plural },
 ]
 
 const UN_DIA_MS = 24 * 60 * 60 * 1000
