@@ -143,6 +143,7 @@ function aAfectacion(r: Reporte): Afectacion {
 
   return {
     id: r.id,
+    origen: 'pereira-responde',
     /* Ojo con este respaldo: no es inocuo. Cuando la fuente estrenó `utility`,
        cada corte de luz cayó aquí y salió rotulado "Edificio", que es decirle a
        alguien que hay un daño estructural donde solo falta la luz. Al añadir un
@@ -156,6 +157,11 @@ function aAfectacion(r: Reporte): Afectacion {
        valor raro en pantalla informa, y uno descartado no. */
     subtipo: categoria ? (SUBTIPO[categoria] ?? categoria) : null,
     nota: nota(r.area, titulo),
+    /* Esta fuente no da dirección. `area` lo parece por el nombre y por su
+       ejemplo ("Barrio Boston"), pero es la nota opcional del formulario: 163 de
+       180 traen el relleno "Ubicación registrada". Ponerla aquí sería inventar
+       una calle. */
+    direccion: null,
     lat,
     lng,
     fotos: Array.isArray(r.photos)

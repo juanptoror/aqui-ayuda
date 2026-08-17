@@ -7,7 +7,7 @@ TypeScript sobre **cinco backends**:
 |---|---|---|---|
 | **Ayudas Pereira** | Supabase `yjkyzfuixdpuhgthoeua` | Centros de acopio, qué necesitan y su inventario | `/ciudades`, `/ciudad/:slug`, `/centro/:id`, `/que-falta` |
 | **Corag** | `ayuda.corag.app` | Ayuda directa entre personas, con WhatsApp | `/ayuda-directa` |
-| **Pereira Unida** | Supabase `ivnrelkbqqfebyullfeb` | Vecinos que piden y que ofrecen, con teléfono; arriendos de Risaralda | `/ayuda-directa`, `/vivienda` |
+| **Pereira Unida** | Supabase `ivnrelkbqqfebyullfeb` | Vecinos que piden y que ofrecen, con teléfono; arriendos de Risaralda; daños de luz, agua, gas e internet | `/ayuda-directa`, `/vivienda`, `/afectaciones`, `/mapa` |
 | **Encuéntralo a un Clic** | Supabase `jdxptkifjcewckbslpno` | Inmuebles en arriendo con foto, sobre todo del Quindío | `/vivienda` |
 | **Pereira Responde** | `pereiraresponde.co` | Edificios afectados, vías cerradas, servicios abiertos y cortes de luz, agua, gas o internet | `/afectaciones`, `/mapa` |
 
@@ -267,6 +267,40 @@ Tres más que se ven en el modelo:
 
 Su mapa oficial dibuja además unas "zonas rojas" que la API pública no expone.
 Esta pantalla no es un sustituto del suyo y no lo aparenta.
+
+### `/afectaciones` tiene dos fuentes, no una
+
+Pereira Unida también publica daños, y de lo que la otra no cubre: energía,
+postes, agua, gas e internet (`service_outages`, leída por Supabase — el detalle
+está en [capacidades-backend.md](docs/capacidades-backend.md#service_outages-la-tabla-que-no-se-pudo-adivinar)).
+Las dos caben en la misma pantalla porque responden a la misma pregunta —qué le
+pasa a la ciudad— y ninguna sabe lo de la otra. Cada tarjeta lleva su sello y hay
+un test que falla si aparece una sin él.
+
+Juntar fuentes en un mapa de peligros obliga a dos cosas que en la vivienda no
+hacían falta:
+
+- **Una fuente caída no puede parecer una ciudad intacta.** Con dos fuentes, la
+  que sigue en pie devuelve una lista corta y nada parece roto: si Pereira
+  Responde no contesta y la otra no tiene daños de servicios que contar, la
+  pantalla enseñaría cero tarjetas sobre una ciudad con 165 edificios tocados.
+  Así que la consulta devuelve **lo que llegó y quién no contestó**, y la
+  pantalla lo dice en voz alta en vez de escribir "no hay nada reportado". Solo
+  cuando fallan todas sale el error de siempre. Un test por cada mitad.
+- **La forma de un punto la decide lo que es, no quién lo publica.** El mapa
+  elegía la forma por el origen, y Pereira Unida publica dos clases de cosa:
+  vecinos pidiendo ayuda y daños de servicios. Con ese criterio un poste con el
+  cable en el suelo salía con el cuadrado de un centro de acopio y la ficha
+  ofrecía **"cómo llegar"** hasta él.
+
+Y un corte de servicio se puede publicar en las dos, con **una casilla marcada
+por defecto**: el tablón de Pereira Unida lo consultan los equipos que reparan
+luz, agua, gas e internet, así que avisar ahí es la diferencia entre que alguien
+rodee el cable y que alguien venga a quitarlo. Al segundo destino no viaja ni un
+dato personal —ni nombre, ni teléfono, ni foto—, solo qué se rompió y el punto
+exacto. El envío es de mejor esfuerzo: si falla, el reporte ya está publicado en
+Pereira Responde y **eso** es lo que se le dice a quien lo escribió, en vez de
+mandarlo a rellenarlo otra vez desde la calle.
 
 ### Publicar un daño: el único trozo de servidor de todo el proyecto
 

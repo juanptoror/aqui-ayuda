@@ -31,6 +31,16 @@ export interface PuntoMapa {
   titulo: string
   detalle?: string
   origen: Origen
+  /**
+   * Qué es este punto, cuando su fuente no lo decide.
+   *
+   * El origen bastaba mientras cada fuente publicara una sola clase de cosa.
+   * Pereira Unida rompió eso: publica vecinos pidiendo ayuda **y** daños de
+   * energía, agua y gas. Sin este campo, un cable caído se dibujaría como el
+   * cuadrado de un centro de acopio y la ficha ofrecería "cómo llegar" hasta
+   * él, que es la peor indicación posible.
+   */
+  forma?: FormaPunto
   /** Resalta el punto: peticiones urgentes, centro seleccionado. */
   destacado?: boolean
   alPulsar?: () => void
@@ -60,9 +70,17 @@ export interface PuntoMapa {
  */
 export type FormaPunto = 'sitio' | 'persona' | 'dano'
 
-export function formaDe(origen: Origen): FormaPunto {
-  if (origen === 'corag') return 'persona'
-  if (origen === 'pereira-responde') return 'dano'
+/**
+ * Manda lo que el punto dice ser; el origen solo decide cuando calla.
+ *
+ * Recibe el punto entero y no su origen a secas justamente por eso: hay una
+ * fuente que publica dos clases de cosa y adivinarlo por el nombre del
+ * proveedor pintaba un poste caído igual que una bodega de donaciones.
+ */
+export function formaDe(p: Pick<PuntoMapa, 'origen' | 'forma'>): FormaPunto {
+  if (p.forma) return p.forma
+  if (p.origen === 'corag') return 'persona'
+  if (p.origen === 'pereira-responde') return 'dano'
   return 'sitio'
 }
 
@@ -129,7 +147,7 @@ export function MapaPuntos({ puntos, yoEstoyAqui = null, alto }: Props) {
   }, [])
 
   const seleccionado = puntos.find((p) => p.id === activo) ?? null
-  const formas = new Set(puntos.map((p) => formaDe(p.origen)))
+  const formas = new Set(puntos.map(formaDe))
 
   return (
     <div>
@@ -199,7 +217,7 @@ export function MapaPuntos({ puntos, yoEstoyAqui = null, alto }: Props) {
                 posible: ahí se enseña dónde está, para rodearlo. */}
             <ComoLlegar
               destino={{ lat: seleccionado.lat, lng: seleccionado.lng, nombre: seleccionado.titulo }}
-              modo={formaDe(seleccionado.origen) === 'dano' ? 'ver' : 'dir'}
+              modo={formaDe(seleccionado) === 'dano' ? 'ver' : 'dir'}
               tamano="sm"
             />
           </div>

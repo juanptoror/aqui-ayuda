@@ -61,7 +61,13 @@ export type Capacidad =
   | 'escribir:unirse-a-centro'
   | 'escribir:ayuda-directa'
   | 'escribir:alojamiento'
-  /** Publicar un daño. Pasa por servidor: la fuente exige clave y la esconde. */
+  /**
+   * Publicar un daño. Las dos fuentes que lo aceptan no lo hacen igual: una
+   * exige clave y pasa por nuestro servidor, la otra escribe directa desde el
+   * navegador. Por eso ninguna de las dos cabe en `EscriturasBackend`, que
+   * asume una llamada suelta; la capacidad se declara igual para que la
+   * interfaz pueda preguntar quién sabe hacerlo.
+   */
   | 'escribir:afectacion'
   | 'sesion:correo'
 

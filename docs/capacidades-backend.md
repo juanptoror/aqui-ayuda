@@ -156,12 +156,26 @@ Tercera fuente. Su REST no expone el OpenAPI con la clave publicable, así que e
 esquema se descubrió probando ~700 nombres de tabla. La convención es **inglés
 en snake_case**, al revés que Ayudas Pereira.
 
-| Tabla | Filas | Leemos | Dónde |
-|---|---|---|---|
-| `reports` | 282 | Sí | Personas pidiendo ayuda, con coordenada y teléfono |
-| `help_offers` | 296 | Sí | Vecinos que se ofrecen. **Pantalla "Quién puede ayudar"** |
-| `comments` | 68 | Declarado | Comentarios sobre un reporte, por `report_id` |
-| `collection_points` | 0 | No | Existe pero está vacía |
+Después apareció una segunda vía: **publican una API pública documentada** con
+tres recursos (`/ayudas`, `/ayudantes`, `/servicios`). No la usamos —exige una
+API key por integración y su propio rate limit, y ya estamos conectados por
+Supabase sin ninguna de las dos cosas— pero sirve de **mapa del tesoro**: dice
+qué hay antes de tener que adivinarlo. Así se encontró `service_outages`, que
+seis meses de sondeos por nombre no habían dado.
+
+| Recurso de su API | Tabla | Filas | Leemos | Dónde |
+|---|---|---|---|---|
+| `GET /ayudas` | `reports` | 378 | Sí | Personas pidiendo ayuda, con coordenada y teléfono |
+| `GET /ayudantes` | `help_offers` | 335 | Sí | Vecinos que se ofrecen. **Pantalla "Quién puede ayudar"** |
+| `GET /servicios` | `service_outages` | **0** | Sí | Daños de luz, agua, gas e internet. **`/afectaciones` y `/mapa`** |
+| — | `rentals` | 82 | Sí | Arriendos de la comunidad. **`/vivienda`** |
+| — | `comments` | 86 | Declarado | Comentarios sobre un reporte, por `report_id` |
+| — | `collection_points` | 0 | No | Existe pero está vacía |
+
+Sus `POST` tampoco hacen falta: se escribe en `reports` y en `service_outages`
+por Supabase, que es la misma fila sin clave de por medio. El `PATCH` de
+`/servicios` —cerrar un daño cuando la cuadrilla lo atiende— no se usa: esta
+aplicación no es el sistema de despacho de nadie.
 
 **No hay permisos por columna**: `SELECT *` devuelve 200 en las cuatro y ninguna
 da 42501. El teléfono es público en las dos tablas que lo tienen, y esa es la
@@ -173,21 +187,101 @@ pueden contactar sin sesión, y estos sí.
 La fuente marca estados que **no se deben republicar**, y el filtro está en la
 consulta y no en la pantalla, para que no se olvide en la siguiente vista:
 
-- `reports.status`: `informacion_falsa` (12 filas) y `duplicado` (10). Publicar
+- `reports.status`: `informacion_falsa` (16 filas) y `duplicado` (14). Publicar
   un aviso señalado como falso en plena emergencia es hacer daño; los duplicados
   mandan a dos personas al mismo sitio a resolver lo mismo. También se oculta
-  `resuelto` (62), que ya no necesita a nadie.
-- `help_offers.status`: `ocultada` (53 filas). Alguien retiró su ofrecimiento.
+  `resuelto` (86), que ya no necesita a nadie. **`en_camino` (7) sí se publica**:
+  alguien va para allá, pero todavía no ha llegado.
+- `help_offers.status`: `ocultada` (63 filas). Alguien retiró su ofrecimiento.
+- `service_outages.status`: se descarta `resuelto` **en la consulta**
+  (`status=neq.resuelto`), no en la pantalla. Se usa `neq` y no una lista blanca
+  a propósito: un estado nuevo que no conozcamos se enseña de más antes que
+  esconder un cable vivo por llevar una etiqueta que no habíamos visto.
 
 ### Vocabulario propio
 
-`reports.category`: alimentos (148) · otros (41) · medicinas (33) ·
-voluntariado (16) · transporte_logistica (14) · **revision_ingenieria (13)** ·
-herramientas (10) · mascotas (8) · herramientas_rescate (1).
+`reports.category`: alimentos (201) · otros (55) · medicinas (46) ·
+transporte_logistica (18) · voluntariado (18) · **revision_ingenieria (13)** ·
+herramientas (13) · mascotas (12) · herramientas_rescate (2). Su API declara una
+décima, `conectividad_energia`, que **todavía no aparece en ningún reporte**:
+llegó con la misma tanda que los daños de servicios.
 
-`help_offers.skill`: otro (92) · alimentacion (59) · **psicologia (43)** ·
-transporte (32) · rescate (26) · medico (18) · oficios (12) · enfermeria (6) ·
-legal (5) · ingenieria (3).
+`help_offers.skill`: otro (109) · alimentacion (68) · **psicologia (45)** ·
+transporte (39) · rescate (26) · medico (22) · oficios (12) · enfermeria (6) ·
+legal (5) · ingenieria (3). Las diez que enumera su API, sin sorpresas.
+
+### `service_outages`: la tabla que no se pudo adivinar
+
+Doce columnas —`id, service, severity, description, address, municipality,
+department, lat, lng, photo_urls, status, created_at`— comprobadas una a una
+contra PostgREST, y **calzan exactamente** con lo que devuelve `GET /servicios`.
+Lo que esa API añade y aquí no existe lo compone ella al vuelo: `service_label`,
+`severity_label`, `status_label` y `maps_url`.
+
+Tres cosas condicionan cómo se lee:
+
+1. **Hoy tiene cero filas.** La tabla existe y responde 200 con lista vacía,
+   igual que `collection_points`. Desde fuera **no se puede distinguir "vacía" de
+   "RLS la esconde entera"**, así que se lee lo que se ve y la pantalla no
+   promete nada que no haya llegado. Todo el mapeo está probado con datos
+   inyectados en los tests, no con datos reales.
+2. **`severity` no es un nivel de riesgo, salvo uno.** Su documentación las
+   define así: `peligro_critico` = cable vivo o poste cayéndose; `corte_sector` =
+   barrio sin servicio; `falla_puntual` = acometida individual. Solo la primera
+   habla de peligro; las otras dos dicen **a cuánta gente afecta**. Traducir "el
+   barrio se quedó sin agua" a "riesgo medio" pintaría una alarma que la fuente
+   no puso, así que únicamente `peligro_critico` se convierte en gravedad y el
+   alcance viaja en el título ("Sector sin agua" frente a "Falla de agua en una
+   vivienda").
+3. **No trae título.** Se compone de `service` × `severity` con una rejilla
+   explícita de quince frases en
+   [pereira-unida/index.ts](../src/backends/pereira-unida/index.ts), y no pegando
+   palabras: las combinaciones no son simétricas —"Sector sin postes" no
+   significa nada— y el título es lo único que mucha gente va a leer.
+
+### Escribir en `service_outages`: la casilla del formulario
+
+Se publica, y con una casilla aparte. Un `INSERT` con un `id` inválido responde
+`22P02` (dato mal formado) y no `42501` (sin permiso), así que el `GRANT` está
+—la misma comprobación que se hizo con `reports`, y que no crea ninguna fila—.
+
+El destino no es decorativo: su propia documentación dice que ese recurso está
+pensado para el tablero de una cuadrilla, "el de Energía de Pereira, por
+ejemplo". Avisar ahí es la diferencia entre que alguien **rodee** el cable y que
+alguien **venga a quitarlo**.
+
+| | |
+|---|---|
+| **Cuándo aparece** | Solo en los cortes de servicio. Ese tablón no recibe edificios ni vías |
+| **Por defecto** | Marcada. No viaja ni un dato personal: ni nombre, ni teléfono, ni foto |
+| **Si falla** | El reporte principal ya está publicado y eso es lo que se dice. Nunca "no se pudo publicar" |
+
+Lo que se manda y lo que no:
+
+| Columna | Qué va | Por qué |
+|---|---|---|
+| `service`, `severity` | Derivados de la clase elegida | `poste-cable` → `peligro_critico` sin preguntar: su escala lo define como "cable vivo o poste cayéndose" |
+| `lat`, `lng` | El pin exacto | Lo único que su documentación llama obligatorio |
+| `description` | La nota, o la frase compuesta si está vacía | Una fila sin descripción no dice ni qué se rompió |
+| `photo_urls` | `[]` | Su columna guarda URLs, no bytes, y subir a su almacenamiento es un permiso que no tenemos |
+| `municipality`, `department` | **`null`** | No se preguntan y el catálogo local solo tiene centroides: Pereira y Dosquebradas están pegadas, y etiquetar como "Pereira" un poste de Dosquebradas manda una cuadrilla al municipio equivocado. Coste medido: su filtro `?municipio=` no encontrará estos reportes |
+| `address` | `null` | Por lo mismo. Meter ahí la nota repetiría el error que ya cuesta un comentario entero explicar con el `area` de la otra fuente |
+
+**El alcance sí se pregunta.** `corte_sector` frente a `falla_puntual` es la
+única cosa que esa fuente necesita y la otra no recoge, y quien reporta la sabe
+sin pensar: o está el barrio entero a oscuras o es solo su casa. Deducirla sería
+inventarla, y al otro lado ordena el tablero.
+
+**Sin verificar de extremo a extremo.** La tabla tiene cero filas y comprobar que
+una inserción completa pasa exigiría dejar un daño falso en la base de datos de
+una emergencia ajena. El mismo caso que la escritura de `vivienda`, y por eso el
+envío es de mejor esfuerzo y su fallo nunca arrastra al reporte principal.
+
+Los dos sondeos quedan en el repositorio para poder repetirlos:
+[sondear-servicios.mjs](../scripts/sondear-servicios.mjs) busca la tabla y
+[sondear-columnas-servicios.mjs](../scripts/sondear-columnas-servicios.mjs)
+pregunta columna por columna, que es la única forma de leer el esquema de una
+tabla vacía.
 
 Dos etiquetas no existían en las otras fuentes y obligaron a ampliar la
 taxonomía con la subcategoría **`servicios-tecnicos`**: `revision_ingenieria`

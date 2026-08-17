@@ -23,7 +23,7 @@ import { ComoLlegar } from '@/components/ComoLlegar'
 import { FichaAfectacion } from '@/components/FichaAfectacion'
 import { ReportarDano } from '@/components/formularios/ReportarDano'
 import { Fab } from '@/components/Fab'
-import { FuentesDeLaPantalla, SelloFuente } from '@/components/Fuente'
+import { FUENTES, FuentesDeLaPantalla, SelloFuente } from '@/components/Fuente'
 import { MapaPuntos, type PuntoMapa } from '@/components/MapaPuntos'
 import { SelectorCiudad } from '@/components/SelectorCiudad'
 import { useAfectaciones } from '@/datos/consultas'
@@ -130,7 +130,7 @@ export function Afectaciones() {
   const referencia = desdeElGps ? 'de donde estás' : 'del centro del municipio'
 
   const todas = useMemo<AfectacionVista[]>(() => {
-    const lista = (consulta.data ?? []).map((a) => ({
+    const lista = (consulta.data?.todas ?? []).map((a) => ({
       ...a,
       distanciaKm:
         origen && a.lat != null && a.lng != null
@@ -178,18 +178,23 @@ export function Afectaciones() {
       visibles
         .filter((a) => a.lat != null && a.lng != null)
         .map((a) => ({
-          id: `pr-${a.id}`,
+          /* Ya no basta con `pr-`: la lista junta dos fuentes y los
+             identificadores solo son únicos dentro de cada una. */
+          id: `dano-${a.origen}-${a.id}`,
           lat: a.lat as number,
           lng: a.lng as number,
           titulo: a.titulo,
           detalle: [
             TIPOS_AFECTACION[a.tipo].nombre,
             a.gravedad === 'sin-clasificar' ? null : GRAVEDADES_AFECTACION[a.gravedad],
-            a.nota,
+            a.direccion ?? a.nota,
           ]
             .filter(Boolean)
             .join(' · '),
-          origen: 'pereira-responde',
+          origen: a.origen,
+          /* Un daño es un daño venga de donde venga. Sin decirlo, los de
+             Pereira Unida saldrían con la forma de "sitio al que se va". */
+          forma: 'dano' as const,
           destacado: a.gravedad === 'alta',
           etiquetaAccion: 'Ver el daño',
           alPulsar: () => setFicha(a),
@@ -203,8 +208,17 @@ export function Afectaciones() {
   const recientes = enRadio.filter((a) => a.reciente).length
   const sinUbicar = visibles.filter((a) => a.lat == null || a.lng == null).length
   /* La API no pagina y tope. Si llegan exactamente 500, puede haber más y no hay
-     forma de pedirlas: eso se dice, no se disimula enseñando 500 como el total. */
-  const puedeHaberMas = (consulta.data?.length ?? 0) >= LIMITE_MAX
+     forma de pedirlas: eso se dice, no se disimula enseñando 500 como el total.
+     Se cuentan SOLO los de Pereira Responde: el tope es suyo, y sumarle los
+     daños de servicios de la otra fuente dispararía el aviso por un límite que
+     esa fuente no tiene. */
+  const puedeHaberMas =
+    (consulta.data?.todas ?? []).filter((a) => a.origen === 'pereira-responde').length >= LIMITE_MAX
+  /* Una fuente caída NO se disimula. Con dos, la lista puede venir a medias sin
+     que nada parezca roto: si Pereira Responde no contesta y la otra devuelve
+     cero daños de servicios, la pantalla diría "no hay nada reportado" sobre una
+     ciudad que sí tiene 165 edificios tocados. */
+  const fallidas = consulta.data?.fallidas ?? []
 
   async function usarMiUbicacion() {
     setBuscando(true)
@@ -236,7 +250,7 @@ export function Afectaciones() {
               : `${conteo(enRadio.length, 'afectación reportada', 'afectaciones reportadas')} ${
                   origen
                     ? `a menos de ${radioKm} km ${referencia}`
-                    : 'en Pereira, sin acotar por distancia'
+                    : 'en Pereira y el resto de Risaralda, sin acotar por distancia'
                 }.`
         }
         acciones={
@@ -270,11 +284,11 @@ export function Afectaciones() {
 
       <div className="container">
         <FuentesDeLaPantalla
-          origenes={['pereira-responde']}
+          origenes={['pereira-responde', 'pereira-unida']}
           nota={
             puedePublicar.data
-              ? 'Cada reporte lo publica una persona con foto y coordenada. Lo que reportes desde aquí se publica allí con tu foto y tu punto, y pasa por su moderación igual que si lo hicieras en su web.'
-              : 'Cada reporte lo publica una persona desde el mapa de Pereira Responde, con foto y coordenada. Esta pantalla solo lee: para reportar algo nuevo se abre la fuente.'
+              ? 'Los edificios y las vías salen de Pereira Responde; los daños de luz, agua, gas e internet, del tablón de Pereira Unida. Lo que reportes desde aquí se publica en la primera con tu foto y tu punto, y pasa por su moderación igual que si lo hicieras en su web.'
+              : 'Los edificios y las vías salen de Pereira Responde; los daños de luz, agua, gas e internet, del tablón de Pereira Unida. Esta pantalla solo lee: para reportar algo nuevo se abre la fuente.'
           }
         />
 
@@ -287,6 +301,23 @@ export function Afectaciones() {
           </Notice>
 
           {errorUbicacion && <Notice tono="warning">{errorUbicacion}</Notice>}
+
+          {fallidas.length > 0 && (
+            <Notice tono="critical">
+              No se pudo leer{' '}
+              <strong>{fallidas.map((o) => FUENTES[o].nombre).join(' ni ')}</strong>, así que{' '}
+              <strong>esta lista está incompleta</strong>. Lo que falta no es que no haya pasado
+              nada: es que no se pudo preguntar.{' '}
+              <button
+                type="button"
+                className="btn btn--sm"
+                onClick={() => consulta.refetch()}
+                style={{ marginTop: 'var(--sp-2)' }}
+              >
+                <span>Reintentar</span>
+              </button>
+            </Notice>
+          )}
 
           {puedeHaberMas && (
             <Notice tono="warning">
@@ -413,6 +444,12 @@ export function Afectaciones() {
                   <SkeletonTarjeta />
                   <SkeletonTarjeta />
                 </div>
+              ) : visibles.length === 0 && fallidas.length > 0 ? (
+                /* Sin nada que enseñar Y con una fuente caída, no se puede decir
+                   "no hay nada reportado": no lo sabemos, no se pudo preguntar.
+                   El aviso de arriba ya lo explica y trae el botón de reintentar,
+                   así que aquí no va nada en vez de una frase que contradiga. */
+                null
               ) : visibles.length === 0 ? (
                 <EmptyState
                   icono={Construction}
@@ -425,8 +462,9 @@ export function Afectaciones() {
                     enRadio.length === 0 && origen ? (
                       <>
                         Ojo con leer esto como "aquí no pasó nada":{' '}
-                        <strong>esta fuente solo cubre Pereira</strong>. Si estás en otro
-                        municipio, su silencio no dice nada sobre el tuyo.
+                        <strong>estas fuentes solo cubren Risaralda</strong>, y los edificios y
+                        vías, solo Pereira. Si estás en otro municipio, su silencio no dice nada
+                        sobre el tuyo.
                       </>
                     ) : (
                       'Prueba a quitar algún filtro o a ampliar el radio.'
@@ -515,7 +553,7 @@ function TarjetaAfectacion({
 }) {
   return (
     <article className="card">
-      <span className="card__accent" data-origen="pereira-responde" />
+      <span className="card__accent" data-origen={a.origen} />
       <div className="card__body">
         <div className="row row--wrap" style={{ gap: 'var(--sp-2)' }}>
           <Badge tono={a.tipo === 'apoyo' ? 'success' : 'neutral'}>
@@ -531,7 +569,7 @@ function TarjetaAfectacion({
           )}
           {a.reciente && <Badge tono="info">Nuevo</Badge>}
           <div className="spacer" />
-          <SelloFuente origen="pereira-responde" />
+          <SelloFuente origen={a.origen} />
         </div>
 
         <h3 className="card__title clamp-2">{a.subtipo ?? a.titulo}</h3>
@@ -539,6 +577,14 @@ function TarjetaAfectacion({
         {a.subtipo && (
           <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
             {a.titulo}
+          </p>
+        )}
+
+        {/* La dirección va antes que la nota: cuando la fuente la da, es lo que
+            permite llegar. La nota explica, la calle ubica. */}
+        {a.direccion && (
+          <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
+            {a.direccion}
           </p>
         )}
 

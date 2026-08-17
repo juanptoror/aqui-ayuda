@@ -120,22 +120,28 @@ export function Mapa() {
     }
 
     if (verDanos) {
-      for (const d of qDanos.data ?? []) {
+      for (const d of qDanos.data?.todas ?? []) {
         if (d.lat == null || d.lng == null) continue
         if (origen && distanciaKm(origen, { lat: d.lat, lng: d.lng }) > radioKm) continue
         lista.push({
-          id: `pr-${d.id}`,
+          /* Dos fuentes informan del terreno y sus identificadores solo son
+             únicos dentro de cada una. */
+          id: `dano-${d.origen}-${d.id}`,
           lat: d.lat,
           lng: d.lng,
           titulo: d.titulo,
           detalle: [
             TIPOS_AFECTACION[d.tipo].nombre,
             d.gravedad === 'sin-clasificar' ? null : GRAVEDADES_AFECTACION[d.gravedad],
-            d.nota,
+            d.direccion ?? d.nota,
           ]
             .filter(Boolean)
             .join(' · '),
-          origen: 'pereira-responde',
+          origen: d.origen,
+          /* Un daño es un daño venga de donde venga: sin esto, los de Pereira
+             Unida saldrían como cuadrado de centro de acopio y la ficha
+             ofrecería "cómo llegar" hasta un cable en el suelo. */
+          forma: 'dano' as const,
           destacado: d.gravedad === 'alta',
           etiquetaAccion: 'Ver el daño',
           alPulsar: () => setFichaDano(d),
