@@ -16,6 +16,7 @@ import {
   SatelliteDish,
   Sun,
   TriangleAlert,
+  UserSearch,
 } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { usePreferencias } from '@/state/preferencias'
@@ -57,6 +58,19 @@ const SECUNDARIOS: Destino[] = [
   /* Va aquí y no abajo por una razón incómoda: se consulta una vez, cuando se
      va a salir a la calle. Las cinco de abajo se consultan todo el rato. */
   { a: '/afectaciones', etiqueta: 'Daños y vías cerradas', etiquetaCorta: 'Daños', icono: Construction },
+  /* Buscar a alguien de quien no se sabe nada, o avisar de alguien que se
+     encontró. Tampoco es una pantalla nuestra: las fotos, el cotejo y el
+     contacto entre quien rescata y quien busca los lleva Encontrados, y ahí se
+     suben caras de personas heridas o muertas. Eso no se copia dentro de una
+     app sin poder responder por lo que pasa con esas fotos, así que sale a su
+     web. */
+  {
+    a: 'https://encontrados.co/',
+    etiqueta: 'Buscar desaparecidos',
+    etiquetaCorta: 'Personas',
+    icono: UserSearch,
+    externo: true,
+  },
   /* Solicitar una antena Starlink para una comunidad o un servicio esencial.
      No es una pantalla nuestra: el formulario, el criterio de priorización y el
      seguimiento son de Conecta Colombia, y quien solicita tiene que saber a
